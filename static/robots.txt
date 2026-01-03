@@ -1,0 +1,6 @@
+# Permitir que todos los crawlers accedan a todo el sitio
+User-agent: *
+Allow: /
+
+# Indicar la ubicación de tu sitemap (lo crearemos en el siguiente paso)
+Sitemap: https://brianleft.com/sitemap.xml
