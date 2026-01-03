@@ -66,7 +66,7 @@
         style="pointer-events: auto; background-color: rgba(0,0,0,0.8);"
         on:click={handleAiButtonClick}
     >
-        <span class="me-2">⚡</span> Hablar con Søren (AI)
+        <span class="me-2">⚡</span> Hablar con Torvalds (AI)
     </button>
 </div>
 </main>

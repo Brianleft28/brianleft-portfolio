@@ -1,7 +1,7 @@
 {
-	"name": "new-portfolio",
+	"name": "portfolio",
 	"private": true,
-	"version": "0.0.1",
+	"version": "0.0.2",
 	"author": {
 		"name": "Brian Benegas",
 		"email": "contacto@brianleft.com"

@@ -1,79 +1,289 @@
-# Portfolio Interactivo v2 (Søren Público)
+<div align="center">
 
-Este proyecto es la cara visible del monorepo: una aplicación web construida con **SvelteKit** que funciona como el portfolio personal de Brian Benegas. Su característica principal es la integración de **"Søren Público"**, un asistente de IA que responde preguntas sobre el perfil, la experiencia y los proyectos del autor.
+# 🖥️ Portfolio Interactivo
 
-Originalmente diseñado para correr con modelos locales, la versión actual ha evolucionado para utilizar la potencia de **Google Gemini 1.5 Flash**, garantizando respuestas rápidas y baja latencia directamente desde la terminal web, utilizando un archivo de memoria unificado.
+**Un "Sistema Operativo" web con un asistente de IA integrado.**
 
-### Stack Tecnológico
+[![SvelteKit](https://img.shields.io/badge/SvelteKit-FF3E00?style=for-the-badge&logo=svelte&logoColor=white)](https://kit.svelte.dev/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![Google Gemini](https://img.shields.io/badge/Google%20Gemini-8E75B2?style=for-the-badge&logo=googlegemini&logoColor=white)](https://ai.google.dev/)
+[![Docker](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)](https://www.docker.com/)
 
-![SvelteKit](https://img.shields.io/badge/SvelteKit-FF3E00?style=for-the-badge&logo=svelte&logoColor=white)
-![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white)
-![Google Gemini](https://img.shields.io/badge/Google%20Gemini-8E75B2?style=for-the-badge&logo=google&logoColor=white)
-![Bootstrap](https://img.shields.io/badge/Bootstrap-7952B3?style=for-the-badge&logo=bootstrap&logoColor=white)
+[**Ver Demo en Vivo →**](https://brianleft.com)
+
+</div>
 
 ---
 
-## 🎯 Arquitectura y Flujo de Datos del Chat
+## 📋 Tabla de Contenidos
 
-Este servicio (`portfolio`) actúa como interfaz y orquestador. El flujo de una consulta en la terminal es el siguiente:
+- [Descripción](#-descripción)
+- [Características Principales](#-características-principales)
+- [Arquitectura del Sistema](#-arquitectura-del-sistema)
+- [Stack Tecnológico](#-stack-tecnológico)
+- [Instalación y Desarrollo](#-instalación-y-desarrollo)
+- [Comandos de la Terminal](#-comandos-de-la-terminal)
+- [Estructura del Proyecto](#-estructura-del-proyecto)
+- [Configuración de la IA](#-configuración-de-la-ia)
+- [Despliegue con Docker](#-despliegue-con-docker)
+- [Documentación Interna](#-documentación-interna)
+- [Licencia](#-licencia)
 
-1.  **Terminal Web (Frontend)**: 
-    * El usuario interactúa mediante comandos o chat libre.
-    * La UI gestiona el sistema de archivos virtual y el estado del contexto.
-    * Cuando se envía un mensaje, hace una petición `POST` a `/api/chat`.
+---
 
-2.  **Backend (SvelteKit Server Route)**: 
-    * Recibe el mensaje del usuario.
-    * Carga la memoria base estática desde `static/data/public_memory.md`.
-    * Construye un *System Prompt* inyectando la memoria y el contexto de la sesión.
-    * Conecta con la **API de Google Gemini (1.5 Flash)** para generar la respuesta.
+## 📖 Descripción
 
-3.  **Respuesta**: 
-    * El texto generado se envía de vuelta al frontend y se renderiza en la terminal simulando una salida de consola.
+ Este portfolio es una experiencia interactiva que simula un sistema operativo dentro del navegador. Los usuarios pueden explorar proyectos y contenido a través de un explorador de archivos visual o mediante una **terminal web completamente funcional**.
+
+La pieza central es **TorvaldsAi**, un asistente de inteligencia artificial con la personalidad de Linus Torvalds, capaz de responder preguntas técnicas sobre la arquitectura del proyecto, la experiencia profesional del autor y los detalles de implementación de cada proyecto listado.
+
+> **Filosofía de diseño:** El código es la herramienta, la arquitectura es el objetivo. Este portfolio no solo muestra *qué* sé hacer, sino *cómo* pienso al construir software.
+
+---
+
+## ✨ Características Principales
+
+| Característica | Descripción |
+| :--- | :--- |
+| **Terminal Interactiva** | Emulador de consola con historial, autocompletado y comandos personalizados. Abre con `Ctrl + Ñ`. |
+| **Sistema de Archivos Virtual** | Navegación por proyectos como si fueran directorios (`cd`, `ll`). |
+| **TorvaldsAi (IA Integrada)** | Asistente con streaming de respuestas, renderizado Markdown y syntax highlighting. Usa Google Gemini. |
+| **Docs as Code** | La IA obtiene su conocimiento de un archivo Markdown (`memory.md`), fácil de versionar y mantener. |
+| **SSR + Hidratación** | Renderizado del lado del servidor con SvelteKit para SEO y performance óptimos. |
+| **Contenerizado** | Dockerfile multi-stage optimizado (<100MB en imagen final). |
+
+---
+
+## 🏛️ Arquitectura del Sistema
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                        CLIENTE (Navegador)                          │
+│  ┌──────────────────┐  ┌──────────────────┐  ┌──────────────────┐   │
+│  │ Explorador de    │  │ Terminal Web     │  │ Renderizador     │   │
+│  │ Archivos (UI)    │  │ (Svelte Component)│  │ Markdown (marked)│  │
+│  └────────┬─────────┘  └────────┬─────────┘  └──────────────────┘   │
+│           │                     │                                   │
+│           │         POST /api/chat (streaming)                      │
+│           ▼                     ▼                                   │
+└─────────────────────────────────────────────────────────────────────┘
+                                  │
+                                  ▼
+┌─────────────────────────────────────────────────────────────────────┐
+│                     SERVIDOR (SvelteKit Node)                       │
+│  ┌──────────────────────────────────────────────────────────────┐   │
+│  │                    /api/chat (+server.ts)                    │   │
+│  │  1. Recibe prompt del usuario                                │   │
+│  │  2. Carga memory.md (contexto de la IA)                      │   │
+│  │  3. Construye System Prompt + User Prompt                    │   │
+│  │  4. Llama a Google Gemini API (streaming)                    │   │
+│  │  5. Retorna ReadableStream al cliente                        │   │
+│  └──────────────────────────────────────────────────────────────┘   │
+└─────────────────────────────────────────────────────────────────────┘
+                                  │
+                                  ▼
+┌─────────────────────────────────────────────────────────────────────┐
+│                    SERVICIOS EXTERNOS                               │
+│  ┌──────────────────┐                                               │
+│  │ Google Gemini    │  Modelo: gemini-2.5-flash                     │
+│  │ (Generative AI)  │  Streaming habilitado                         │
+│  └──────────────────┘                                               │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## 🛠️ Stack Tecnológico
+
+| Capa | Tecnología | Propósito |
+| :--- | :--- | :--- |
+| **Frontend** | SvelteKit 2, Svelte 5 | Framework reactivo con SSR |
+| **Estilos** | Bootstrap 5, SASS | Utilidades CSS y preprocesador |
+| **Lenguaje** | TypeScript | Tipado estático |
+| **IA** | Google Gemini API | Generación de respuestas (LLM) |
+| **Markdown** | marked, marked-highlight | Parsing y renderizado de Markdown |
+| **Syntax Highlighting** | highlight.js | Coloreo de código en respuestas |
+| **Runtime** | Node.js 20+ | Servidor SSR |
+| **Contenedor** | Docker (multi-stage) | Despliegue optimizado |
+
+---
+
+## 🚀 Instalación y Desarrollo
+
+### Prerrequisitos
+
+- **Node.js** >= 20.x
+- **npm** >= 10.x (o pnpm/yarn)
+- **API Key de Google Gemini** ([Obtener aquí](https://aistudio.google.com/app/apikey))
+
+### Pasos
+
+1.  **Clonar el repositorio:**
+    ```bash
+    git clone https://github.com/brianleft/portfolio.git
+    cd portfolio
+    ```
+
+2.  **Instalar dependencias:**
+    ```bash
+    npm install
+    ```
+
+3.  **Configurar variables de entorno:**
+    ```bash
+    cp .env.example .env
+    ```
+    Edita `.env` y añade tu API Key:
+    ```env
+    GEMINI_API_KEY=tu_api_key_aqui
+    ```
+
+4.  **Iniciar servidor de desarrollo:**
+    ```bash
+    npm run dev
+    ```
+    Abre [http://localhost:5173](http://localhost:5173) en tu navegador.
 
 ---
 
 ## 💻 Comandos de la Terminal
 
-La terminal interactiva es la forma principal de navegación. Los proyectos ahora se exploran como si fueran directorios en un sistema real:
+La terminal se abre con `Ctrl + Ñ` o haciendo clic en el botón **"Hablar con Torvalds (AI)"**.
 
 | Comando | Descripción |
 | :--- | :--- |
-| `help` o `-h` | Muestra la lista de comandos disponibles. |
-| `ll` / `dir` | Lista el contenido del directorio actual. Úsalo para ver qué proyectos existen. |
-| `cd [dir]` | Navegación entre directorios (ej: `cd portfolio`). |
-| `soren_chat` | Activa el modo chat general con el asistente. |
-| `soren_chat [proyecto]` | Activa el modo chat **con contexto**, enfocando las respuestas en un proyecto específico (ej: `soren_chat soren-mirror`). |
-| `cls` | Limpia la pantalla y reinicia el contexto del chat. |
+| `-h` | Muestra la ayuda con todos los comandos disponibles. |
+| `ll` | Lista archivos y carpetas del directorio actual. |
+| `cd [dir]` | Cambia de directorio. Usa `cd ..` para subir un nivel. |
+| `cls` | Limpia la terminal y reinicia el contexto del chat. |
+| `exit` | Cierra la terminal o sale del modo chat. |
+| `torvaldsai` | Activa el modo chat con TorvaldsAi. |
+| `torvaldsai [pregunta]` | Envía una pregunta directa a la IA. |
+
+**Ejemplo de uso:**
+```
+C:\> torvaldsai ¿Cuál es la arquitectura de este proyecto?
+TorvaldsAi: Este portfolio está construido con SvelteKit usando SSR...
+```
 
 ---
 
-## 🚀 Desarrollo Local
+## 📁 Estructura del Proyecto
 
-Para levantar este servicio:
-
-1.  **Configura las variables de entorno**:
-    Crea un archivo `.env` en la raíz con tu API Key de Gemini:
-    ```env
-    GEMINI_API_KEY=tu_api_key_aqui
-    ```
-
-2.  **Instala dependencias y corre el servidor**:
-    ```bash
-    npm install
-    npm run dev
-    ```
-
-3.  **Docker (Opcional)**:
-    Si prefieres correrlo contenerizado como en producción:
-    ```bash
-    docker-compose up -d --build
-    ```
+```
+brianleft-portfolio/
+├── src/
+│   ├── lib/
+│   │   ├── components/        # Componentes Svelte reutilizables
+│   │   │   └── Terminal.svelte    # Emulador de terminal principal
+│   │   ├── data/
+│   │   │   ├── file-system.ts     # Definición del sistema de archivos virtual
+│   │   │   └── memory/
+│   │   │       └── memory.md      # 🧠 Memoria/contexto de TorvaldsAi
+│   │   ├── docs/              # Documentación interna (Docs as Code)
+│   │   └── stores/            # Stores de Svelte (estado global)
+│   │       ├── ui.ts              # Estado de visibilidad de terminal
+│   │       └── terminal.ts        # Estado del path actual
+│   ├── routes/
+│   │   ├── +layout.svelte     # Layout principal con terminal global
+│   │   ├── +page.svelte       # Página de inicio
+│   │   └── api/
+│   │       └── chat/
+│   │           └── +server.ts # Endpoint de la IA (Gemini)
+│   └── app.html               # Template HTML base
+├── static/                    # Archivos estáticos (robots.txt, etc.)
+├── Dockerfile                 # Build multi-stage optimizado
+├── .env.example               # Plantilla de variables de entorno
+├── package.json
+├── svelte.config.js
+├── tsconfig.json
+└── vite.config.ts
+```
 
 ---
 
-## 📄 Documentación Profunda
+## 🤖 Configuración de la IA
 
-Para una visión completa de la arquitectura del monorepo, decisiones de diseño y el manifiesto de los agentes, consulta la documentación en el directorio `docs/` del repositorio principal o pregunta directamente a Søren en la terminal.
+### Archivo de Memoria (`src/lib/data/memory/memory.md`)
 
--   **[Ver Documentación del Proyecto Portfolio](../../docs/proyectos/portfolio.md)**
+Este archivo Markdown contiene **todo el conocimiento** que TorvaldsAi tiene sobre el proyecto, el autor y los proyectos listados. Se inyecta como contexto en cada petición a la API de Gemini.
+
+**Ventajas de este enfoque:**
+- ✅ Versionable con Git
+- ✅ Fácil de editar (es solo Markdown)
+- ✅ La IA siempre tiene información actualizada
+- ✅ Separación clara entre código y contenido
+
+### Personalidad de la IA
+
+El prompt del sistema en [`src/routes/api/chat/+server.ts`](src/routes/api/chat/+server.ts) define:
+- Personalidad tipo Linus Torvalds (directo, técnico, pragmático)
+- Respuestas en español
+- Formato Markdown con syntax highlighting
+- Límite de tokens y manejo de errores
+
+---
+
+## 🐳 Despliegue con Docker
+
+### Build y ejecución local:
+
+```bash
+# Construir imagen
+docker build -t portfolio:latest .
+
+# Ejecutar contenedor
+docker run -d -p 3000:3000 \
+  -e GEMINI_API_KEY=tu_api_key \
+  --name portfolio \
+  portfolio:latest
+```
+
+### Con Docker Compose:
+
+```yaml
+# docker-compose.yml
+version: '3.8'
+services:
+  portfolio:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+    restart: unless-stopped
+```
+
+```bash
+docker-compose up -d --build
+```
+
+---
+
+## 📚 Documentación Interna
+
+La documentación técnica profunda sigue el paradigma **Docs as Code** y se encuentra en:
+
+| Documento | Ubicación | Descripción |
+| :--- | :--- | :--- |
+| Memoria de IA | [`src/lib/data/memory/memory.md`](src/lib/data/memory/memory.md) | Contexto completo para TorvaldsAi |
+| Arquitectura | `src/lib/docs/arquitectura.md` | Decisiones de diseño y diagramas |
+| Componentes | `src/lib/docs/componentes.md` | API de componentes Svelte |
+
+> **Tip:** Podés preguntarle directamente a TorvaldsAi sobre cualquier aspecto del proyecto usando el comando `torvaldsai` en la terminal.
+
+---
+
+## 📄 Licencia
+
+Este proyecto está bajo la licencia **MIT**. Consulta el archivo [LICENSE](LICENSE) para más detalles.
+
+---
+
+<div align="center">
+
+**Desarrollado con ☕ y pragmatismo por [Brian Benegas](https://portfolio.brianleft.com)**
+
+*"Talk is cheap. Show me the code."* — Linus Torvalds
+
+</div>

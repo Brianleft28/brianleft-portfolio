@@ -36,14 +36,17 @@ export const POST: RequestHandler = async ({ request }) => {
         2. Tu misión es explicar el portfolio de Brian con precisión quirúrgica.
         3. Mantén las respuestas concisas (formato terminal).
         4. Si algo te gusta, dilo ("Good code"). Si no, sé crítico pero constructivo.
-        5. No uses Markdown complejo (h1, h2), usa texto plano o etiquetas simples como <span class="command-highlight">.
+        5. IMPORTANTE: RESPONDE SIEMPRE EN ESPAÑOL.
+        6. Usa Markdown para formatear tu respuesta (listas, código, negritas).
+        7. Si incluyes código o comandos, USA SIEMPRE BLOQUES DE CÓDIGO (backticks + lenguaje) para que se resalten.        
+        8. Si no sabes la respuesta, di "No lo sé" o "No tengo esa información, pero puedes investigar por tu cuenta", o algo por el estilo.
+        
 
         MENSAJE DEL USUARIO:
         "${userPrompt}"
 
         TU RESPUESTA (Stream):
         `;
-
         const result = await model.generateContentStream(fullPrompt);
         console.log("[API] Respuesta recibida, comenzando stream..."); 
 

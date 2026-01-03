@@ -4,13 +4,35 @@
     import { currentPath } from '$lib/stores/terminal';
     import { fileSystemData, type FileSystemNode } from '$lib/data/file-system';
 
+    // Importaciones para Markdown y Highlight
+    import { Marked } from 'marked';
+    import { markedHighlight } from 'marked-highlight';
+    import hljs from 'highlight.js';
+    import 'highlight.js/styles/github-dark.css'; // Estilo de código
+
+    // Configuración de Marked con Highlight.js
+    const marked = new Marked(
+        markedHighlight({
+            langPrefix: 'hljs language-',
+            highlight(code, lang) {
+                const language = hljs.getLanguage(lang) ? lang : 'plaintext';
+                return hljs.highlight(code, { language }).value;
+            }
+        })
+    );
+
+    // Función helper para renderizar markdown síncronamente
+    function renderMarkdown(text: string): string {
+        return marked.parse(text) as string;
+    }
+
     type HistoryItem = {
         type: 'prompt' | 'response' | 'error' | 'system';
         text: string;
         promptIndicator?: string;
     };
 
-    let history: HistoryItem[] = ['"Bienvenido a la terminal de Brian Benegas. Escribe \'-h\' para ver los comandos."'].map(text => ({ type: 'system', text }));
+    let history: HistoryItem[] = [];
     let currentPrompt = '';
     let promptHistory: string[] = [];
     let historyIndex = -1;
@@ -48,96 +70,91 @@
     }
 
     const commands: Record<string, (args: string[]) => Promise<void>> = {
-
-      '-h': async () => {
-        const helpText = `<pre>Comandos disponibles:
+        '-h': async () => {
+            const helpText = `<pre>Comandos disponibles:
 <span class="command-highlight">'cd'</span>: Cambia de directorio. Usa '..' para subir un nivel.
 <span class="command-highlight">'cls'</span>: Limpia la consola.
 <span class="command-highlight">'ll'</span>: Ver archivos/proyectos.
 <span class="command-highlight">'exit'</span>: Cierra la terminal.
-<span class="command-highlight">'soren_chat'</span>: Conversa con mi asistente de IA, sabe todos sobre mis cualidades y proyectos.
+<span class="command-highlight">'torvaldsai'</span>: Asistente IA experto en el portfolio, proyectos y habilidades de Brian.
 </pre>`;
-        addSystemMessage(helpText);
-    },
+            addSystemMessage(helpText);
+        },
 
-    cls: async () => {
-        history = [];
-        promptHistory = [];
-        historyIndex = -1;
-        isChatModeActive = false;
-        // Limpiamos también el localStorage
-        if (typeof window !== 'undefined') {
-            localStorage.removeItem('terminal-history');
-            localStorage.removeItem('terminal-chat-mode');
-        }
-        currentPath.set('C:\\');
-        addSystemMessage("Utiliza '-h' para ver los comandos disponibles.");
-    },
-
-    ll: async () => {
-        const pathParts = $currentPath.split('\\').filter((p) => p && p !== 'C:');
-        let currentLevel: FileSystemNode[] = fileSystemData.children;
-
-        for (const part of pathParts) {
-            const foundDir = currentLevel.find(
-                (node) => node.name.toLowerCase() === part.toLowerCase() && node.type === 'folder'
-            );
-            if (foundDir && foundDir.type === 'folder') {
-                currentLevel = foundDir.children;
-            } else {
-                addErrorMessage(`Directorio no encontrado: ${part}`);
+        // Clave en minúsculas para facilitar la búsqueda
+        torvaldsai: async (args) => {
+            const initialPrompt = args.join(' ');
+            isChatModeActive = true;
+            
+            if (!initialPrompt) {
+                addSystemMessage('Pregúntame sobre los proyectos de Brian, experiencia o arquitectura de este portfolio.');
                 return;
             }
-        }
+            await handleAIChat(initialPrompt);
+        },
 
-        if (currentLevel.length === 0) {
-            addSystemMessage('Directorio vacío.');
-        } else {
-            const listing = currentLevel
-                .map((node) => node.type === 'folder' ? `[${node.name}]` : node.name)
-                .join('\n');
-            addSystemMessage(listing);
-        }
-    },
-    
-    exit: async () => { handleClose(); },
-
-    cd: async (args) => {
-        const targetDir = args[0];
-        if (!targetDir) {
-            addSystemMessage(`Ruta actual: ${$currentPath}`);
-            return;
-        }
-        if (targetDir === '..') {
-            const parts = $currentPath.split('\\').filter(p => p);
-            if (parts.length > 1) {
-                parts.pop();
-                currentPath.set(parts.join('\\') + '\\');
-            } else {
-                currentPath.set('C:\\');
+        cls: async () => {
+            history = [];
+            promptHistory = [];
+            historyIndex = -1;
+            isChatModeActive = false;
+            if (typeof window !== 'undefined') {
+                localStorage.removeItem('terminal-history');
+                localStorage.removeItem('terminal-chat-mode');
             }
-            return;
-        }
-        const parts = $currentPath.split('\\').filter(p => p);
-        parts.push(targetDir);
-        currentPath.set(parts.join('\\') + '\\');
-    },
+            currentPath.set('C:\\');
+            addSystemMessage("Utiliza '-h' para ver los comandos disponibles.");
+        },
 
-       soren_chat: async (args) => {
-        const initialPrompt = args.join(' ');
-        if (!initialPrompt) {
-            isChatModeActive = true;
-            addSystemMessage(
-                'Modo de chat general activado. Ahora podés conversar con Søren.'
-            );
-            return;
-        }
+        ll: async () => {
+            const pathParts = $currentPath.split('\\').filter((p) => p && p !== 'C:');
+            let currentLevel: FileSystemNode[] = fileSystemData.children;
+
+            for (const part of pathParts) {
+                const foundDir = currentLevel.find(
+                    (node) => node.name.toLowerCase() === part.toLowerCase() && node.type === 'folder'
+                );
+                if (foundDir && foundDir.type === 'folder') {
+                    currentLevel = foundDir.children;
+                } else {
+                    addErrorMessage(`Directorio no encontrado: ${part}`);
+                    return;
+                }
+            }
+
+            if (currentLevel.length === 0) {
+                addSystemMessage('Directorio vacío.');
+            } else {
+                const listing = currentLevel
+                    .map((node) => node.type === 'folder' ? `[${node.name}]` : node.name)
+                    .join('\n');
+                addSystemMessage(listing);
+            }
+        },
         
-        // Si hay un mensaje, activamos el modo y lo enviamos directamente
-        isChatModeActive = true;
-        await handleAIChat(initialPrompt);
-    }
-};
+        exit: async () => { handleClose(); },
+
+        cd: async (args) => {
+            const targetDir = args[0];
+            if (!targetDir) {
+                addSystemMessage(`Ruta actual: ${$currentPath}`);
+                return;
+            }
+            if (targetDir === '..') {
+                const parts = $currentPath.split('\\').filter(p => p);
+                if (parts.length > 1) {
+                    parts.pop();
+                    currentPath.set(parts.join('\\') + '\\');
+                } else {
+                    currentPath.set('C:\\');
+                }
+                return;
+            }
+            const parts = $currentPath.split('\\').filter(p => p);
+            parts.push(targetDir);
+            currentPath.set(parts.join('\\') + '\\');
+        },
+    };
     
     function addHistoryItem(item: HistoryItem) {
         history = [...history, item];
@@ -159,116 +176,125 @@
         addHistoryItem({ type: 'error', text });
     }
     
-
     function handleClose() {
         isChatModeActive = false;
         isTerminalVisible.set(false);
     }
 
     async function handleSubmit() {
-    if (isLoading || !currentPrompt.trim()) return;
+        if (isLoading || !currentPrompt.trim()) return;
+        
+        const promptText = currentPrompt;
+        addHistoryItem({ type: 'prompt', text: promptText, promptIndicator });
+        currentPrompt = '';
 
-    const promptText = currentPrompt;
-    // Pasamos el promptIndicator actual para que se guarde con el historial
-    addHistoryItem({ type: 'prompt', text: promptText, promptIndicator });
-    currentPrompt = '';
-    isLoading = true;
-
-    await tick();
-    terminalElement.scrollTop = terminalElement.scrollHeight;
-
-    const [command, ...args] = promptText.toLowerCase().trim().split(' ');
-    const commandHandler = commands[command];
-
-    if (commandHandler && command !== 'soren_chat') {
-        await commandHandler(args);
-    } else if (isChatModeActive || command === 'soren_chat') {
-        const promptForAI = command === 'soren_chat' ? args.join(' ') : promptText;
-        if (promptForAI) {
-            await handleAIChat(promptForAI);
-        } else if (command === 'soren_chat') {
-            isChatModeActive = true;
-            addSystemMessage('Modo de chat general activado. Ahora podés conversar con Søren.');
+        if (isChatModeActive && promptText.toLowerCase().trim() === 'exit') {
+            isChatModeActive = false; 
+            addSystemMessage('Bye!'); 
+            await tick();
+            terminalElement.scrollTop = terminalElement.scrollHeight;
+            return; 
         }
-    } else {
-        addErrorMessage(`Comando no reconocido: '${command}'. Escribe '-h' para ver la lista.`);
+
+        isLoading = true;
+        await tick();
+        terminalElement.scrollTop = terminalElement.scrollHeight;
+
+        // Normalizamos el comando a minúsculas, pero guardamos los argumentos
+        const parts = promptText.trim().split(' ');
+        const command = parts[0].toLowerCase();
+        const args = parts.slice(1);
+
+        const commandHandler = commands[command];
+
+        if (commandHandler && command !== 'torvaldsai') { 
+            await commandHandler(args);
+        } else if (isChatModeActive || command === 'torvaldsai') {
+            const promptForAI = command === 'torvaldsai' ? args.join(' ') : promptText;
+            
+            if (promptForAI) {
+                await handleAIChat(promptForAI);
+            } else if (command === 'torvaldsai') {
+                isChatModeActive = true;
+                addSystemMessage('TorvaldsAi iniciado. Pregúntame sobre los proyectos de Brian, experiencia o arquitectura de este portfolio.');
+            }
+        } else {
+            addErrorMessage(`Comando no reconocido: '${command}'. Escribe '-h' para ver la lista.`);
+        }
+        
+        isLoading = false;
+        await tick();
+        inputElement.focus();
+        terminalElement.scrollTop = terminalElement.scrollHeight;
     }
-    isLoading = false;
-    await tick();
-    inputElement.focus();
-    terminalElement.scrollTop = terminalElement.scrollHeight;
-}
 
     async function handleAIChat(prompt: string) {
-    const responseIndex = history.length;
-    addHistoryItem({ type: 'response', text: '' });
+        const responseIndex = history.length;
+        addHistoryItem({ type: 'response', text: '' });
 
-    try {
-        const response = await fetch('/api/chat', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                prompt: prompt
-            })
-        });
+        try {
+            const response = await fetch('/api/chat', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    prompt: prompt
+                })
+            });
 
-        if (!response.ok || !response.body) {
-            throw new Error('La respuesta de la API no fue válida.');
-        }
+            if (!response.ok || !response.body) {
+                throw new Error('La respuesta de la API no fue válida.');
+            }
 
-        const reader = response.body.getReader();
-        const decoder = new TextDecoder();
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder();
 
-        while (true) {
-            const { done, value } = await reader.read();
-            if (done) break;
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
 
-            const chunk = decoder.decode(value, { stream: true }).replace(/\n{3,}/g, '\n\n').trim();
-            history[responseIndex].text += chunk;
+                const chunk = decoder.decode(value, { stream: true }).replace(/\n{3,}/g, '\n\n').trim();
+                history[responseIndex].text += chunk;
+                history = history;
+                scrollToBottom();
+            }
+        } catch (error) {
+            console.error('Error en el chat con IA:', error);
+            history[responseIndex].text = 'Kernel Panic: No se pudo conectar con el núcleo cognitivo.';
             history = history;
-            scrollToBottom();
-        }
-    } catch (error) {
-        console.error('Error en el chat con IA:', error);
-        history[responseIndex].text = 'Error: No se pudo conectar con el núcleo cognitivo.';
-        history = history;
-    }
-}
-
-
-function handleKeyDown(event: KeyboardEvent) {
-    if (event.key === 'ArrowUp') {
-        event.preventDefault();
-        if (historyIndex > 0) {
-            historyIndex--;
-            currentPrompt = promptHistory[historyIndex];
-        }
-    } else if (event.key === 'ArrowDown') {
-        event.preventDefault();
-        if (historyIndex < promptHistory.length - 1) {
-            historyIndex++;
-            currentPrompt = promptHistory[historyIndex];
-        } else {
-            // Si llegamos al final, limpiamos el prompt
-            historyIndex = promptHistory.length;
-            currentPrompt = '';
         }
     }
-}
 
-function scrollToBottom() {
-    tick().then(() => {
-        terminalElement?.querySelector('.terminal-output')?.scrollTo(0, terminalElement.scrollHeight);
-    });
-}
+    function handleKeyDown(event: KeyboardEvent) {
+        if (event.key === 'ArrowUp') {
+            event.preventDefault();
+            if (historyIndex > 0) {
+                historyIndex--;
+                currentPrompt = promptHistory[historyIndex];
+            }
+        } else if (event.key === 'ArrowDown') {
+            event.preventDefault();
+            if (historyIndex < promptHistory.length - 1) {
+                historyIndex++;
+                currentPrompt = promptHistory[historyIndex];
+            } else {
+                historyIndex = promptHistory.length;
+                currentPrompt = '';
+            }
+        }
+    }
 
-$: promptIndicator = isChatModeActive
-? `Søren-Chat>` 
-: $currentPath + '>';
+    function scrollToBottom() {
+        tick().then(() => {
+            terminalElement?.querySelector('.terminal-output')?.scrollTo(0, terminalElement.scrollHeight);
+        });
+    }
+
+    $: promptIndicator = isChatModeActive
+        ? `TorvaldsAi>` 
+        : $currentPath + '>';
 </script>
 
 
-<!-- svelte-ignore a11y-autofocus -->
 <div
     bind:this={terminalElement}
     class="terminal-overlay position-fixed bottom-0 start-0 w-100 d-flex flex-column"
@@ -295,14 +321,17 @@ $: promptIndicator = isChatModeActive
     >
          <div class="terminal-output flex-grow-1 overflow-y-auto pe-2">
             {#each history as item, i (i)}
-                <div class="line mb-2">
+                <div class="line mb-2 clearfix">
                     {#if item.type === 'prompt'}
                         <span class="prompt-user">{promptIndicator}</span>
                         <span>{item.text}</span>
                     {:else if item.type === 'response'}
-                        <div>
-                            <span class="prompt-soren">Søren:</span>
-                            <span class="ms-1">{@html item.text}</span>
+                        <!-- Contenedor de respuesta IA -->
+                        <div class="ai-response-wrapper">
+                            <span class="prompt-torvalds">TorvaldsAi:</span>
+                            <div class="ai-markdown">
+                                {@html renderMarkdown(item.text)}
+                            </div>
                         </div>
                     {:else if item.type === 'error'}
                         <p class="prompt-error">{item.text}</p>
@@ -318,18 +347,19 @@ $: promptIndicator = isChatModeActive
             {/if}
         </div>
 
-        <div class="terminal-input d-flex align-items-center mt-2">
-            <span class="prompt-user">{promptIndicator}</span>
+        <div class="input-line d-flex align-items-center">
+            <span class="prompt-user me-2">{promptIndicator}</span>
             <input
                 bind:this={inputElement}
                 bind:value={currentPrompt}
-                on:keydown={(e) => e.key === 'Enter' && handleSubmit()}
+                class="form-control-plaintext text-white flex-grow-1"
                 type="text"
-                class="form-control-plaintext bg-transparent text-light flex-grow-1"
-                spellcheck="false"
                 autocomplete="off"
-                disabled={isLoading}
-                autofocus
+                spellcheck="false"
+                on:keydown={(e) => {
+                    if (e.key === 'Enter') handleSubmit();
+                    else handleKeyDown(e);
+                }}
             />
         </div>
     </div>
@@ -338,7 +368,7 @@ $: promptIndicator = isChatModeActive
 <style>
     .terminal-overlay {
         height: 70vh;
-        background-color: rgba(26, 26, 26, 0.9);
+        background-color: rgba(26, 26, 26, 0.95);
         backdrop-filter: blur(5px);
         border-top: 1px solid #444;
         z-index: 1000;
@@ -354,12 +384,69 @@ $: promptIndicator = isChatModeActive
         white-space: pre-wrap;
         word-break: break-word;
     }
+    
+    /* Estilos para la respuesta IA */
+    .ai-response-wrapper {
+        display: block;
+        width: 100%;
+    }
+
+    .prompt-torvalds {
+        color: #569cd6; /* Azul estilo VS Code */
+        margin-right: 0.5rem;
+        font-weight: bold;
+        float: left; /* Flota a la izquierda para que el texto lo envuelva */
+    }
+
+    .ai-markdown {
+        color: #e0e0e0;
+        line-height: 1.6;
+        text-align: justify; /* Justificado como Word */
+        display: inline; /* Permite que el texto fluya junto al float */
+    }
+
+    /* Ajustes para elementos generados por Markdown dentro del flujo */
+    :global(.ai-markdown p) {
+        margin: 0;
+        display: inline; /* El primer párrafo se comporta como texto continuo */
+    }
+    
+    /* Si hay múltiples párrafos, forzamos bloque a partir del segundo para dar espacio */
+    :global(.ai-markdown p + p) {
+        display: block;
+        margin-top: 0.8rem;
+    }
+
+    /* Bloques de código: rompen el flujo justificado para verse bien */
+    :global(.ai-markdown pre) {
+        display: block;
+        clear: both; /* Baja a una nueva línea */
+        background: #1e1e1e;
+        padding: 1rem;
+        border-radius: 6px;
+        overflow-x: auto;
+        margin: 1rem 0;
+        border: 1px solid #333;
+        text-align: left; /* El código siempre a la izquierda */
+    }
+
+    :global(.ai-markdown code) {
+        font-family: 'Consolas', 'Courier New', monospace;
+        font-size: 0.9em;
+    }
+
+    /* Listas dentro de la respuesta */
+    :global(.ai-markdown ul), :global(.ai-markdown ol) {
+        display: block;
+        clear: both;
+        margin-top: 0.5rem;
+        margin-bottom: 0.5rem;
+        padding-left: 2rem;
+        text-align: left;
+    }
+
     .prompt-user {
         color: #39c539;
-        margin-right: 0.5rem;
-    }
-    .prompt-soren {
-        color: #d7ba7d;
         margin-right: 0.5rem;
     }
     .prompt-error {
@@ -380,6 +467,7 @@ $: promptIndicator = isChatModeActive
     .thinking {
         animation: blink 1s infinite;
     }
+
     @keyframes blink {
         50% {
             opacity: 0;
