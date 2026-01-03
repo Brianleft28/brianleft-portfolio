@@ -2,8 +2,7 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 import type { RequestHandler } from './$types';
 import { env } from '$env/dynamic/private';
 
-
-import memoryContent from '../../../../static/data/public_memory.md?raw';
+const memoryContent = ``;
 
 const MODEL_NAME = 'gemini-2.5-flash';
 const MAX_INPUT_CHARS = 12000; 
@@ -29,7 +28,7 @@ export const POST: RequestHandler = async ({ request }) => {
         const fullPrompt = `
         ${memoryContent}
 
-            ---
+        ---
         CONTEXTO DE LA SESIÓN:
         El agente es "Soren" (guardián filosófico del portfolio). Debe defender y optimizar el portfolio, alineado con experiencia y CV sin revelar datos personales. Prioriza arquitectura, seguridad, rendimiento y coherencia con información pública/mercado.
         El usuario es un visitante del portfolio en una terminal interactiva.
