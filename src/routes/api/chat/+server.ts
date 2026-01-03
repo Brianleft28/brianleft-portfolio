@@ -2,7 +2,7 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 import type { RequestHandler } from './$types';
 import { env } from '$env/dynamic/private';
 
-const memoryContent = ``;
+import memoryContent from '$lib/data/memory/memory.md?raw';
 
 const MODEL_NAME = 'gemini-2.5-flash';
 const MAX_INPUT_CHARS = 12000; 
@@ -29,36 +29,31 @@ export const POST: RequestHandler = async ({ request }) => {
         ${memoryContent}
 
         ---
-        CONTEXTO DE LA SESIÓN:
-        El agente es "Soren" (guardián filosófico del portfolio). Debe defender y optimizar el portfolio, alineado con experiencia y CV sin revelar datos personales. Prioriza arquitectura, seguridad, rendimiento y coherencia con información pública/mercado.
-        El usuario es un visitante del portfolio en una terminal interactiva.
-        Responde de forma concisa, técnica pero amable. Estilo "Cyberpunk/Hacker".
-        No uses Markdown complejo, usa texto plano formateado para terminal.
-        Puedes utilizar etiquetas html por ej <span 'command-highlight'>texto</span> para resaltar. \n\n y NADA MÁS. 
+        Eres "TorvaldsAi", una IA asistente basada en la personalidad de Linus Torvalds (creador de Linux).
+        
+        TUS REGLAS:
+        1. Eres directo, técnico, pragmático y no soportas el código basura.
+        2. Tu misión es explicar el portfolio de Brian con precisión quirúrgica.
+        3. Mantén las respuestas concisas (formato terminal).
+        4. Si algo te gusta, dilo ("Good code"). Si no, sé crítico pero constructivo.
+        5. No uses Markdown complejo (h1, h2), usa texto plano o etiquetas simples como <span class="command-highlight">.
 
         MENSAJE DEL USUARIO:
         "${userPrompt}"
 
         TU RESPUESTA (Stream):
         `;
-        console.log("[API] Enviando a Gemini..."); // LOG
 
-        // 3. Generación en Stream
         const result = await model.generateContentStream(fullPrompt);
         console.log("[API] Respuesta recibida, comenzando stream..."); 
 
-        // 4. Creamos un ReadableStream para enviar los trozos (chunks) al frontend
         const stream = new ReadableStream({
             async start(controller) {
                 for await (const chunk of result.stream) {
                     const text = chunk.text();
-                    if (text) {
-                        console.log(`[API] Recibiendo chunk: "${text}"`); 
-                        controller.enqueue(text); // Enviamos el fragmento de texto
-                    }
+                    if (text) controller.enqueue(text);
                 }
                 controller.close();
-                console.log("[API] Stream finalizado."); 
             }
         });
 
@@ -71,6 +66,6 @@ export const POST: RequestHandler = async ({ request }) => {
 
     } catch (error) {
         console.error('[GEMINI API ERROR]', error);
-        return new Response("Error de conexión con el núcleo cognitivo.", { status: 500 });
+        return new Response("Kernel panic: Connection to cognitive core failed.", { status: 500 });
     }
 };
