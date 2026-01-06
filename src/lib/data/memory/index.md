@@ -129,7 +129,7 @@ Abierto a desafíos técnicos complejos en Full Stack y DevOps. Especialmente in
                            │
 ┌──────────────────────────▼──────────────────────────────────┐
 │                    CAPA DE DATOS                            │
-│  MySQL (transaccional) │ MongoDB (documentos/cache)         │
+│                MySQL (transaccional)                                      │
 └──────────────────────────┬──────────────────────────────────┘
                            │
 ┌──────────────────────────▼──────────────────────────────────┐
