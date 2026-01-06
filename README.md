@@ -267,8 +267,8 @@ La documentación técnica profunda sigue el paradigma **Docs as Code** y se enc
 | Documento | Ubicación | Descripción |
 | :--- | :--- | :--- |
 | Memoria de IA | [`src/lib/data/memory/memory.md`](src/lib/data/memory/memory.md) | Contexto completo para TorvaldsAi |
-| Arquitectura | `src/lib/docs/arquitectura.md` | Decisiones de diseño y diagramas |
-| Componentes | `src/lib/docs/componentes.md` | API de componentes Svelte |
+| Arquitectura | [`src/lib/docs/arquitectura.md`](src/lib/docs/arquitectura.md) | Decisiones de diseño y diagramas |
+| Componentes | [`src/lib/docs/componentes.md`](src/lib/docs/componentes.md) | API de componentes Svelte |
 
 > **Tip:** Podés preguntarle directamente a TorvaldsAi sobre cualquier aspecto del proyecto usando el comando `torvaldsai` en la terminal.
 
