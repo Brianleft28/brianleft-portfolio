@@ -25,7 +25,7 @@ flowchart TB
     Gemini -->|"ReadableStream"| API
     API -->|"Chunks de texto"| Terminal
     Terminal --> Markdown
-    
+
     style Cliente fill:#1a1a2e,stroke:#00bc8c,color:#fff
     style Server fill:#16213e,stroke:#3498db,color:#fff
     style External fill:#0f3460,stroke:#e94560,color:#fff
@@ -49,7 +49,7 @@ sequenceDiagram
     A->>M: Detecta keywords
     M-->>A: Carga docs relevantes
     A->>G: System Prompt + Context + User Prompt
-    
+
     loop Streaming
         G-->>A: Chunk de texto
         A-->>T: ReadableStream

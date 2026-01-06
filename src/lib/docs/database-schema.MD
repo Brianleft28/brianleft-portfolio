@@ -6,8 +6,8 @@ Para representar la estructura jerárquica del sistema de archivos (carpetas den
 
 La idea es "aplanar" el árbol en una única tabla donde cada fila es un "nodo" (un archivo o una carpeta). La relación jerárquica se establece mediante una columna `parentId` que apunta al `id` del nodo padre.
 
--   Un nodo con `parentId = NULL` es un elemento raíz.
--   Un nodo con un `parentId` apunta a la carpeta que lo contiene.
+- Un nodo con `parentId = NULL` es un elemento raíz.
+- Un nodo con un `parentId` apunta a la carpeta que lo contiene.
 
 ## 2. Esquema SQL
 
@@ -34,25 +34,25 @@ TypeORM tiene soporte nativo para este patrón a través de los decoradores `@Tr
 import { Entity, PrimaryGeneratedColumn, Column, Tree, TreeChildren, TreeParent } from 'typeorm';
 
 @Entity({ name: 'nodes' })
-@Tree("adjacency-list")
+@Tree('adjacency-list')
 export class Node {
-  @PrimaryGeneratedColumn()
-  id: number;
+	@PrimaryGeneratedColumn()
+	id: number;
 
-  @Column()
-  name: string;
+	@Column()
+	name: string;
 
-  @Column({ type: 'enum', enum: ['folder', 'markdown', 'component'] })
-  type: string;
+	@Column({ type: 'enum', enum: ['folder', 'markdown', 'component'] })
+	type: string;
 
-  @Column({ nullable: true })
-  path: string;
+	@Column({ nullable: true })
+	path: string;
 
-  @TreeChildren()
-  children: Node[];
+	@TreeChildren()
+	children: Node[];
 
-  @TreeParent()
-  parent: Node;
+	@TreeParent()
+	parent: Node;
 }
 ```
 
@@ -60,10 +60,10 @@ export class Node {
 
 La entidad `Node` está diseñada para que TypeORM pueda abstraer la complejidad de manejar la estructura de árbol.
 
--   **`@Tree("adjacency-list")`**: Este es el decorador principal. Le indica a TypeORM que esta entidad no es una tabla plana, sino que representa un árbol y debe ser gestionada usando el patrón de "Lista de Adyacencia". Esto significa que TypeORM buscará y gestionará automáticamente la columna `parentId`.
+- **`@Tree("adjacency-list")`**: Este es el decorador principal. Le indica a TypeORM que esta entidad no es una tabla plana, sino que representa un árbol y debe ser gestionada usando el patrón de "Lista de Adyacencia". Esto significa que TypeORM buscará y gestionará automáticamente la columna `parentId`.
 
--   **`@TreeChildren()`**: Este decorador le dice a TypeORM: "Cuando yo pida un nodo, busca en la tabla todos los otros nodos cuyo `parentId` sea mi `id`, y cárgalos en esta propiedad `children`". Esto permite reconstruir el árbol hacia abajo.
+- **`@TreeChildren()`**: Este decorador le dice a TypeORM: "Cuando yo pida un nodo, busca en la tabla todos los otros nodos cuyo `parentId` sea mi `id`, y cárgalos en esta propiedad `children`". Esto permite reconstruir el árbol hacia abajo.
 
--   **`@TreeParent()`**: Este decorador hace lo contrario. Le dice a TypeORM: "Busca en la tabla el nodo cuyo `id` coincida con mi `parentId` y cárgalo en esta propiedad `parent`". Esto permite navegar el árbol hacia arriba.
+- **`@TreeParent()`**: Este decorador hace lo contrario. Le dice a TypeORM: "Busca en la tabla el nodo cuyo `id` coincida con mi `parentId` y cárgalo en esta propiedad `parent`". Esto permite navegar el árbol hacia arriba.
 
 **En resumen:** Gracias a estos decoradores, no necesitamos escribir consultas SQL complejas con `JOIN`s recursivos. Simplemente usamos los métodos del repositorio de TypeORM (como `findTrees()`) y él se encarga de consultar la tabla `nodes` y reconstruir la estructura de objetos anidados que la API necesita para enviar al frontend.

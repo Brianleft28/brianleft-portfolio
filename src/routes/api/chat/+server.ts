@@ -18,57 +18,57 @@ const MAX_REQUESTS_PER_MINUTE = 10;
 const requestCounts = new Map<string, { count: number; resetTime: number }>();
 
 function isRateLimited(ip: string): boolean {
-    const now = Date.now();
-    const record = requestCounts.get(ip);
-    
-    if (!record || now > record.resetTime) {
-        requestCounts.set(ip, { count: 1, resetTime: now + 60000 });
-        return false;
-    }
-    
-    if (record.count >= MAX_REQUESTS_PER_MINUTE) {
-        return true;
-    }
-    
-    record.count++;
-    return false;
+	const now = Date.now();
+	const record = requestCounts.get(ip);
+
+	if (!record || now > record.resetTime) {
+		requestCounts.set(ip, { count: 1, resetTime: now + 60000 });
+		return false;
+	}
+
+	if (record.count >= MAX_REQUESTS_PER_MINUTE) {
+		return true;
+	}
+
+	record.count++;
+	return false;
 }
 
 // Keywords que activan cada módulo de memoria
 const projectKeywords: Record<string, string> = {
-    // Print Server
-    'print': printServerMemory,
-    'impresora': printServerMemory,
-    'imprimir': printServerMemory,
-    'zpl': printServerMemory,
-    'esc-pos': printServerMemory,
-    'térmica': printServerMemory,
-    'spooler': printServerMemory,
-    '.net': printServerMemory,
-    // Electoral
-    'electoral': electoralMemory,
-    'voto': electoralMemory,
-    'elección': electoralMemory,
-    'elecciones': electoralMemory,
-    'fiscal': electoralMemory,
-    'gobierno': electoralMemory,
-    'concurrencia': electoralMemory,
-    // Portfolio / Meta
-    'portfolio': portfolioMemory,
-    'terminal': metaMemory,
-    'torvalds': metaMemory,
-    'arquitectura': metaMemory,
-    'cómo funciona': metaMemory,
-    'este sitio': metaMemory,
-    'esta web': metaMemory,
-    // POS API
-    'pos': posApiMemory,
-    'kiosco': posApiMemory,
-    'punto de venta': posApiMemory,
-    'customer display': posApiMemory,
-    'cobro': posApiMemory,
-    // Preguntas generales sobre proyectos (NO cargan docs específicos, pero index.md ya los lista)
-    // Se manejan en la lógica de getRelevantMemory
+	// Print Server
+	print: printServerMemory,
+	impresora: printServerMemory,
+	imprimir: printServerMemory,
+	zpl: printServerMemory,
+	'esc-pos': printServerMemory,
+	térmica: printServerMemory,
+	spooler: printServerMemory,
+	'.net': printServerMemory,
+	// Electoral
+	electoral: electoralMemory,
+	voto: electoralMemory,
+	elección: electoralMemory,
+	elecciones: electoralMemory,
+	fiscal: electoralMemory,
+	gobierno: electoralMemory,
+	concurrencia: electoralMemory,
+	// Portfolio / Meta
+	portfolio: portfolioMemory,
+	terminal: metaMemory,
+	torvalds: metaMemory,
+	arquitectura: metaMemory,
+	'cómo funciona': metaMemory,
+	'este sitio': metaMemory,
+	'esta web': metaMemory,
+	// POS API
+	pos: posApiMemory,
+	kiosco: posApiMemory,
+	'punto de venta': posApiMemory,
+	'customer display': posApiMemory,
+	cobro: posApiMemory
+	// Preguntas generales sobre proyectos (NO cargan docs específicos, pero index.md ya los lista)
+	// Se manejan en la lógica de getRelevantMemory
 };
 
 /**
@@ -76,50 +76,50 @@ const projectKeywords: Record<string, string> = {
  * Siempre incluye el perfil base (index.md) para contexto mínimo.
  */
 function getRelevantMemory(prompt: string): string {
-    const lowerPrompt = prompt.toLowerCase();
-    const relevantDocs = new Set<string>([indexMemory]); // Siempre incluir perfil base
+	const lowerPrompt = prompt.toLowerCase();
+	const relevantDocs = new Set<string>([indexMemory]); // Siempre incluir perfil base
 
-    for (const [keyword, doc] of Object.entries(projectKeywords)) {
-        if (lowerPrompt.includes(keyword)) {
-            relevantDocs.add(doc);
-        }
-    }
+	for (const [keyword, doc] of Object.entries(projectKeywords)) {
+		if (lowerPrompt.includes(keyword)) {
+			relevantDocs.add(doc);
+		}
+	}
 
-    // Si no matcheó nada específico, incluir meta para contexto general
-    if (relevantDocs.size === 1) {
-        relevantDocs.add(metaMemory);
-    }
+	// Si no matcheó nada específico, incluir meta para contexto general
+	if (relevantDocs.size === 1) {
+		relevantDocs.add(metaMemory);
+	}
 
-    return Array.from(relevantDocs).join('\n\n---\n\n');
+	return Array.from(relevantDocs).join('\n\n---\n\n');
 }
 
 export const POST: RequestHandler = async ({ request, getClientAddress }) => {
-    try {
-        // Rate limiting
-        const clientIp = getClientAddress();
-        if (isRateLimited(clientIp)) {
-            return new Response("Demasiadas peticiones. Espera un momento.", { status: 429 });
-        }
+	try {
+		// Rate limiting
+		const clientIp = getClientAddress();
+		if (isRateLimited(clientIp)) {
+			return new Response('Demasiadas peticiones. Espera un momento.', { status: 429 });
+		}
 
-        const apiKey = env.GEMINI_API_KEY;
-        if (!apiKey) {
-            return new Response("Error: API Key no configurada.", { status: 500 });
-        }
+		const apiKey = env.GEMINI_API_KEY;
+		if (!apiKey) {
+			return new Response('Error: API Key no configurada.', { status: 500 });
+		}
 
-        const { prompt } = await request.json();
-        const userPrompt = `${prompt ?? ''}`.slice(0, MAX_INPUT_CHARS);
+		const { prompt } = await request.json();
+		const userPrompt = `${prompt ?? ''}`.slice(0, MAX_INPUT_CHARS);
 
-        if (!userPrompt.trim()) {
-            return new Response("Error: Mensaje vacío.", { status: 400 });
-        }
+		if (!userPrompt.trim()) {
+			return new Response('Error: Mensaje vacío.', { status: 400 });
+		}
 
-        // Cargar solo memoria relevante según keywords
-        const memoryContent = getRelevantMemory(userPrompt);
+		// Cargar solo memoria relevante según keywords
+		const memoryContent = getRelevantMemory(userPrompt);
 
-        const genAI = new GoogleGenerativeAI(apiKey);
-        const model = genAI.getGenerativeModel({ model: MODEL_NAME });
+		const genAI = new GoogleGenerativeAI(apiKey);
+		const model = genAI.getGenerativeModel({ model: MODEL_NAME });
 
-        const fullPrompt = `
+		const fullPrompt = `
         ## CONTEXTO
         ${memoryContent}
 
@@ -173,28 +173,27 @@ USUARIO: "${userPrompt}"
 
 RESPUESTA:`;
 
-        const result = await model.generateContentStream(fullPrompt);
-        console.log("[API] Respuesta recibida, comenzando stream..."); 
+		const result = await model.generateContentStream(fullPrompt);
+		console.log('[API] Respuesta recibida, comenzando stream...');
 
-        const stream = new ReadableStream({
-            async start(controller) {
-                for await (const chunk of result.stream) {
-                    const text = chunk.text();
-                    if (text) controller.enqueue(text);
-                }
-                controller.close();
-            }
-        });
+		const stream = new ReadableStream({
+			async start(controller) {
+				for await (const chunk of result.stream) {
+					const text = chunk.text();
+					if (text) controller.enqueue(text);
+				}
+				controller.close();
+			}
+		});
 
-        return new Response(stream, {
-            headers: {
-                'content-type': 'text/plain; charset=utf-8',
-                'Transfer-Encoding': 'chunked' 
-            }
-        });
-
-    } catch (error) {
-        console.error('[GEMINI API ERROR]', error);
-        return new Response("Kernel panic: Connection to cognitive core failed.", { status: 500 });
-    }
+		return new Response(stream, {
+			headers: {
+				'content-type': 'text/plain; charset=utf-8',
+				'Transfer-Encoding': 'chunked'
+			}
+		});
+	} catch (error) {
+		console.error('[GEMINI API ERROR]', error);
+		return new Response('Kernel panic: Connection to cognitive core failed.', { status: 500 });
+	}
 };

@@ -25,6 +25,7 @@
 		"@types/marked": "^5.0.2",
 		"@types/node": "^24.10.1",
 		"prettier": "^3.4.2",
+		"prettier-plugin-svelte": "^3.4.1",
 		"sass": "^1.93.2",
 		"svelte": "^5.0.0",
 		"svelte-check": "^4.0.0",

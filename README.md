@@ -33,24 +33,24 @@
 
 ## 📖 Descripción
 
- Este portfolio es una experiencia interactiva que simula un sistema operativo dentro del navegador. Los usuarios pueden explorar proyectos y contenido a través de un explorador de archivos visual o mediante una **terminal web completamente funcional**.
+Este portfolio es una experiencia interactiva que simula un sistema operativo dentro del navegador. Los usuarios pueden explorar proyectos y contenido a través de un explorador de archivos visual o mediante una **terminal web completamente funcional**.
 
 La pieza central es **TorvaldsAi**, un asistente de inteligencia artificial con la personalidad de Linus Torvalds, capaz de responder preguntas técnicas sobre la arquitectura del proyecto, la experiencia profesional del autor y los detalles de implementación de cada proyecto listado.
 
-> **Filosofía de diseño:** El código es la herramienta, la arquitectura es el objetivo. Este portfolio no solo muestra *qué* sé hacer, sino *cómo* pienso al construir software.
+> **Filosofía de diseño:** El código es la herramienta, la arquitectura es el objetivo. Este portfolio no solo muestra _qué_ sé hacer, sino _cómo_ pienso al construir software.
 
 ---
 
 ## ✨ Características Principales
 
-| Característica | Descripción |
-| :--- | :--- |
-| **Terminal Interactiva** | Emulador de consola con historial, autocompletado y comandos personalizados. Abre con `Ctrl + Ñ`. |
-| **Sistema de Archivos Virtual** | Navegación por proyectos como si fueran directorios (`cd`, `ll`). |
-| **TorvaldsAi (IA Integrada)** | Asistente con streaming de respuestas, renderizado Markdown y syntax highlighting. Usa Google Gemini. |
-| **Docs as Code** | La IA obtiene su conocimiento de un archivo Markdown (`memory.md`), fácil de versionar y mantener. |
-| **SSR + Hidratación** | Renderizado del lado del servidor con SvelteKit para SEO y performance óptimos. |
-| **Contenerizado** | Dockerfile multi-stage optimizado (<100MB en imagen final). |
+| Característica                  | Descripción                                                                                           |
+| :------------------------------ | :---------------------------------------------------------------------------------------------------- |
+| **Terminal Interactiva**        | Emulador de consola con historial, autocompletado y comandos personalizados. Abre con `Ctrl + Ñ`.     |
+| **Sistema de Archivos Virtual** | Navegación por proyectos como si fueran directorios (`cd`, `ll`).                                     |
+| **TorvaldsAi (IA Integrada)**   | Asistente con streaming de respuestas, renderizado Markdown y syntax highlighting. Usa Google Gemini. |
+| **Docs as Code**                | La IA obtiene su conocimiento de un archivo Markdown (`memory.md`), fácil de versionar y mantener.    |
+| **SSR + Hidratación**           | Renderizado del lado del servidor con SvelteKit para SEO y performance óptimos.                       |
+| **Contenerizado**               | Dockerfile multi-stage optimizado (<100MB en imagen final).                                           |
 
 ---
 
@@ -95,16 +95,16 @@ La pieza central es **TorvaldsAi**, un asistente de inteligencia artificial con 
 
 ## 🛠️ Stack Tecnológico
 
-| Capa | Tecnología | Propósito |
-| :--- | :--- | :--- |
-| **Frontend** | SvelteKit 2, Svelte 5 | Framework reactivo con SSR |
-| **Estilos** | Bootstrap 5, SASS | Utilidades CSS y preprocesador |
-| **Lenguaje** | TypeScript | Tipado estático |
-| **IA** | Google Gemini API | Generación de respuestas (LLM) |
-| **Markdown** | marked, marked-highlight | Parsing y renderizado de Markdown |
-| **Syntax Highlighting** | highlight.js | Coloreo de código en respuestas |
-| **Runtime** | Node.js 20+ | Servidor SSR |
-| **Contenedor** | Docker (multi-stage) | Despliegue optimizado |
+| Capa                    | Tecnología               | Propósito                         |
+| :---------------------- | :----------------------- | :-------------------------------- |
+| **Frontend**            | SvelteKit 2, Svelte 5    | Framework reactivo con SSR        |
+| **Estilos**             | Bootstrap 5, SASS        | Utilidades CSS y preprocesador    |
+| **Lenguaje**            | TypeScript               | Tipado estático                   |
+| **IA**                  | Google Gemini API        | Generación de respuestas (LLM)    |
+| **Markdown**            | marked, marked-highlight | Parsing y renderizado de Markdown |
+| **Syntax Highlighting** | highlight.js             | Coloreo de código en respuestas   |
+| **Runtime**             | Node.js 20+              | Servidor SSR                      |
+| **Contenedor**          | Docker (multi-stage)     | Despliegue optimizado             |
 
 ---
 
@@ -119,21 +119,26 @@ La pieza central es **TorvaldsAi**, un asistente de inteligencia artificial con 
 ### Pasos
 
 1.  **Clonar el repositorio:**
+
     ```bash
     git clone https://github.com/brianleft/portfolio.git
     cd portfolio
     ```
 
 2.  **Instalar dependencias:**
+
     ```bash
     npm install
     ```
 
 3.  **Configurar variables de entorno:**
+
     ```bash
     cp .env.example .env
     ```
+
     Edita `.env` y añade tu API Key:
+
     ```env
     GEMINI_API_KEY=tu_api_key_aqui
     ```
@@ -150,17 +155,18 @@ La pieza central es **TorvaldsAi**, un asistente de inteligencia artificial con 
 
 La terminal se abre con `Ctrl + Ñ` o haciendo clic en el botón **"Hablar con Torvalds (AI)"**.
 
-| Comando | Descripción |
-| :--- | :--- |
-| `-h` | Muestra la ayuda con todos los comandos disponibles. |
-| `ll` | Lista archivos y carpetas del directorio actual. |
-| `cd [dir]` | Cambia de directorio. Usa `cd ..` para subir un nivel. |
-| `cls` | Limpia la terminal y reinicia el contexto del chat. |
-| `exit` | Cierra la terminal o sale del modo chat. |
-| `torvaldsai` | Activa el modo chat con TorvaldsAi. |
-| `torvaldsai [pregunta]` | Envía una pregunta directa a la IA. |
+| Comando                 | Descripción                                            |
+| :---------------------- | :----------------------------------------------------- |
+| `-h`                    | Muestra la ayuda con todos los comandos disponibles.   |
+| `ll`                    | Lista archivos y carpetas del directorio actual.       |
+| `cd [dir]`              | Cambia de directorio. Usa `cd ..` para subir un nivel. |
+| `cls`                   | Limpia la terminal y reinicia el contexto del chat.    |
+| `exit`                  | Cierra la terminal o sale del modo chat.               |
+| `torvaldsai`            | Activa el modo chat con TorvaldsAi.                    |
+| `torvaldsai [pregunta]` | Envía una pregunta directa a la IA.                    |
 
 **Ejemplo de uso:**
+
 ```
 C:\> torvaldsai ¿Cuál es la arquitectura de este proyecto?
 TorvaldsAi: Este portfolio está construido con SvelteKit usando SSR...
@@ -209,6 +215,7 @@ brianleft-portfolio/
 Este archivo Markdown contiene **todo el conocimiento** que TorvaldsAi tiene sobre el proyecto, el autor y los proyectos listados. Se inyecta como contexto en cada petición a la API de Gemini.
 
 **Ventajas de este enfoque:**
+
 - ✅ Versionable con Git
 - ✅ Fácil de editar (es solo Markdown)
 - ✅ La IA siempre tiene información actualizada
@@ -217,6 +224,7 @@ Este archivo Markdown contiene **todo el conocimiento** que TorvaldsAi tiene sob
 ### Personalidad de la IA
 
 El prompt del sistema en [`src/routes/api/chat/+server.ts`](src/routes/api/chat/+server.ts) define:
+
 - Personalidad tipo Linus Torvalds (directo, técnico, pragmático)
 - Respuestas en español
 - Formato Markdown con syntax highlighting
@@ -245,13 +253,13 @@ docker run -d -p 3000:3000 \
 # docker-compose.yml
 version: '3.8'
 services:
-  portfolio:
-    build: .
-    ports:
-      - "3000:3000"
-    environment:
-      - GEMINI_API_KEY=${GEMINI_API_KEY}
-    restart: unless-stopped
+    portfolio:
+        build: .
+        ports:
+            - '3000:3000'
+        environment:
+            - GEMINI_API_KEY=${GEMINI_API_KEY}
+        restart: unless-stopped
 ```
 
 ```bash
@@ -264,11 +272,11 @@ docker-compose up -d --build
 
 La documentación técnica profunda sigue el paradigma **Docs as Code** y se encuentra en:
 
-| Documento | Ubicación | Descripción |
-| :--- | :--- | :--- |
+| Documento     | Ubicación                                                        | Descripción                       |
+| :------------ | :--------------------------------------------------------------- | :-------------------------------- |
 | Memoria de IA | [`src/lib/data/memory/memory.md`](src/lib/data/memory/memory.md) | Contexto completo para TorvaldsAi |
-| Arquitectura | [`src/lib/docs/arquitectura.md`](src/lib/docs/arquitectura.md) | Decisiones de diseño y diagramas |
-| Componentes | [`src/lib/docs/componentes.md`](src/lib/docs/componentes.md) | API de componentes Svelte |
+| Arquitectura  | [`src/lib/docs/arquitectura.md`](src/lib/docs/arquitectura.md)   | Decisiones de diseño y diagramas  |
+| Componentes   | [`src/lib/docs/componentes.md`](src/lib/docs/componentes.md)     | API de componentes Svelte         |
 
 > **Tip:** Podés preguntarle directamente a TorvaldsAi sobre cualquier aspecto del proyecto usando el comando `torvaldsai` en la terminal.
 
@@ -284,6 +292,6 @@ Este proyecto está bajo la licencia **MIT**. Consulta el archivo [LICENSE](LICE
 
 **Desarrollado con ☕ y pragmatismo por [Brian Benegas](https://portfolio.brianleft.com)**
 
-*"Talk is cheap. Show me the code."* — Linus Torvalds
+_"Talk is cheap. Show me the code."_ — Linus Torvalds
 
 </div>
