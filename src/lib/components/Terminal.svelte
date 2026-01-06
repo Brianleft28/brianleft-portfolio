@@ -1,14 +1,14 @@
 <script lang="ts">
     import { onMount, tick } from 'svelte';
     import { isTerminalVisible } from '$lib/stores/ui';
-    import { currentPath } from '$lib/stores/terminal';
+    import { currentPath, startInChatMode } from '$lib/stores/terminal';
     import { fileSystemData, type FileSystemNode } from '$lib/data/file-system';
 
     // Importaciones para Markdown y Highlight
     import { Marked } from 'marked';
     import { markedHighlight } from 'marked-highlight';
     import hljs from 'highlight.js';
-    import 'highlight.js/styles/github-dark.css'; // Estilo de código
+    import 'highlight.js/styles/github-dark.css';
 
     // Configuración de Marked con Highlight.js
     const marked = new Marked(
@@ -40,33 +40,81 @@
     let inputElement: HTMLInputElement;
     let terminalElement: HTMLDivElement;
     let isChatModeActive = false;
+    let isInitialized = false;
+
+    // Cargar desde localStorage
+    function loadFromStorage() {
+        if (typeof window === 'undefined') return;
+        
+        try {
+            const savedHistory = localStorage.getItem('terminal-history');
+            const savedChatMode = localStorage.getItem('terminal-chat-mode');
+            const savedPath = localStorage.getItem('terminal-path');
+
+            if (savedHistory) {
+                history = JSON.parse(savedHistory);
+                promptHistory = history
+                    .filter((item) => item.type === 'prompt')
+                    .map((item) => item.text);
+                historyIndex = promptHistory.length;
+            }
+
+            if (savedChatMode === 'true') {
+                isChatModeActive = true;
+            }
+
+            if (savedPath) {
+                currentPath.set(savedPath);
+            }
+        } catch (e) {
+            console.error('Error loading terminal state:', e);
+        }
+    }
+
+    // Guardar en localStorage
+    function saveToStorage() {
+        if (typeof window === 'undefined' || !isInitialized) return;
+        
+        try {
+            localStorage.setItem('terminal-history', JSON.stringify(history));
+            localStorage.setItem('terminal-chat-mode', String(isChatModeActive));
+            localStorage.setItem('terminal-path', $currentPath);
+        } catch (e) {
+            console.error('Error saving terminal state:', e);
+        }
+    }
 
     onMount(() => {
-        const savedHistory = localStorage.getItem('terminal-history');
-        const savedChatMode = localStorage.getItem('terminal-chat-mode');
-
-        if (savedHistory) {
-            history = JSON.parse(savedHistory);
-            promptHistory = history
-                .filter((item) => item.type === 'prompt')
-                .map((item) => item.text);
-            historyIndex = promptHistory.length;
-        } else {
+        loadFromStorage();
+        
+        // Si no hay historial, mostrar bienvenida
+        if (history.length === 0) {
             addSystemMessage(
                 "Bienvenido a la terminal de Brian Benegas. Escribe '-h' para ver los comandos."
             );
         }
 
-        if (savedChatMode === 'true') {
+         // Verificar si debe iniciar en modo chat (desde el botón)
+        if ($startInChatMode) {
             isChatModeActive = true;
+            addSystemMessage(`TorvaldsAi iniciado. Hablemos sobre Brian sus proyectos, experiencia o la misma arquitectura de este portfolio.
+Escribí <span class="command-highlight">'exit'</span> para salir del chat.`);
+            startInChatMode.set(false); // Reset
         }
 
+
+        isInitialized = true;
         inputElement?.focus();
     });
 
-    $: if (typeof window !== 'undefined') {
-        localStorage.setItem('terminal-history', JSON.stringify(history));
-        localStorage.setItem('terminal-chat-mode', String(isChatModeActive));
+    // Guardar cada vez que cambie el historial o modo chat
+    $: if (isInitialized) {
+        saveToStorage();
+    }
+
+    // Re-guardar cuando cambie history específicamente
+    $: if (isInitialized && history) {
+        saveToStorage();
     }
 
     const commands: Record<string, (args: string[]) => Promise<void>> = {
@@ -81,7 +129,6 @@
             addSystemMessage(helpText);
         },
 
-        // Clave en minúsculas para facilitar la búsqueda
         torvaldsai: async (args) => {
             const initialPrompt = args.join(' ');
             isChatModeActive = true;
@@ -162,10 +209,7 @@
             promptHistory = [...promptHistory, item.text];
             historyIndex = promptHistory.length;
         }
-        setTimeout(() => {
-            const container = terminalElement.querySelector('.terminal-output');
-            container?.scrollTo(0, container.scrollHeight);
-        }, 0);
+        scrollToBottom();
     }
 
     function addSystemMessage(text: string) {
@@ -177,7 +221,7 @@
     }
     
     function handleClose() {
-        isChatModeActive = false;
+        saveToStorage(); // Guardar antes de cerrar
         isTerminalVisible.set(false);
     }
 
@@ -190,17 +234,16 @@
 
         if (isChatModeActive && promptText.toLowerCase().trim() === 'exit') {
             isChatModeActive = false; 
-            addSystemMessage('Bye!'); 
+            addSystemMessage('Chau loco! 👋'); 
             await tick();
-            terminalElement.scrollTop = terminalElement.scrollHeight;
+            scrollToBottom();
             return; 
         }
 
         isLoading = true;
         await tick();
-        terminalElement.scrollTop = terminalElement.scrollHeight;
+        scrollToBottom();
 
-        // Normalizamos el comando a minúsculas, pero guardamos los argumentos
         const parts = promptText.trim().split(' ');
         const command = parts[0].toLowerCase();
         const args = parts.slice(1);
@@ -216,7 +259,7 @@
                 await handleAIChat(promptForAI);
             } else if (command === 'torvaldsai') {
                 isChatModeActive = true;
-                addSystemMessage('TorvaldsAi iniciado. Pregúntame sobre los proyectos de Brian, experiencia o arquitectura de este portfolio.');
+                addSystemMessage('TorvaldsAi iniciado. Pregúntame sobre Brian, sus proyectos, experiencia o la misma arquitectura de este portfolio.');
             }
         } else {
             addErrorMessage(`Comando no reconocido: '${command}'. Escribe '-h' para ver la lista.`);
@@ -224,8 +267,8 @@
         
         isLoading = false;
         await tick();
-        inputElement.focus();
-        terminalElement.scrollTop = terminalElement.scrollHeight;
+        inputElement?.focus();
+        scrollToBottom();
     }
 
     async function handleAIChat(prompt: string) {
@@ -236,9 +279,7 @@
             const response = await fetch('/api/chat', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    prompt: prompt
-                })
+                body: JSON.stringify({ prompt })
             });
 
             if (!response.ok || !response.body) {
@@ -252,11 +293,18 @@
                 const { done, value } = await reader.read();
                 if (done) break;
 
-                const chunk = decoder.decode(value, { stream: true }).replace(/\n{3,}/g, '\n\n').trim();
+                const chunk = decoder.decode(value, { stream: true });
                 history[responseIndex].text += chunk;
                 history = history;
                 scrollToBottom();
             }
+            
+            // Limpiar espacios excesivos al final
+            history[responseIndex].text = history[responseIndex].text
+                .replace(/\n{3,}/g, '\n\n')
+                .trim();
+            history = history;
+            
         } catch (error) {
             console.error('Error en el chat con IA:', error);
             history[responseIndex].text = 'Kernel Panic: No se pudo conectar con el núcleo cognitivo.';
@@ -285,7 +333,10 @@
 
     function scrollToBottom() {
         tick().then(() => {
-            terminalElement?.querySelector('.terminal-output')?.scrollTo(0, terminalElement.scrollHeight);
+            const output = terminalElement?.querySelector('.terminal-output');
+            if (output) {
+                output.scrollTop = output.scrollHeight;
+            }
         });
     }
 
@@ -307,7 +358,7 @@
     }}
 >
     <div class="d-flex justify-content-end me-2 mt-2 p-2">
-        <button class="btn-close btn-white" on:click={handleClose} aria-label="Cerrar Terminal"></button>
+        <button class="btn-close-neon" on:click={handleClose} aria-label="Cerrar Terminal">✕</button>
     </div>
 
     <div
@@ -321,28 +372,25 @@
     >
          <div class="terminal-output flex-grow-1 overflow-y-auto pe-2">
             {#each history as item, i (i)}
-                <div class="line mb-2 clearfix">
+                <div class="line">
                     {#if item.type === 'prompt'}
-                        <span class="prompt-user">{promptIndicator}</span>
+                        <span class="prompt-user">{item.promptIndicator || promptIndicator}</span>
                         <span>{item.text}</span>
                     {:else if item.type === 'response'}
-                        <!-- Contenedor de respuesta IA -->
                         <div class="ai-response-wrapper">
                             <span class="prompt-torvalds">TorvaldsAi:</span>
-                            <div class="ai-markdown">
-                                {@html renderMarkdown(item.text)}
-                            </div>
+                            <span class="ai-markdown">{@html renderMarkdown(item.text)}</span>
                         </div>
                     {:else if item.type === 'error'}
-                        <p class="prompt-error">{item.text}</p>
+                        <span class="prompt-error">{item.text}</span>
                     {:else if item.type === 'system'}
                         <div class="system-message">{@html item.text}</div>
                     {/if}
                 </div>
             {/each}
             {#if isLoading}
-                <div class="line mb-2">
-                    <span class="thinking ms-1">...</span>
+                <div class="line">
+                    <span class="thinking">...</span>
                 </div>
             {/if}
         </div>
@@ -368,117 +416,174 @@
 <style>
     .terminal-overlay {
         height: 70vh;
-        background-color: rgba(26, 26, 26, 0.95);
+        background-color: rgba(20, 20, 20, 0.97);
         backdrop-filter: blur(5px);
-        border-top: 1px solid #444;
+        border-top: 1px solid #333;
         z-index: 1000;
         animation: slide-up 0.3s ease-out;
-        font-family: 'Consolas', 'Courier New', monospace;
-    }
-    .terminal-output {
-        scrollbar-width: thin;
-        scrollbar-color: #555 #333;
-    }
-    .line p,
-    .line div {
-        white-space: pre-wrap;
-        word-break: break-word;
+        font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+        font-size: 14px;
     }
     
-    /* Estilos para la respuesta IA */
+    .terminal-output {
+        scrollbar-width: thin;
+        scrollbar-color: #444 #1a1a1a;
+    }
+    
+    .line {
+        margin-bottom: 0.35rem;
+        line-height: 1.4;
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+    }
+    
+    /* Respuesta IA - texto fluido */
     .ai-response-wrapper {
         display: block;
-        width: 100%;
     }
 
     .prompt-torvalds {
-        color: #569cd6; /* Azul estilo VS Code */
-        margin-right: 0.5rem;
+        color: #569cd6;
         font-weight: bold;
-        float: left; /* Flota a la izquierda para que el texto lo envuelva */
+        margin-right: 0.5rem;
+        float: left;
     }
 
     .ai-markdown {
-        color: #e0e0e0;
-        line-height: 1.6;
-        text-align: justify; /* Justificado como Word */
-        display: inline; /* Permite que el texto fluya junto al float */
+        color: #d4d4d4;
+        display: inline;
     }
 
-    /* Ajustes para elementos generados por Markdown dentro del flujo */
+    /* Markdown interno - reducir espaciado */
     :global(.ai-markdown p) {
         margin: 0;
-        display: inline; /* El primer párrafo se comporta como texto continuo */
+        display: inline;
     }
     
-    /* Si hay múltiples párrafos, forzamos bloque a partir del segundo para dar espacio */
     :global(.ai-markdown p + p) {
         display: block;
-        margin-top: 0.8rem;
+        margin-top: 0.3rem;
     }
 
-    /* Bloques de código: rompen el flujo justificado para verse bien */
     :global(.ai-markdown pre) {
         display: block;
-        clear: both; /* Baja a una nueva línea */
+        clear: both;
         background: #1e1e1e;
-        padding: 1rem;
-        border-radius: 6px;
+        padding: 0.75rem;
+        border-radius: 4px;
         overflow-x: auto;
-        margin: 1rem 0;
+        margin: 0.5rem 0;
         border: 1px solid #333;
-        text-align: left; /* El código siempre a la izquierda */
     }
 
     :global(.ai-markdown code) {
-        font-family: 'Consolas', 'Courier New', monospace;
-        font-size: 0.9em;
+        font-family: inherit;
+        font-size: 0.95em;
+    }
+    
+    :global(.ai-markdown code:not(pre code)) {
+        background: #2d2d2d;
+        padding: 0.1rem 0.3rem;
+        border-radius: 3px;
     }
 
-    /* Listas dentro de la respuesta */
     :global(.ai-markdown ul), :global(.ai-markdown ol) {
         display: block;
         clear: both;
-        margin-top: 0.5rem;
-        margin-bottom: 0.5rem;
-        padding-left: 2rem;
+        margin: 0.3rem 0;
+        padding-left: 1.5rem;
+    }
+    
+    :global(.ai-markdown li) {
+        margin-bottom: 0.15rem;
+    }
+
+    :global(.ai-markdown ul),
+    :global(.ai-markdown ol) {
+        display: block;
+        clear: both;
+        margin: 0.4rem 0;
+        padding-left: 1.5rem;
+    }
+
+    :global(.ai-markdown li) {
+        margin-bottom: 0.2rem;
+        color: #d4d4d4;
+    }
+
+    :global(.ai-markdown li::marker) {
+        color: #4ec9b0; /* Verde como el prompt */
+    }
+
+    :global(.ai-markdown li strong) {
+        color: #bb3b00; /* Azul para negritas en listas */
+    }
+
+    :global(.ai-markdown li code) {
+        background: #2d2d2d;
+        color: #ce9178; /* Naranja para código inline */
+        padding: 0.1rem 0.4rem;
+        border-radius: 3px;
+    }
+
+    :global(.ai-markdown table) {
+        border-collapse: collapse;
+        margin: 0.5rem 0;
+        width: 100%;
+        clear: both;
+    }
+
+    :global(.ai-markdown th) {
+        background: #2d2d2d;
+        color: #4ec9b0;
+        padding: 0.4rem 0.8rem;
         text-align: left;
+        border: 1px solid #444;
+    }
+
+    :global(.ai-markdown td) {
+        padding: 0.3rem 0.8rem;
+        border: 1px solid #333;
+        color: #d4d4d4;
+    }
+
+    :global(.ai-markdown tr:nth-child(even)) {
+        background: rgba(255, 255, 255, 0.03);
     }
 
     .prompt-user {
-        color: #39c539;
-        margin-right: 0.5rem;
+        color: #4ec9b0;
     }
+    
     .prompt-error {
         color: #f44747;
-        margin-right: 0.5rem;
     }
+    
     .system-message {
         color: #808080;
     }
+    
     :global(.command-highlight) {
         color: #9cdcfe;
         font-weight: bold;
     }
+    
     .form-control-plaintext:focus {
         outline: none;
         box-shadow: none;
     }
+    
     .thinking {
+        color: #808080;
         animation: blink 1s infinite;
     }
 
     @keyframes blink {
-        50% {
-            opacity: 0;
-        }
+        50% { opacity: 0; }
     }
+    
     @keyframes slide-up {
-        from {
-            transform: translateY(100%);
-        }
-        to {
-            transform: translateY(0);
-        }
+        from { transform: translateY(100%); }
+        to { transform: translateY(0); }
     }
 </style>

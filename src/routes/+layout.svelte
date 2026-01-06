@@ -3,6 +3,7 @@
     import { onMount } from 'svelte';
     import { isTerminalVisible } from '../lib/stores/ui';
     import Terminal from '$lib/components/Terminal.svelte';
+    import { startInChatMode } from '$lib/stores/terminal';
 
     onMount(() => {
         const handleKeyDown = (event: KeyboardEvent) => {
@@ -23,13 +24,10 @@
         };
     });
 
-    const handleAiButtonClick = () => {
-        isTerminalVisible.update(visible => {
-            const newVisible = !visible;
-            console.log(`[DEBUG] Terminal visibility toggled via button: ${newVisible}`);
-            return newVisible;
-        });
-    };
+    function openTerminalWithAI() {
+        startInChatMode.set(true);
+        isTerminalVisible.set(true);
+    }
 </script>
 
 <svelte:head>
@@ -58,17 +56,20 @@
 </svelte:head>
 
 
-<main class="container-fluid font-monospace">
+<main class="container-fluid font-monospace vh-100 d-flex flex-column overflow-hidden p-0">
     <slot />
-<div class="fixed-bottom p-3 d-flex justify-content-end" style="pointer-events: none;">
-    <button 
-        class="btn ai-button btn-dark border border-success text-success shadow-lg" 
-        style="pointer-events: auto; background-color: rgba(0,0,0,0.8);"
-        on:click={handleAiButtonClick}
-    >
-        <span class="me-2">⚡</span> Hablar con Torvalds (AI)
-    </button>
-</div>
+
+    {#if !$isTerminalVisible}
+        <div class="fixed-bottom p-3 d-flex justify-content-end">
+            <button 
+                class="btn ai-button btn-dark border border-success text-success shadow-lg" 
+                style="background-color: rgba(0,0,0,0.8);"
+                on:click={openTerminalWithAI}
+            >
+                <span class="me-2">⚡</span> Hablá con mi asistente Torvalds (AI)
+            </button>
+        </div>
+    {/if}
 </main>
 
 {#if $isTerminalVisible}
@@ -78,6 +79,5 @@
 <style>
     .ai-button {
         z-index: 1050;
-        bottom: 20px;
     }
 </style>

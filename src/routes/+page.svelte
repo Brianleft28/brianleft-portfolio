@@ -4,7 +4,7 @@
     import markdownIcon from '$lib/assets/markdown.svg';
     import FileViewer from '$lib/components/FileViewer.svelte';
     import type { FolderNode, FileSystemNode, FileNode } from '$lib/data/file-system';
-	import { fileSystemData } from '$lib/data/file-system';
+    import { fileSystemData } from '$lib/data/file-system';
 
 
     let currentPathIds = $state<string[]>([]);
@@ -63,13 +63,16 @@
     }
 </script>
 
-<div class="container-fluid min-vh-100 py-2 pb-5 font-monospace d-flex flex-column">
-    <header class="row">
+<div class="container-fluid vh-100 py-2 pb-5 font-monospace d-flex flex-column">
+    <!-- Indice -->
+    <header class="row flex-shrink-0">
         <h3 class="col-12 mb-3">Índice de {currentPathString()}</h3>
         <hr>
     </header>
-    <div class="row flex-grow-1">
-        <div class="col-md-3 pe-md-4">
+
+    <div class="row flex-grow-1 overflow-hidden" style="min-height: 0;">
+    <!-- Izquierda -->
+        <div class="col-md-5 pe-md-4 overflow-auto">
             {#if currentPathIds.length > 0}
             <div class="d-flex align-items-center mb-2">
                 <img src={folderIcon} alt="folder icon" width="18" height="18" class="me-2" />
@@ -101,24 +104,32 @@
                 {/each}
             </div>
         </div> 
-       <div class="col-md-7 offset-md-2">
-            <div class="card bg-body-tertiary text-dark-emphasis shadow-sm h-100 border-0">
-                <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center py-1" style="font-size: 0.8rem;">
-                    <span>{activeItem()?.name || 'Sin archivo seleccionado'}</span>
-                    <div class="d-flex gap-1">
-                        <span class="badge rounded-pill bg-danger" style="width: 10px; height: 10px;"></span>
-                        <span class="badge rounded-pill bg-warning" style="width: 10px; height: 10px;"></span>
-                        <span class="badge rounded-pill bg-success" style="width: 10px; height: 10px;"></span>
-                    </div>
+
+    <!-- Derecha -->
+        <div class="col-md-7 d-flex flex-column" style="min-height: 0; overflow: hidden;">
+            <div class="card card-dark-viewer shadow-sm border-0 d-flex flex-column flex-grow-1" style="min-height: 0; overflow: hidden;">
+                
+                <div class="card-header d-flex justify-content-between align-items-center py-1 flex-shrink-0" style="font-size: 0.8rem;">
+                    <span class="text-light">{activeItem()?.name || 'Sin archivo seleccionado'}</span>
+                    {#if activeItem()}
+                        <button 
+                            class="btn-close-neon" 
+                            onclick={() => activeFileId = null}
+                            aria-label="Cerrar archivo"
+                        >
+                            ✕
+                        </button>
+                    {/if}
                 </div>
-                <div class="card-body overflow-auto h-100 font-monospace p-0">
+
+                <div class="card-body p-0 flex-grow-1" style="min-height: 0; overflow-y: auto; background: #222;">
                     {#if activeItem()}
                         <FileViewer file={activeItem()!} />
                     {:else}
-                        <div class="d-flex flex-column justify-content-center text-dark align-items-center h-100 opacity-70">
-                            <img src={folderMainIcon} alt="Logo" width="64" class="mb-3 grayscale" style="filter: grayscale(1);" />
-                            <p>Selecciona un archivo para comenzar...</p>   
-                            <small class="text-dark">Usa <kbd class="bg-dark text-white">Ctrl</kbd> + <kbd class="bg-dark text-white">Ñ</kbd> para abrir la consola.</small>
+                        <div class="empty-state h-100 d-flex flex-column justify-content-center align-items-center">
+                            <img src={folderMainIcon} alt="Logo" width="64" />
+                            <p class="mt-3 text-muted">Seleccioná un archivo para comenzar...</p>   
+                            <small class="text-muted">Usá <kbd>Ctrl</kbd> + <kbd>Ñ</kbd> para abrir la consola.</small>
                         </div>
                     {/if}
                 </div>

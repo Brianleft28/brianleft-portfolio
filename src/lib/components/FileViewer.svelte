@@ -1,75 +1,181 @@
 <script lang="ts">
-    import type { FileNode } from '$lib/data/file-system'; // Asegúrate que la ruta sea correcta
     import { Marked } from 'marked';
     import { markedHighlight } from 'marked-highlight';
     import hljs from 'highlight.js';
-    
-    // Importamos el tema (puedes cambiar 'atom-one-dark' por otro)
-    import 'highlight.js/styles/atom-one-dark.css';
+    import 'highlight.js/styles/github-dark.css';
 
-    // Recibimos el archivo como Propiedad
-    let { file } = $props<{ file: FileNode }>();
+    import type { FileNode } from '$lib/data/file-system';
 
-    // Creamos una instancia de Marked
-    // Usamos markedHighlight para inyectar la lógica de colores
+    interface Props {
+        file: FileNode;
+    }
+
+    let { file }: Props = $props();
+
     const marked = new Marked(
         markedHighlight({
             langPrefix: 'hljs language-',
-            highlight(code: string, lang: string) { // <--- Tipamos explícitamente como string
+            highlight(code, lang) {
                 const language = hljs.getLanguage(lang) ? lang : 'plaintext';
                 return hljs.highlight(code, { language }).value;
             }
         })
     );
 
-    // Procesamos el Markdown
-    // Nota: marked.parse puede devolver una Promise en algunos casos avanzados, 
-    // pero por defecto es síncrono para strings. Forzamos el tipo a string si es necesario.
-    let htmlContent = $derived(
-        file.content 
-        ? marked.parse(file.content) as string 
-        : ''
-    );
+    function renderMarkdown(text: string): string {
+        return marked.parse(text) as string;
+    }
 </script>
 
-<div class="h-100 w-100">
-    {#if file.type === 'markdown'}
-        <div class="p-4 markdown-body overflow-auto h-100">
-            {@html htmlContent}
-        </div>
-
-  {:else if file.type === 'component'}
-        <div class="h-100 d-flex flex-column">
-            {#if file.component}
-                {@const ActiveApp = file.component}
-                <ActiveApp />
-            {:else}
-                <div class="alert alert-warning m-3">
-                    El archivo "{file.name}" es una aplicación, pero no tiene código asociado aún.
-                </div>
-            {/if}
-        </div>
-    {/if}
-</div>
+<article class="file-viewer-content">
+    {@html renderMarkdown(file.content || '*Archivo sin contenido*')}
+</article>
 
 <style>
-    .markdown-body {
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
-        line-height: 1.6;
-        color: #24292f;
-        background-color: white;
-    }
-    
-    :global(.markdown-body img) {
-        max-width: 100%;
+    .file-viewer-content {
+        padding: 1.5rem 2rem;
+        color: #adb5bd;
+        line-height: 1.7;
+        min-height: 100%;
+        background: #222; /* Fondo consistente */
     }
 
-    /* Importante: Asegurar contraste en el bloque de código */
-    :global(.markdown-body pre) {
-        background-color: #282c34;
-        padding: 1rem;
+    /* ========== TIPOGRAFÍA MARKDOWN ========== */
+    :global(.file-viewer-content h1) {
+        color: #fff;
+        font-size: 1.6rem;
+        font-weight: 700;
+        margin-top: 0;
+        margin-bottom: 0.75rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 2px solid #00bc8c;
+    }
+
+    :global(.file-viewer-content h2) {
+        color: #e9ecef;
+        font-size: 1.2rem;
+        font-weight: 600;
+        margin-top: 1.5rem;
+        margin-bottom: 0.5rem;
+    }
+
+    :global(.file-viewer-content h3) {
+        color: #dee2e6;
+        font-size: 1rem;
+        font-weight: 600;
+        margin-top: 1rem;
+        margin-bottom: 0.4rem;
+    }
+
+    :global(.file-viewer-content p) {
+        margin-bottom: 0.75rem;
+    }
+
+    :global(.file-viewer-content strong) {
+        color: #fff;
+        font-weight: 600;
+    }
+
+    :global(.file-viewer-content a) {
+        color: #00bc8c;
+        text-decoration: none;
+        border-bottom: 1px dotted #00bc8c;
+        transition: all 0.2s;
+    }
+
+    :global(.file-viewer-content a:hover) {
+        color: #3498db;
+        border-bottom-color: #3498db;
+    }
+
+    /* Código inline */
+    :global(.file-viewer-content code:not(pre code)) {
+        background: #375a7f;
+        color: #fff;
+        padding: 0.1rem 0.4rem;
+        border-radius: 4px;
+        font-size: 0.85em;
+        font-family: 'Consolas', 'Monaco', monospace;
+    }
+
+    /* Bloques de código */
+    :global(.file-viewer-content pre) {
+        background: #1a1a1a;
+        border: 1px solid #444;
         border-radius: 6px;
-        overflow: auto;
-        color: #abb2bf; 
+        padding: 1rem;
+        overflow-x: auto;
+        margin: 1rem 0;
+    }
+
+    :global(.file-viewer-content pre code) {
+        background: transparent;
+        padding: 0;
+        font-size: 0.85rem;
+        color: #e0e0e0;
+    }
+
+    /* Tablas */
+    :global(.file-viewer-content table) {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 1rem 0;
+        font-size: 0.9rem;
+    }
+
+    :global(.file-viewer-content th) {
+        background: #303030;
+        color: #00bc8c;
+        padding: 0.5rem 0.75rem;
+        text-align: left;
+        border: 1px solid #444;
+        font-weight: 600;
+    }
+
+    :global(.file-viewer-content td) {
+        padding: 0.4rem 0.75rem;
+        border: 1px solid #444;
+        background: #262626;
+    }
+
+    :global(.file-viewer-content tr:nth-child(even) td) {
+        background: #2a2a2a;
+    }
+
+    /* Listas */
+    :global(.file-viewer-content ul),
+    :global(.file-viewer-content ol) {
+        margin: 0.75rem 0;
+        padding-left: 1.5rem;
+    }
+
+    :global(.file-viewer-content li) {
+        margin-bottom: 0.35rem;
+    }
+
+    :global(.file-viewer-content li::marker) {
+        color: #00bc8c;
+    }
+
+    /* Líneas horizontales */
+    :global(.file-viewer-content hr) {
+        border: none;
+        border-top: 1px solid #444;
+        margin: 1.5rem 0;
+    }
+
+    /* Blockquotes */
+    :global(.file-viewer-content blockquote) {
+        border-left: 3px solid #00bc8c;
+        margin: 1rem 0;
+        padding: 0.5rem 1rem;
+        background: rgba(0, 188, 140, 0.08);
+        color: #adb5bd;
+        font-style: italic;
+        border-radius: 0 4px 4px 0;
+    }
+
+    :global(.file-viewer-content blockquote p) {
+        margin: 0;
     }
 </style>

@@ -86,7 +86,59 @@ export const fileSystemData: FolderNode = {
             id: 'welcome',
             name: 'LEEME.md',
             type: 'markdown',
-            content: `# Bienvenido a mi portfolio\n\nEste portfolio es interactivo. Puedes navegar usando:\n- El **Explorador de Archivos** a la izquierda.\n- La **Terminal** abajo, abrila con <kbd class="bg-dark text-white">CTRL</kbd> + <kbd class="bg-dark text-white">Ñ</kbd> (prueba comandos como \`cd\` o \`ls\`).\n\n### Sobre el proyecto\nConstruido con **Svelte 5 (Runes)** para manejar la reactividad del estado global.`,
+            content: `# Bienvenido a mi portfolio
+
+Este portfolio es interactivo. Podés navegar usando:
+
+- El **Explorador de Archivos** a la izquierda.
+- La **Terminal** abajo, abrila con \`CTRL\` + \`Ñ\` (probá comandos como \`cd\` o \`ll\`).
+
+---
+
+## Sobre este proyecto
+
+Este sitio simula un **sistema operativo web**. No es solo una página estática con mi CV, es un demostrador técnico de cómo pienso y construyo software.
+
+### Stack Técnico
+
+| Capa | Tecnología |
+|------|------------|
+| Frontend | SvelteKit 2 + Svelte 5 |
+| Estilos | Bootstrap 5 + SASS |
+| IA | Google Gemini API |
+| Deploy | Docker multi-stage |
+
+### Características
+
+- 🖥️ **Terminal interactiva** con comandos reales (\`cd\`, \`ll\`, \`cls\`)
+- 🤖 **TorvaldsAi** - Asistente IA con personalidad de Linus Torvalds criado a mate y pitusas
+- 📁 **Sistema de archivos virtual** - Navegá los proyectos como directorios
+- ⚡ **Streaming de respuestas** - La IA responde en tiempo real
+- 📝 **Docs as Code** - La memoria de la IA está en archivos Markdown
+
+---
+
+## ¿Querés saber más?
+
+Escribí \`torvaldsai\` en la terminal y preguntale lo que quieras sobre:
+- Mi experiencia profesional
+- La arquitectura de este portfolio
+- Detalles técnicos de mis proyectos
+
+**Tip:** Probá preguntarle "¿Cómo funciona el sistema de memoria modular?"
+
+---
+
+## Contacto
+
+- 🌐 [brianleft.com](https://brianleft.com)
+- 💼 [LinkedIn](https://linkedin.com/in/brianbenegas)
+- 🐙 [GitHub](https://github.com/brianleft)
+
+---
+
+*"Talk is cheap. Show me the code."* — Linus Torvalds
+`
         },
     ]
 };
