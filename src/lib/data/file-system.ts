@@ -65,10 +65,12 @@ export const fileSystemData: FolderNode = {
 									content: `# Exportación a Excel\n\nUtilizamos la librería \`exceljs\` en el frontend para generar reportes sin sobrecargar el servidor.\n\n\`\`\`typescript\n// src/lib/logic/export-excel.ts\nimport ExcelJS from 'exceljs';\n\nexport const exportarResultados = async (data) => {\n  const workbook = new ExcelJS.Workbook();\n  const sheet = workbook.addWorksheet('Resultados');\n  // ... lógica de filas y columnas\n};\n\`\`\`\n`
 								}
 							]
-						},
-						{
-							id: 'migracion-fortalecimiento',
-							name: 'migracion-fortalecimiento',
+						}
+	]
+},
+{
+			id: 'migracion-fortalecimiento',
+			name: 'migracion-fortalecimiento',
 							type: 'folder',
 							children: [
 								{
@@ -101,13 +103,11 @@ Herramienta CLI para automatizar la ingesta y normalización de datos de benefic
 \`\`\`bash
 npm install
 npm run start
-\`\`\`
+\`\`\`				
 `
 								}
 							]
 						}
-					]
-				}
 			]
 		},
 		{
@@ -127,57 +127,57 @@ npm run start
 			name: 'LEEME.md',
 			type: 'markdown',
 			content: `# Bienvenido a mi portfolio
-            Este portfolio es interactivo. Podés navegar usando:
 
-            - El **Explorador de Archivos** a la izquierda.
-            - La **Terminal** abajo, abrila con \`CTRL\` + \`Ñ\` (probá comandos como \`cd\` o \`ll\`).
+Este portfolio es interactivo. Podés navegar usando:
 
-            ---
+- El **Explorador de Archivos** a la izquierda.
+- La **Terminal** abajo, abrila con \`CTRL\` + \`Ñ\` (probá comandos como \`cd\` o \`ll\`).
 
-            ## Sobre este proyecto
+---
 
-            Este sitio simula un **sistema operativo web**. No es solo una página estática con mi CV, es un demostrador técnico de cómo pienso y construyo software.
+## Sobre este proyecto
 
-            ### Stack Técnico
+Este sitio simula un **sistema operativo web**. No es solo una página estática con mi CV, es un demostrador técnico de cómo pienso y construyo software.
 
-            | Capa | Tecnología |
-            |------|------------|
-            | Frontend | SvelteKit 2 + Svelte 5 |
-            | Estilos | Bootstrap 5 + SASS |
-            | IA | Google Gemini API |
-            | Deploy | Docker multi-stage |
+### Stack Técnico
 
-            ### Características
+| Capa | Tecnología |
+|------|------------|
+| Frontend | SvelteKit 2 + Svelte 5 |
+| Estilos | Bootstrap 5 + SASS |
+| IA | Google Gemini API |
+| Deploy | Docker multi-stage |
 
-            - 🖥️ **Terminal interactiva** con comandos reales (\`cd\`, \`ll\`, \`cls\`)
-            - 🤖 **TorvaldsAi** - Asistente IA con personalidad de Linus Torvalds criado a mate y pitusas
-            - 📁 **Sistema de archivos virtual** - Navegá los proyectos como directorios
-            - ⚡ **Streaming de respuestas** - La IA responde en tiempo real
-            - 📝 **Docs as Code** - La memoria de la IA está en archivos Markdown
+### Características
 
-            ---
+- 🖥️ **Terminal interactiva** con comandos reales (\`cd\`, \`ll\`, \`cls\`)
+- 🤖 **TorvaldsAi** - Asistente IA con personalidad de Linus Torvalds criado a mate y pitusas
+- 📁 **Sistema de archivos virtual** - Navegá los proyectos como directorios
+- ⚡ **Streaming de respuestas** - La IA responde en tiempo real
+- 📝 **Docs as Code** - La memoria de la IA está en archivos Markdown
 
-            ## ¿Querés saber más?
+---
 
-            Escribí \`torvaldsai\` en la terminal y preguntale lo que quieras sobre:
-            - Mi experiencia profesional
-            - La arquitectura de este portfolio
-            - Detalles técnicos de mis proyectos
+## ¿Querés saber más?
 
-            **Tip:** Probá preguntarle "¿Cómo funciona el sistema de memoria modular?"
+Escribí \`torvaldsai\` en la terminal y preguntale lo que quieras sobre:
+- Mi experiencia profesional
+- La arquitectura de este portfolio
+- Detalles técnicos de mis proyectos
 
-            ---
+**Tip:** Probá preguntarle "¿Cómo funciona el sistema de memoria modular?"
 
-            ## Contacto
+---
 
-            - 🌐 [brianleft.com](https://brianleft.com)
-            - 💼 [LinkedIn](https://linkedin.com/in/brianbenegas)
-            - 🐙 [GitHub](https://github.com/brianleft)
+## Contacto
 
-            ---
+- 🌐 [brianleft.com](https://brianleft.com)
+- 💼 [LinkedIn](https://linkedin.com/in/brianbenegas)
+- 🐙 [GitHub](https://github.com/brianleft)
 
-            *"Talk is cheap. Show me the code."* — Linus Torvalds
-            `
+---
+
+*"Talk is cheap. Show me the code."* — Linus Torvalds`
 		}
 	]
 };

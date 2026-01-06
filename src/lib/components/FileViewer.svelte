@@ -1,72 +1,49 @@
 <script lang="ts">
-	import { Marked } from 'marked';
-	import { markedHighlight } from 'marked-highlight';
-	import hljs from 'highlight.js';
-	import 'highlight.js/styles/github-dark.css';
-	import mermaid from 'mermaid';
-	import { onMount } from 'svelte';
+    import { Marked } from 'marked';
+    import { markedHighlight } from 'marked-highlight';
+    import hljs from 'highlight.js';
+    import 'highlight.js/styles/github-dark.css';
+    import { onMount } from 'svelte';
 
-	import type { FileNode } from '$lib/data/file-system';
+    import type { FileNode } from '$lib/data/file-system';
 
-	interface Props {
-		file: FileNode;
-	}
+    interface Props {
+        file: FileNode;
+    }
 
-	let { file }: Props = $props();
+    let { file }: Props = $props();
+    let renderedHtml = $state<string>('');
 
-	let mermaidInitialized = false;
+    // Crear instancia de Marked con highlight integrado
+    const marked = new Marked(
+        markedHighlight({
+            langPrefix: 'hljs language-',
+            highlight(code, lang) {
+                const language = hljs.getLanguage(lang) ? lang : 'plaintext';
+                return hljs.highlight(code, { language }).value;
+            }
+        }),
+        {
+            gfm: true,
+            breaks: true
+        }
+    );
 
-	const marked = new Marked(
-		markedHighlight({
-			langPrefix: 'hljs language-',
-			highlight(code, lang) {
-				// Si es mermaid, lo marcamos para renderizar después
-				if (lang === 'mermaid') {
-					return `<div class="mermaid">${code}</div>`;
-				}
-				const language = hljs.getLanguage(lang) ? lang : 'plaintext';
-				return hljs.highlight(code, { language }).value;
-			}
-		})
-	);
+    async function updateContent(content: string) {
+        renderedHtml = await marked.parse(content);
+    }
 
-	function renderMarkdown(text: string): string {
-		return marked.parse(text) as string;
-	}
+    onMount(() => {
+        updateContent(file.content || '*Archivo sin contenido*');
+    });
 
-	async function renderMermaidDiagrams() {
-		if (!mermaidInitialized) {
-			mermaid.initialize({
-				startOnLoad: false,
-				theme: 'dark',
-				themeVariables: {
-					primaryColor: '#00bc8c',
-					primaryTextColor: '#fff',
-					primaryBorderColor: '#00bc8c',
-					lineColor: '#adb5bd',
-					secondaryColor: '#375a7f',
-					tertiaryColor: '#303030'
-				}
-			});
-			mermaidInitialized = true;
-		}
-		await mermaid.run({ querySelector: '.mermaid' });
-	}
-
-	onMount(() => {
-		renderMermaidDiagrams();
-	});
-
-	// Re-render cuando cambia el archivo
-	$effect(() => {
-		file; // dependency
-		// Pequeño delay para que el DOM se actualice
-		setTimeout(() => renderMermaidDiagrams(), 50);
-	});
+    $effect(() => {
+        updateContent(file.content || '*Archivo sin contenido*');
+    });
 </script>
 
 <article class="file-viewer-content">
-	{@html renderMarkdown(file.content || '*Archivo sin contenido*')}
+	{@html renderedHtml}
 </article>
 
 <style>
@@ -74,7 +51,6 @@
 		padding: 1.5rem 2rem;
 		color: #adb5bd;
 		line-height: 1.7;
-		min-height: 100%;
 		background: #222; /* Fondo consistente */
 	}
 
@@ -215,20 +191,5 @@
 
 	:global(.file-viewer-content blockquote p) {
 		margin: 0;
-	}
-
-	/* Mermaid diagrams */
-	:global(.file-viewer-content .mermaid) {
-		background: #1a1a1a;
-		border: 1px solid #444;
-		border-radius: 6px;
-		padding: 1rem;
-		margin: 1rem 0;
-		text-align: center;
-	}
-
-	:global(.file-viewer-content .mermaid svg) {
-		max-width: 100%;
-		height: auto;
 	}
 </style>

@@ -64,16 +64,16 @@
 	}
 </script>
 
-<div class="container-fluid vh-100 py-2 pb-5 font-monospace d-flex flex-column">
-	<!-- Indice -->
-	<header class="row flex-shrink-0">
-		<h3 class="col-12 mb-3">Índice de {currentPathString()}</h3>
-		<hr />
-	</header>
+<div class="container-fluid py-2 font-monospace d-flex flex-column" style="height: 100%; overflow: hidden;">
+    <!-- Indice -->
+    <header class="row flex-shrink-0">
+        <h3 class="col-12 mb-3">Índice de {currentPathString()}</h3>
+        <hr />
+    </header>
 
 	<div class="row flex-grow-1 overflow-hidden" style="min-height: 0;">
 		<!-- Izquierda -->
-		<div class="col-md-5 pe-md-4 overflow-auto">
+		<div class="col-md-5 pe-md-4 h-100 overflow-auto">
 			{#if currentPathIds.length > 0}
 				<div class="d-flex align-items-center mb-2">
 					<img src={folderIcon} alt="folder icon" width="18" height="18" class="me-2" />
@@ -117,10 +117,10 @@
 		</div>
 
 		<!-- Derecha -->
-		<div class="col-md-7 d-flex flex-column" style="min-height: 0; overflow: hidden;">
+		<div class="col-md-7 h-100 d-flex flex-column" style="min-height: 0; overflow: hidden;">
 			<div
-				class="card card-dark-viewer shadow-sm border-0 d-flex flex-column flex-grow-1"
-				style="min-height: 0; overflow: hidden;"
+				class="card card-dark-viewer shadow-sm border-0 h-100 d-flex flex-column"
+				style="overflow: hidden;"
 			>
 				<div
 					class="card-header d-flex justify-content-between align-items-center py-1 flex-shrink-0"
@@ -141,8 +141,8 @@
 				</div>
 
 				<div
-					class="card-body p-0 flex-grow-1"
-					style="min-height: 0; overflow-y: auto; background: #222;"
+					class="card-body p-0 flex-grow-1 overflow-auto"
+					style="background: #222;"
 				>
 					{#if activeItem()}
 						<FileViewer file={activeItem()!} />
@@ -162,3 +162,46 @@
 		</div>
 	</div>
 </div>
+<style>
+    /* Scrollbar estilo neon para columna izquierda */
+    .col-md-5::-webkit-scrollbar {
+        width: 4px;
+    }
+
+    .col-md-5::-webkit-scrollbar-track {
+        background: #0d0d0d;
+        border-radius: 2px;
+    }
+
+    .col-md-5::-webkit-scrollbar-thumb {
+        background: #00bc8c;
+        border-radius: 2px;
+        box-shadow: 0 0 6px rgba(0, 188, 140, 0.5);
+    }
+
+    .col-md-5::-webkit-scrollbar-thumb:hover {
+        background: #00ff9f;
+        box-shadow: 0 0 10px rgba(0, 255, 159, 0.8);
+    }
+
+    /* Scrollbar estilo neon para card-body (visor derecho) */
+    .card-body::-webkit-scrollbar {
+        width: 4px;
+    }
+
+    .card-body::-webkit-scrollbar-track {
+        background: #1a1a1a;
+        border-radius: 2px;
+    }
+
+    .card-body::-webkit-scrollbar-thumb {
+        background: #00bc8c;
+        border-radius: 2px;
+        box-shadow: 0 0 8px rgba(0, 188, 140, 0.6);
+    }
+
+    .card-body::-webkit-scrollbar-thumb:hover {
+        background: #00ff9f;
+        box-shadow: 0 0 12px rgba(0, 255, 159, 0.9);
+    }
+</style>

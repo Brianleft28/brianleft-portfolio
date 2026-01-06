@@ -9,136 +9,124 @@
 
 ## Especialización
 
-Brian se especializa en **unir mundos desconectados**: Web a Hardware, Nube a On-Premise, Frontend a sistemas legacy. Su metodología combina:
+Brian se especializa en unir mundos desconectados: Web a Hardware, Nube a On-Premise, Frontend a sistemas legacy. Su metodología combina:
 
 - Procesos estocásticos para medir rendimiento
 - Documentación obsesiva para mitigar el caos
 - Arquitectura primero, código después
-- Automatización para desplegues y mantenimiento
+- Automatización para despliegues y mantenimiento
 
 ## Situación Actual
 
-La mayor parte de su actividad diaria ocurre en repositorios privados de **GitLab** (proyectos corporativos/gubernamentales). Su GitHub es una vitrina de experimentos, no un registro de asistencia diario.
+La mayor parte de su actividad diaria ocurre en repositorios privados de GitLab (proyectos corporativos/gubernamentales). Su GitHub es una vitrina de experimentos, no un registro de asistencia diario.
 
 ## Stack Tecnológico
 
-### Backend & Systems
+**Backend & Systems:** Node.js (NestJS, Express), .NET 8 (C#) para Windows Services y APIs, Python para scripts y automatización.
 
-- **Node.js** (NestJS, Express)
-- **.NET 8 (C#)** — Windows Services, APIs
-- **Python** — Scripts, automatización
+**Frontend:** SvelteKit (nivel experto, SSR, hidratación), React (proyectos legacy).
 
-### Frontend
+**Bases de Datos:** MySQL (Connection Pooling, optimización de queries), MongoDB (documentos, caching).
 
-- **SvelteKit** — Nivel experto, SSR, hidratación
-- **React** — Proyectos legacy
+**DevOps & Infraestructura:** Docker (multi-stage builds, compose), Linux (SysAdmin level), Nginx (reverse proxy, SSL), WebSockets (real-time systems).
 
-### Bases de Datos
-
-- **MySQL** — Connection Pooling, optimización de queries
-- **MongoDB** — Documentos, caching
-
-### DevOps & Infraestructura
-
-- **Docker** — Multi-stage builds, compose
-- **Linux** — SysAdmin level
-- **Nginx** — Reverse proxy, SSL
-- **WebSockets** — Real-time systems
-
-### Integraciones
-
-- APIs HTTP/RESTful
-- Streaming de datos (Server-Sent Events, WebSockets)
-- Comunicación directa con Hardware (Raw Printing, ESC-POS)
-- Sistemas de mensajería (colas, eventos)
+**Integraciones:** APIs HTTP/RESTful, Streaming de datos (SSE, WebSockets), Comunicación directa con Hardware (Raw Printing, ESC-POS), Sistemas de mensajería (colas, eventos).
 
 ## Enlaces
 
-- **GitHub:** [github.com/brianleft28](https://github.com/brianleft28)
-- **LinkedIn:** [linkedin.com/in/brian-benegas](https://www.linkedin.com/in/brian-benegas/)
-- **Email:** contacto@brianleft.com | contactobrianleft@gmail.com
+- GitHub: github.com/brianleft28
+- LinkedIn: linkedin.com/in/brian-benegas
+- Email: contacto@brianleft.com | contactobrianleft@gmail.com
 
 ## Disponibilidad
 
-Abierto a desafíos técnicos complejos en Full Stack y DevOps. Especialmente interesado en:
-
-- Sistemas de alta concurrencia
-- Integraciones hardware-software
-- Arquitecturas resilientes
+Abierto a desafíos técnicos complejos en Full Stack y DevOps. Especialmente interesado en sistemas de alta concurrencia, integraciones hardware-software y arquitecturas resilientes.
 
 ---
 
 ## Proyectos Destacados
 
-| Proyecto | Contexto | Stack | Estado |
-|----------|----------|-------|--------|
-| Middleware Impresión RAW | Corporativo | .NET 8, Windows Services, ESC-POS/ZPL | Producción |
-| Sistema Electoral | Gobierno/Misión Crítica | SvelteKit, Node.js, MySQL, Socket.io | Producción |
-| Portfolio Interactivo | I+D/Demostrador | SvelteKit, Gemini API, Docker | Producción |
-| Migrador de Beneficiarios | Gobierno/Automatización | Node.js, MySQL2, ExcelJS | Producción |
+### 1. Middleware de Impresión RAW (.NET Print Server)
 
-### Detalle de cada proyecto:
+- **Contexto:** Corporativo, en producción.
+- **Stack:** .NET 8, Windows Services, ESC-POS/ZPL.
 
-#### 1. Middleware de Impresión RAW (.NET Print Server)
-- **Problema:** Aplicaciones web no pueden enviar bytes crudos a impresoras térmicas
-- **Solución:** API RESTful corriendo como Windows Service en localhost
-- **Flujo:** Web → HTTP POST → API .NET → Spooler Windows → Impresora
-- **Formatos:** ZPL (Zebra), ESC-POS (térmicas genéricas), RAW bytes
-- **Características:** Auto-reconexión, cola de trabajos, logs rotativos
-- **Pregunta sugerida:** "háblame del print server" o "cómo funciona la impresión RAW"
+**Problema:** Las aplicaciones web no pueden enviar bytes crudos a impresoras térmicas por restricciones del navegador.
 
-#### 2. Sistema de Gestión Electoral
-- **Problema:** Cómputo de votos en tiempo real con tolerancia cero a errores
-- **Solución:** Sistema distribuido con broadcasting vía WebSockets
-- **Arquitectura:** SvelteKit (frontend) + Node.js (API) + MySQL (persistencia) + Socket.io (real-time)
-- **Desafíos resueltos:** Alta concurrencia, idempotencia en carga de actas, auditoría completa
-- **Características:** Dashboard en vivo, validación multinivel, exportación oficial
-- **Pregunta sugerida:** "cuéntame del sistema electoral" o "cómo manejaste la concurrencia"
+**Solución:** API RESTful corriendo como Windows Service en localhost que actúa como puente. Recibe peticiones HTTP con datos de impresión y los inyecta directamente al spooler de Windows.
 
-#### 3. Portfolio Interactivo (Este sitio)
-- **Problema:** Mostrar habilidades técnicas de forma memorable
-- **Solución:** Terminal web interactiva con IA conversacional integrada
-- **Arquitectura:** SvelteKit SSR + Gemini API + Sistema de archivos virtual
-- **Características:** Memoria modular (optimiza tokens), comandos Unix simulados, tema retro
-- **Stack:** SvelteKit, TypeScript, Gemini 2.0, Docker, Nginx
-- **Pregunta sugerida:** "cómo funciona este portfolio" o "qué tecnologías usas aquí"
+**Flujo técnico:** Aplicación Web envía HTTP POST a localhost:puerto, la API .NET recibe y parsea el payload, convierte a formato requerido (ZPL para Zebra, ESC-POS para térmicas), envía bytes crudos al spooler, la impresora ejecuta.
 
-#### 4. Migrador de Beneficiarios
-- **Problema:** Migrar datos de beneficiarios desde Excel a base de datos normalizada
-- **Solución:** Script Node.js con validación, deduplicación y reportes de errores
-- **Flujo:** Excel → Parsing (ExcelJS) → Validación → Transformación → MySQL (batch inserts)
-- **Características:** Manejo de 50k+ registros, logs detallados, rollback automático en fallos
-- **Desafíos resueltos:** Datos sucios, duplicados, encoding inconsistente
-- **Pregunta sugerida:** "háblame del migrador" o "cómo manejaste datos sucios"
+**Características:** Auto-reconexión ante fallos, cola de trabajos persistente, logs rotativos, soporte multi-impresora.
+
+**Preguntas sugeridas:** "háblame del print server", "cómo funciona la impresión RAW", "cómo resolviste la comunicación web-impresora".
 
 ---
 
-## Arquitectura General de Proyectos
+### 2. Sistema de Gestión Electoral
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                    CAPA DE PRESENTACIÓN                     │
-│  SvelteKit (SSR) │ React (Legacy) │ Terminales/Dashboards   │
-└──────────────────────────┬──────────────────────────────────┘
-                           │
-┌──────────────────────────▼──────────────────────────────────┐
-│                    CAPA DE SERVICIOS                        │
-│  Node.js (NestJS/Express) │ .NET 8 (APIs/Services)          │
-│  WebSockets │ REST │ Colas de mensajes                      │
-└──────────────────────────┬──────────────────────────────────┘
-                           │
-┌──────────────────────────▼──────────────────────────────────┐
-│                    CAPA DE DATOS                            │
-│                MySQL (transaccional)                                      │
-└──────────────────────────┬──────────────────────────────────┘
-                           │
-┌──────────────────────────▼──────────────────────────────────┐
-│                    INFRAESTRUCTURA                          │
-│  Docker │ Linux │ Nginx │ Windows Services                  │
-└─────────────────────────────────────────────────────────────┘
-```
+- **Contexto:** Gobierno, misión crítica, en producción.
+- **Stack:** SvelteKit, Node.js, MySQL, Socket.io.
+
+**Problema:** Cómputo de votos en tiempo real durante jornada electoral. Tolerancia cero a errores, alta concurrencia, auditoría completa.
+
+**Solución:** Sistema distribuido con frontend SvelteKit para operadores, API Node.js para lógica de negocio, MySQL para persistencia transaccional, Socket.io para broadcasting en tiempo real a dashboards.
+
+**Desafíos resueltos:** Alta concurrencia (múltiples operadores cargando simultáneamente), idempotencia en carga de actas (evitar duplicados), auditoría completa (cada acción logueada con usuario y timestamp), validación multinivel (frontend, API, base de datos).
+
+**Características:** Dashboard en vivo con actualización automática, exportación en formatos oficiales, sistema de roles y permisos.
+
+**Preguntas sugeridas:** "cuéntame del sistema electoral", "cómo manejaste la concurrencia", "qué estrategias usaste para tolerancia a fallos".
 
 ---
 
-*Documento optimizado para consumo por IA. Última actualización: 2025.*
+### 3. Portfolio Interactivo (Este sitio)
+
+- **Contexto:** I+D, demostrador técnico, en producción.
+- **Stack:** SvelteKit, TypeScript, Gemini 2.0 API, Docker, Nginx.
+
+**Problema:** Mostrar habilidades técnicas de forma memorable, no solo un CV estático.
+
+**Solución:** Terminal web interactiva que simula un sistema operativo. Incluye sistema de archivos virtual navegable, asistente IA con personalidad (TorvaldsAI), comandos Unix simulados (cd, ls, cat, clear).
+
+**Arquitectura:** SvelteKit con SSR para SEO, sistema de memoria modular para optimizar tokens de IA (la IA solo carga contexto relevante), streaming de respuestas en tiempo real.
+
+**Características:** Tema retro estilo terminal, explorador de archivos visual, markdown renderizado con highlight.js, Docker multi-stage para deploy.
+
+**Preguntas sugeridas:** "cómo funciona este portfolio", "qué tecnologías usas aquí", "cómo implementaste la memoria de la IA".
+
+---
+
+### 4. Migrador de Beneficiarios
+
+- **Contexto:** Gobierno, automatización, en producción.
+- **Stack:** Node.js, MySQL2, ExcelJS.
+
+**Problema:** Migrar datos de beneficiarios desde archivos Excel heterogéneos a base de datos normalizada. Datos sucios, duplicados, encoding inconsistente.
+
+**Solución:** Script Node.js que parsea Excel con ExcelJS, valida cada registro contra reglas de negocio, deduplica por múltiples criterios, transforma a esquema normalizado, inserta en batch a MySQL.
+
+**Características:** Manejo de 50k+ registros, logs detallados de errores por fila, rollback automático en fallos críticos, reportes de migración.
+
+**Desafíos resueltos:** Encoding mixto (UTF-8, Latin1), fechas en formatos inconsistentes, campos vacíos vs nulos, duplicados por variaciones en nombres.
+
+**Preguntas sugeridas:** "háblame del migrador", "cómo manejaste datos sucios", "qué estrategia usaste para deduplicación".
+
+---
+
+## Arquitectura General
+
+Brian estructura sus proyectos en capas claras:
+
+- **Capa de Presentación:** SvelteKit (SSR) para proyectos nuevos, React para legacy, terminales y dashboards especializados.
+
+- **Capa de Servicios:** Node.js (NestJS o Express) para APIs web, .NET 8 para servicios Windows y comunicación con hardware, WebSockets para tiempo real, REST para comunicación estándar.
+
+- **Capa de Datos:** MySQL para datos transaccionales críticos, MongoDB para documentos y cache cuando aplica.
+
+- **Infraestructura:** Docker para containerización y deploys consistentes, Linux para servidores, Nginx como reverse proxy con SSL, Windows Services para integraciones de escritorio.
+
+---
+
+Documento optimizado para consumo por IA. Sin diagramas visuales. Última actualización: 2025.
 

@@ -8,7 +8,7 @@ import metaMemory from '$lib/data/memory/meta.md?raw';
 import printServerMemory from '$lib/data/memory/projects/print-server.md?raw';
 import electoralMemory from '$lib/data/memory/projects/electoral.md?raw';
 import portfolioMemory from '$lib/data/memory/projects/portfolio.md?raw';
-import posApiMemory from '$lib/data/memory/projects/pos-api.md?raw';
+import migradorMemory from '$lib/data/memory/projects/migrador.md?raw';
 
 const MODEL_NAME = 'gemini-2.5-flash';
 const MAX_INPUT_CHARS = 4000;
@@ -61,12 +61,12 @@ const projectKeywords: Record<string, string> = {
 	'cómo funciona': metaMemory,
 	'este sitio': metaMemory,
 	'esta web': metaMemory,
-	// POS API
-	pos: posApiMemory,
-	kiosco: posApiMemory,
-	'punto de venta': posApiMemory,
-	'customer display': posApiMemory,
-	cobro: posApiMemory
+	// Migrador
+	migrador: migradorMemory,
+	migracion: migradorMemory,
+	beneficiarios: migradorMemory,
+	excel: migradorMemory,
+	'datos sucios': migradorMemory
 	// Preguntas generales sobre proyectos (NO cargan docs específicos, pero index.md ya los lista)
 	// Se manejan en la lógica de getRelevantMemory
 };
