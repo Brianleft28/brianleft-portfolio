@@ -40,14 +40,23 @@ El servidor carga dinámicamente solo los archivos relevantes según la pregunta
 
 ## Comandos de Terminal
 
-| Comando      | Función                          |
-| ------------ | -------------------------------- |
-| `-h`         | Ayuda                            |
-| `ll`         | Listar archivos                  |
-| `cd [dir]`   | Cambiar directorio               |
-| `cls`        | Limpiar terminal                 |
-| `torvaldsai` | Activar chat conmigo             |
-| `exit`       | Salir del chat o cerrar terminal |
+```mermaid
+flowchart LR
+    subgraph Navegación
+        A["-h"] --> A1[Ayuda]
+        B["ll"] --> B1[Listar archivos]
+        C["cd [dir]"] --> C1[Cambiar directorio]
+    end
+    
+    subgraph Control
+        D["cls"] --> D1[Limpiar terminal]
+        E["exit"] --> E1[Salir]
+    end
+    
+    subgraph IA
+        F["torvaldsai"] --> F1[Activar chat]
+    end
+```
 
 ## Stack Técnico Completo
 
