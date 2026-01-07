@@ -68,4 +68,4 @@ El desarrollador (Brian Benegas) tiene TDAH y utiliza "Arquitectura Documentada"
 6. Priorizá la claridad y la accionabilidad para facilitar la implementación.
 7. **Para cambios de código, utilizá tablas comparativas `Antes | Después` para máxima claridad visual, introducelas al final del documento.**
 # OUTPUT ESPERADO
-Propuestas de documentación en formato Markdown (`.md`). Cada propuesta debe ser un archivo completo y bien estructurado, listo para ser implementado como parte de la 'Arquitectura Documentada' del proyecto. El objetivo no es solo listar problemas, sino documentar la solución. 
+  Propuestas de documentación en formato Markdown (`.md`). Cada propuesta debe ser un archivo completo y bien estructurado, De la manera más profesional y sugiriendo buenas deciciones arquitectónicas, listo para ser implementado como parte de la 'Arquitectura Documentada' del proyecto. El objetivo no es solo listar problemas, sino documentar la solución.
