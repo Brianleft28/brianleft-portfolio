@@ -1,8 +1,8 @@
-import { Server } from "@modelcontextprotocol/sdk/server/index.js";
+import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
-import { CallToolRequestSchema, ListToolsRequestSchema } from "@modelcontextprotocol/sdk/types.js";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { config } from "dotenv";
+import { z } from "zod";
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
@@ -13,7 +13,7 @@ const envPath = path.resolve(__dirname, "..", ".env");
 config({ path: envPath, override: true });
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-console.log("Usando GEMINI_API_KEY:", GEMINI_API_KEY ? "✅ Configurada" : "❌ No configurada");
+console.error("Usando GEMINI_API_KEY:", GEMINI_API_KEY ? "✅ Configurada" : "❌ No configurada");
 
 if (!GEMINI_API_KEY) {
   console.error("❌ GEMINI_API_KEY no configurada");
@@ -25,38 +25,25 @@ const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
 // Cargar el system prompt de Torvalds
 function loadTorvaldsPersonality() {
   try {
-    const agentPath = path.join(process.cwd(), ".github/agents/torvalds.agent.md");
+    const agentPath = path.join(process.cwd(), ".github/copilot-agents/torvalds.md");
     return fs.readFileSync(agentPath, "utf-8");
   } catch {
     return "Actuá como un CTO crítico y directo.";
   }
 }
 
-const server = new Server(
-  { name: "torvalds-gemini", version: "1.0.0" },
-  { capabilities: { tools: {} } }
-);
+// Crear servidor MCP con la nueva API
+const server = new McpServer({
+  name: "torvalds-gemini",
+  version: "1.0.0"
+});
 
-server.setRequestHandler(ListToolsRequestSchema, async () => ({
-  tools: [
-    {
-      name: "ask_torvalds",
-      description: "Consulta a Torvalds (CTO AI) usando tu API de Gemini",
-      inputSchema: {
-        type: "object",
-        properties: {
-          question: { type: "string", description: "Tu pregunta" }
-        },
-        required: ["question"]
-      }
-    }
-  ]
-}));
-
-server.setRequestHandler(CallToolRequestSchema, async (request) => {
-  const { name, arguments: args } = request.params;
-
-  if (name === "ask_torvalds") {
+// Registrar herramienta con la nueva sintaxis
+server.tool(
+  "ask_torvalds",
+  "Consulta a Torvalds (CTO AI) usando tu API de Gemini",
+  { question: z.string().describe("Tu pregunta") },
+  async ({ question }) => {
     const personality = loadTorvaldsPersonality();
     
     const model = genAI.getGenerativeModel({ 
@@ -64,14 +51,12 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       systemInstruction: personality
     });
 
-    const result = await model.generateContent(args.question);
+    const result = await model.generateContent(question);
     return {
       content: [{ type: "text", text: result.response.text() }]
     };
   }
-
-  return { content: [{ type: "text", text: "Herramienta no encontrada" }] };
-});
+);
 
 async function main() {
   const transport = new StdioServerTransport();
