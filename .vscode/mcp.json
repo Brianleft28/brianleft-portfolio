@@ -1,0 +1,12 @@
+{
+  "servers": {
+    "torvalds-gemini": {
+      "type": "stdio",
+      "command": "node",
+      "args": ["${workspaceFolder}/mcp/gemini-server.js"],
+      "env": {
+        "GEMINI_API_KEY": "${env:GEMINI_API_KEY}"
+      }
+    }
+  }
+}
