@@ -9,7 +9,13 @@
 [![Google Gemini](https://img.shields.io/badge/Google%20Gemini-8E75B2?style=for-the-badge&logo=googlegemini&logoColor=white)](https://ai.google.dev/)
 [![Docker](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)](https://www.docker.com/)
 
-[**Ver Demo en Vivo →**](https://brianleft.com)
+<div align="center">
+
+<a href="https://portfolio.brianleft.com" target="_blank" rel="noopener noreferrer">
+  <img src="https://img.shields.io/badge/Ver%20Demo%20en%20Vivo-🚀-blue?style=for-the-badge" alt="Demo en Vivo">
+</a>
+
+</div>
 
 </div>
 
