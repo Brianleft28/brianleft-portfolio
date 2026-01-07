@@ -1,6 +1,6 @@
-# Roadmap del Proyecto: Portfolio (Estado Actual)
+# Roadmap del Proyecto: Portfolio (Evolución a Microservicios)
 
-**Objetivo General:** Transformar el portfolio estático en una aplicación _full-stack_ con una arquitectura de microservicios dockerizados y un flujo de despliegue continuo (CI/CD).
+**Objetivo General:** Transformar el portfolio en una aplicación _full-stack_ con una arquitectura de microservicios dockerizados y un flujo de despliegue continuo (CI/CD).
 
 ---
 
@@ -13,33 +13,20 @@ El proyecto sigue un patrón de **arquitectura de microservicios dockerizados**.
 - **Base de Datos:** Servicio MySQL.
 - **Orquestación:** Todos los servicios son dockerizados y gestionados a través de `docker-compose.yml`.
 
-**Flujo de Trabajo (CI/CD):**
-El objetivo es la automatización total desde el desarrollo hasta la producción.
-
-1.  **Desarrollo Local:** Se trabaja en la máquina local, usando `docker-compose` para replicar el entorno de producción.
-2.  **Control de Versiones:** Los cambios se confirman y se suben a GitHub (`git push`).
-3.  **Integración Continua (CI):** Un `push` a la rama principal dispara un workflow de GitHub Actions que:
-    - Construye las imágenes Docker para el frontend y el backend.
-    - Sube estas imágenes a un registro de contenedores (ej. Docker Hub ).
-4.  **Despliegue Continuo (CD):** Tras el éxito de la CI, el workflow:
-    - Se conecta de forma segura al VPS (vía SSH).
-    - Ejecuta `docker-compose pull` para descargar las nuevas imágenes.
-    - Reinicia los servicios con `docker-compose up -d` para aplicar los cambios.
-
 ---
 
 ## Fase 0: Limpieza y Consistencia (Completada)
 
 _Objetivo: Eliminar "ruido" y deudas técnicas antes de construir._
 
-- [ X ] **Tarea 1: Actualizar `README.md` (GitHub)**
-- [ X ] **Tarea 2: Corregir SEO en `src/routes/+layout.svelte`**
+- [x] **Tarea 1: Actualizar `README.md` (GitHub)**
+- [x] **Tarea 2: Corregir SEO en `src/routes/+layout.svelte`**
 
 ---
 
-## Fase 1: Migración a Monorepo (Paso Inicial Crítico)
+## Fase 1: Migración a Monorepo (PENDIENTE - Próximo Paso)
 
-_Objetivo: Reestructurar el repositorio de una sola aplicación a una estructura de monorepo para soportar múltiples microservicios._
+_Objetivo: Reestructurar el repositorio a una estructura de monorepo para soportar múltiples microservicios._
 
 - [ ] **Tarea 1: Ejecutar la Migración Estructural**
     - **Razón:** Esta es la base sobre la que se construirá toda la arquitectura. Separa físicamente los servicios, permitiendo un desarrollo y despliegue independientes.
@@ -47,93 +34,120 @@ _Objetivo: Reestructurar el repositorio de una sola aplicación a una estructura
 
 ---
 
-## Fase 2: Refactor del Frontend (Modularización)
+## Fase 2: Refactor del Frontend (Completada)
 
 _Objetivo: Mover el contenido hardcodeado a archivos `.md` para mejorar la mantenibilidad._
-_(Las tareas de esta fase no cambian, ya que son internas al código del frontend)_
 
-- [ ] **Tarea 1: Crear Estructura de Contenido**
-- [ ] **Tarea 2: Extraer Contenido a Archivos `.md`**
-- [ ] **Tarea 3: Actualizar `file-system.ts`**
-- [ ] **Tarea 4: Cargar Contenido Dinámicamente**
+- [x] **Tarea 1: Crear Estructura de Contenido en `src/lib/data/memory`**
+- [x] **Tarea 2: Extraer Contenido a Archivos `.md`**
+- [x] **Tarea 3: Actualizar `file-system.ts` para reflejar la nueva estructura**
+- [x] **Tarea 4: Cargar Contenido Dinámicamente en `api/chat`**
 
 ---
 
-## Fase 3: El Backend y la Orquestación Local
+## Fase 3: El Backend y la Orquestación Local (PENDIENTE)
 
 _Objetivo: Crear los servicios de backend y base de datos, y orquestarlos para que funcionen en el entorno de desarrollo local._
 
 - [ ] **Tarea 1: Crear el Proyecto NestJS y su `Dockerfile`**
-    - **Razón:** Cada servicio debe ser "dockerizable" de forma independiente. El `Dockerfile` es la receta para construir la imagen del servicio de API.
-
 - [ ] **Tarea 2: Crear el `docker-compose.yml` para Desarrollo Local**
-    - Define los 3 servicios (frontend, api, db) y cómo se conectan entre sí en tu máquina.
-    - **Razón:** Este archivo es la clave para replicar el entorno de producción localmente. Es la base sobre la que se construirá el despliegue automático.
-
 - [ ] **Tarea 3: Implementar y Probar la API Localmente**
-    - Implementa la lógica de NestJS y TypeORM.
-    - Levanta todo con `docker-compose up` y verifica que los 3 contenedores funcionan y se comunican.
-    - **Razón:** Es crucial validar que la arquitectura completa funciona en un entorno controlado (local) antes de intentar automatizar su despliegue.
 
 ---
 
-## Fase 4: Conectar el Frontend al Backend
+## Fase 4: Conectar el Frontend al Backend (PENDIENTE)
 
-_Objetivo: Reemplazar los datos estáticos del frontend con llamadas a la API de NestJS._
-_(Las tareas no cambian, pero ahora se ejecutan contra la API que corre en Docker localmente)_
+_Objetivo: Reemplazar los datos estáticos del `file-system.ts` con llamadas a la API de NestJS._
 
-- [ ] **Tarea 1: Cargar Datos en la Página Principal**
-- [ ] **Tarea 2: Renderizar el Explorador de Archivos Dinámicamente**
+- [ ] **Tarea 1: Cargar Datos en la Página Principal desde la API**
+- [ ] **Tarea 2: Renderizar el Explorador de Archivos Dinámicamente desde la API**
 
 ---
 
-## Fase 4.5: La Consola Interactiva (Søren Public Integration)
+## Fase 4.5: La Consola Interactiva (Completada)
 
-_Objetivo: Implementar una terminal web funcional que permita a los visitantes "chatear" con una versión sanitizada del asistente._
+_Objetivo: Implementar una terminal web funcional que permita a los visitantes "chatear" con el asistente._
 
-- [ ] **Tarea 1: Definir la "Máscara Pública" de Søren**
-    - Crear un nuevo prompt en el backend que solo tenga acceso a datos profesionales (CV, Stack, Proyectos).
-    - Implementar reglas estrictas de privacidad (Data Loss Prevention).
+- [x] **Tarea 1: Definir la Personalidad de la IA en el Endpoint**
+- [x] **Tarea 2: Crear Componente `Terminal.svelte`**
+- [x] **Tarea 3: Crear Endpoint Público en `api/chat` con Streaming**
 
-- [ ] **Tarea 2: Componente `Console.svelte`**
-    - Implementar listener de teclado global (`Ctrl + Ñ`).
-    - Crear interfaz visual estilo "Matrix" o terminal Linux.
-    - Conectar vía `fetch` al endpoint `/api/public-chat`.
+---
 
-- [ ] **Tarea 3: Endpoint Público en Backend**
-    - Crear ruta `POST /public-chat` en `soren-mirror`.
-    - Rate limiting (para que no te fundan la API key de Gemini).
-
-## Fase 5: Preparación para el Despliegue (CI/CD)
+## Fase 5: Preparación para el Despliegue (CI/CD) (PENDIENTE)
 
 _Objetivo: Configurar las herramientas y la infraestructura necesarias para la automatización._
 
-- [ ] **Tarea 1: Configurar el Registro de Contenedores**
-    - Crea un repositorio en Docker Hub o GitHub Container Registry para alojar tus imágenes.
-    - **Razón:** El VPS no construirá las imágenes; las descargará de este registro central.
-
-- [ ] **Tarea 2: Configurar Secrets en GitHub**
-    - Añade los `secrets` en tu repositorio de GitHub para:
-        - `DOCKER_USERNAME`, `DOCKER_PASSWORD`: Para iniciar sesión en el registro.
-        - `VPS_SSH_HOST`, `VPS_SSH_USER`, `VPS_SSH_KEY`: Para que GitHub Actions pueda acceder a tu VPS.
-    - **Razón:** Permite que el workflow de CI/CD se autentique en servicios externos de forma segura, sin exponer credenciales en el código.
-
-- [ ] **Tarea 3: Crear el Workflow de CI (`ci.yml`)**
-    - Crea el archivo `.github/workflows/ci.yml`.
-    - Define el job de **Build y Push**: se activa con un `push`, construye las imágenes y las sube al registro.
-    - **Razón:** Este es el paso de "Integración Continua". Asegura que tu código siempre se puede construir y empaquetar correctamente.
+- [ ] **Tarea 1: Configurar el Registro de Contenedores (Docker Hub)**
+- [ ] **Tarea 2: Configurar Secrets en GitHub (Docker, SSH)**
+- [ ] **Tarea 3: Crear el Workflow de CI (`.github/workflows/ci.yml`)**
 
 ---
 
-## Fase 5: Despliegue Continuo (CD)
+## Fase 6: Despliegue Continuo (CD) (PENDIENTE)
 
 _Objetivo: Automatizar el despliegue en el VPS._
 
-- [ ] **Tarea 1: Preparar el VPS**
-    - Instala Docker y Docker Compose en tu VPS.
-    - Sube el archivo `docker-compose.yml` al VPS (puedes crear una versión `docker-compose.prod.yml` si es necesario).
-
+- [ ] **Tarea 1: Preparar el VPS con Docker y Docker Compose**
 - [ ] **Tarea 2: Añadir el Job de Despliegue al `ci.yml`**
-    - Añade un segundo `job` al workflow que dependa del éxito del job de "Build y Push".
-    - Este job usará los secrets SSH para conectarse al VPS y ejecutar `docker-compose pull && docker-compose up -d`.
-    - **Razón:** Este es el paso de "Despliegue Continuo". Completa la automatización, llevando tus cambios a producción después de cada `push` exitoso.
+
+---
+
+## Fase 7: Integración del Agente `@torvalds` en vs-codde (NUEVO - PENDIENTE)
+
+_Objetivo: Conectar la terminal con el agente MCP para permitir comandos de arquitectura y análisis de código._
+
+- [ ] **Tarea 1: Modificar `Terminal.svelte` para Parsear Comandos `@agent`**
+    - Implementar lógica para detectar el patrón `@torvalds /comando`.
+
+- [ ] **Tarea 2: Crear un Nuevo Endpoint de API (`/api/agent`)**
+    - Esta ruta recibirá los comandos del agente y actuará como puente hacia el servidor MCP.
+    - Deberá invocar el proceso del `gemini-server.js` y comunicarse con él.
+
+- [ ] **Tarea 3: Mejorar el Renderizado de la Terminal (Decoradores)**
+    - Añadir estilos específicos en `Terminal.svelte` para diferenciar la salida del chat (`TorvaldsAi:`) de la salida del agente (`@torvalds:`).
+    - Implementar renderizado para formatos de salida complejos como diffs de código o tablas de análisis.
+
+
+## Fase 7: Integración del Agente `@torvalds` (PENDIENTE)
+
+_Objetivo: Conectar la terminal con el agente MCP para permitir comandos de arquitectura y análisis de código._
+
+- [ ] **Tarea 1: Modificar `Terminal.svelte` para Parsear Comandos `@agent`**
+- [ ] **Tarea 2: Crear un Nuevo Endpoint de API (`/api/agent`)**
+- [ ] **Tarea 3: Mejorar el Renderizado de la Terminal (Decoradores)**
+
+---
+## Fase 7.5: Integración Nativa del Agente en VS Code (NUEVO - PENDIENTE)
+
+_Objetivo: Habilitar el uso del agente `@torvalds` directamente desde el chat de GitHub Copilot en el editor de VS Code._
+
+- [ ] **Tarea 1: Validar la Configuración del Agente**
+    - Asegurarse de que el archivo `.github/agents/torvalds.agent.md` sea correctamente parseado por VS Code.
+    - El `name` debe ser simple (`torvalds`) y no contener espacios.
+
+- [ ] **Tarea 2: Configurar el Servidor MCP para VS Code**
+    - Verificar que el archivo `.vscode/mcp.json` esté correctamente configurado para lanzar el `gemini-server.js`.
+    - Asegurarse de que la herramienta `torvalds-gemini/ask_torvalds` esté disponible y sea reconocida por el editor.
+
+- [ ] **Tarea 3: Debugging y Recarga de Ventana**
+    - Forzar la recarga de la ventana de VS Code (`Developer: Reload Window`) para que el editor tome los cambios en la configuración de agentes y servidores MCP.
+    - Revisar los logs de salida de "GitHub Copilot Chat" en busca de errores relacionados con la carga del agente.
+
+
+## Fase 8: Dashboard de Administración (NUEVO - PENDIENTE)
+
+_Objetivo: Crear una interfaz web para gestionar los proyectos, desacoplando el contenido del código y eliminando la necesidad de editar archivos manualmente._
+
+- [ ] **Tarea 1: Diseño de la API (CRUD de Proyectos en NestJS)**
+    - Definir endpoints `POST`, `GET`, `PUT`, `DELETE` en el backend para gestionar los nodos del sistema de archivos (proyectos, carpetas, archivos `.md`).
+    - La API debe interactuar con la base de datos MySQL, siguiendo el esquema de árbol definido en [`database-schema.MD`](./database-schema.MD).
+
+- [ ] **Tarea 2: Crear la Interfaz del Dashboard (SvelteKit)**
+    - Crear una nueva ruta protegida (ej: `/admin`).
+    - Desarrollar componentes Svelte para listar, crear, editar y eliminar nodos del proyecto.
+    - La UI debe permitir editar tanto la estructura del `file-system` como el contenido Markdown para la memoria de la IA.
+
+- [ ] **Tarea 3: Refactorizar las Fuentes de Datos**
+    - **CRÍTICO:** Modificar el frontend (`+page.svelte`) para que en lugar de importar `fileSystemData`, haga un `fetch` a la API de NestJS para obtener la estructura de archivos.
+    - **CRÍTICO:** Modificar el backend de la IA (`/api/chat/+server.ts`) para que en lugar de leer archivos locales `.md`, consulte la base de datos a través de la API para construir la memoria relevante.
