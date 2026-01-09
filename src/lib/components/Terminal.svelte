@@ -1,8 +1,12 @@
 <script lang="ts">
 	import { onMount, tick } from 'svelte';
 	import { isTerminalVisible } from '$lib/stores/ui';
-	import { currentPath, startInChatMode } from '$lib/stores/terminal';
-	import { fileSystemData, type FileSystemNode } from '$lib/data/file-system';
+	import { currentPath, startInChatMode, iaMode } from '$lib/stores/terminal';
+	import { fileSystemData, type FileSystemNode, type FolderNode } from '$lib/data/file-system';
+	
+	// Sistema modular de comandos
+	import { getCommand, getAllCommands } from '$lib/terminal/commands';
+	import type { CommandContext } from '$lib/terminal/types';
 
 	// Importaciones para Markdown y Highlight
 	import { Marked } from 'marked';
@@ -85,20 +89,52 @@
 	}
 
 	onMount(() => {
-		loadFromStorage();
+		// Limpiar terminal al abrir
+		history = [];
+		promptHistory = [];
+		historyIndex = -1;
+		isChatModeActive = false;
+		currentPath.set('C:\\');
 
-		// Si no hay historial, mostrar bienvenida
-		if (history.length === 0) {
-			addSystemMessage(
-				"Bienvenido a la terminal de Brian Benegas. Escribe '-h' para ver los comandos."
-			);
-		}
+		// Mostrar bienvenida
+		const welcomeMsg = `<pre class="ascii-logo">╔════════════════════════════════════════════════════════════════════╗
+║  ____       _               ____                                   ║
+║ | __ ) _ __(_) __ _ _ __   | __ )  ___ _ __   ___  __ _  __ _ ___  ║
+║ |  _ \\| '__| |/ _\` | '_ \\  |  _ \\ / _ \\ '_ \\ / _ \\/ _\` |/ _\` / __| ║
+║ | |_) | |  | | (_| | | | | | |_) |  __/ | | |  __/ (_| | (_| \\__ \\ ║
+║ |____/|_|  |_|\\__,_|_| |_| |____/ \\___|_| |_|\\___|\\__, |\\__,_|___/ ║
+║                                                   |___/            ║
+║                  <span class="welcome-subtitle">Full Stack Developer & DevOps</span>                     ║
+╚════════════════════════════════════════════════════════════════════╝</pre>
+<span class="system-header">📚 Comandos disponibles:</span>
+
+<span class="category-header">  📁 Navegación</span>
+       <span class="command-highlight">cd</span>          Cambiar directorio
+       <span class="command-highlight">ls</span>          Listar archivos y carpetas
+       <span class="command-highlight">pwd</span>         Mostrar directorio actual
+       <span class="command-highlight">tree</span>        Árbol de directorios
+
+<span class="category-header">  📄 Archivos</span>
+       <span class="command-highlight">cat</span>         Ver contenido de archivo
+
+<span class="category-header">  ⚙️ Terminal</span>
+       <span class="command-highlight">cls</span>         Limpiar consola (Ctrl+L)
+       <span class="command-highlight">help o -h </span>        Mostrar ayuda completa
+       <span class="command-highlight">exit</span>        Cerrar terminal
+
+<span class="category-header">  🐧 Inteligencia Artificial</span>
+       <span class="command-highlight">torvalds</span>    Asistente AI con modos especializados
+
+<span class="system-hint">💡 Tip: Usa &lt;comando&gt; -h para ayuda detallada</span>`;
+		addSystemMessage(welcomeMsg);
 
 		// Verificar si debe iniciar en modo chat (desde el botón)
 		if ($startInChatMode) {
 			isChatModeActive = true;
-			addSystemMessage(`TorvaldsAi iniciado. Hablemos sobre Brian sus proyectos, experiencia o la misma arquitectura de este portfolio.
-Escribí <span class="command-highlight">'exit'</span> para salir del chat.`);
+			addSystemMessage(`<span class="ai-success">✓ TorvaldsAI iniciado</span> en modo <span class="mode-name">${$iaMode || 'arquitecto'}</span>
+<br>Hablemos sobre Brian, sus proyectos, experiencia o la arquitectura de este portfolio.
+<br><br><span class="system-hint">Cambiar modo: /arquitecto, /debugger, /documentador</span>
+<span class="system-hint">Salir: exit</span>`);
 			startInChatMode.set(false); // Reset
 		}
 
@@ -116,94 +152,54 @@ Escribí <span class="command-highlight">'exit'</span> para salir del chat.`);
 		saveToStorage();
 	}
 
-	const commands: Record<string, (args: string[]) => Promise<void>> = {
-		'-h': async () => {
-			const helpText = `<pre>Comandos disponibles:
-<span class="command-highlight">'cd'</span>: Cambia de directorio. Usa '..' para subir un nivel.
-<span class="command-highlight">'cls'</span>: Limpia la consola.
-<span class="command-highlight">'ll'</span>: Ver archivos/proyectos.
-<span class="command-highlight">'exit'</span>: Cierra la terminal.
-<span class="command-highlight">'torvaldsai'</span>: Asistente IA experto en el portfolio, proyectos y habilidades de Brian.
-</pre>`;
-			addSystemMessage(helpText);
-		},
+	// Helper para obtener nodo en una ruta
+	function getNodeAtPath(path: string): FileSystemNode | undefined {
+		const pathParts = path.split('\\').filter((p) => p && p !== 'C:');
+		let current: FileSystemNode = fileSystemData;
 
+		for (const part of pathParts) {
+			if (current.type !== 'folder') return undefined;
+			const folder = current as FolderNode;
+			const found = folder.children.find(
+				(child) => child.name.toLowerCase() === part.toLowerCase()
+			);
+			if (!found) return undefined;
+			current = found;
+		}
+
+		return current;
+	}
+
+	// Crear contexto para comandos modulares
+	function createCommandContext(): CommandContext {
+		return {
+			currentPath: $currentPath,
+			setPath: (newPath: string) => currentPath.set(newPath),
+			getNodeAtPath,
+			aiMode: $iaMode,
+			setAiMode: (mode: string | null) => iaMode.set(mode || 'arquitecto')
+		};
+	}
+
+	// Comandos legacy que requieren lógica especial del componente
+	const legacyCommands: Record<string, (args: string[]) => Promise<void>> = {
 		torvaldsai: async (args) => {
 			const initialPrompt = args.join(' ');
 			isChatModeActive = true;
 
 			if (!initialPrompt) {
-				addSystemMessage(
-					'Pregúntame sobre los proyectos de Brian, experiencia o arquitectura de este portfolio.'
-				);
+				const welcomeMsg = `<span class="ai-success">✓ TorvaldsAI iniciado</span> en modo <span class="mode-name">${$iaMode || 'arquitecto'}</span>
+<br>Pregúntame sobre los proyectos de Brian, experiencia o arquitectura de este portfolio.
+<br><br><span class="system-hint">Cambiar modo: /arquitecto, /debugger, /documentador</span>
+<span class="system-hint">Salir: exit</span>`;
+				addSystemMessage(welcomeMsg);
 				return;
 			}
 			await handleAIChat(initialPrompt);
 		},
 
-		cls: async () => {
-			history = [];
-			promptHistory = [];
-			historyIndex = -1;
-			isChatModeActive = false;
-			if (typeof window !== 'undefined') {
-				localStorage.removeItem('terminal-history');
-				localStorage.removeItem('terminal-chat-mode');
-			}
-			currentPath.set('C:\\');
-			addSystemMessage("Utiliza '-h' para ver los comandos disponibles.");
-		},
-
-		ll: async () => {
-			const pathParts = $currentPath.split('\\').filter((p) => p && p !== 'C:');
-			let currentLevel: FileSystemNode[] = fileSystemData.children;
-
-			for (const part of pathParts) {
-				const foundDir = currentLevel.find(
-					(node) =>
-						node.name.toLowerCase() === part.toLowerCase() && node.type === 'folder'
-				);
-				if (foundDir && foundDir.type === 'folder') {
-					currentLevel = foundDir.children;
-				} else {
-					addErrorMessage(`Directorio no encontrado: ${part}`);
-					return;
-				}
-			}
-
-			if (currentLevel.length === 0) {
-				addSystemMessage('Directorio vacío.');
-			} else {
-				const listing = currentLevel
-					.map((node) => (node.type === 'folder' ? `[${node.name}]` : node.name))
-					.join('\n');
-				addSystemMessage(listing);
-			}
-		},
-
 		exit: async () => {
 			handleClose();
-		},
-
-		cd: async (args) => {
-			const targetDir = args[0];
-			if (!targetDir) {
-				addSystemMessage(`Ruta actual: ${$currentPath}`);
-				return;
-			}
-			if (targetDir === '..') {
-				const parts = $currentPath.split('\\').filter((p) => p);
-				if (parts.length > 1) {
-					parts.pop();
-					currentPath.set(parts.join('\\') + '\\');
-				} else {
-					currentPath.set('C:\\');
-				}
-				return;
-			}
-			const parts = $currentPath.split('\\').filter((p) => p);
-			parts.push(targetDir);
-			currentPath.set(parts.join('\\') + '\\');
 		}
 	};
 
@@ -225,7 +221,20 @@ Escribí <span class="command-highlight">'exit'</span> para salir del chat.`);
 	}
 
 	function handleClose() {
-		saveToStorage(); // Guardar antes de cerrar
+		// Limpiar terminal al cerrar
+		history = [];
+		promptHistory = [];
+		historyIndex = -1;
+		isChatModeActive = false;
+		currentPath.set('C:\\');
+		iaMode.set('arquitecto');
+
+		// Limpiar localStorage
+		if (typeof window !== 'undefined') {
+			localStorage.removeItem('terminal-history');
+			localStorage.removeItem('terminal-chat-mode');
+		}
+
 		isTerminalVisible.set(false);
 	}
 
@@ -244,31 +253,97 @@ Escribí <span class="command-highlight">'exit'</span> para salir del chat.`);
 			return;
 		}
 
-		isLoading = true;
-		await tick();
-		scrollToBottom();
-
 		const parts = promptText.trim().split(' ');
 		const command = parts[0].toLowerCase();
 		const args = parts.slice(1);
 
-		const commandHandler = commands[command];
+		// Manejar comandos de modo de IA
+		const iaModeCommands = ['/arquitecto', '/debugger', '/documentador'];
+		if (iaModeCommands.includes(command)) {
+			const newMode = command.substring(1);
+			iaMode.set(newMode);
 
-		if (commandHandler && command !== 'torvaldsai') {
-			await commandHandler(args);
-		} else if (isChatModeActive || command === 'torvaldsai') {
-			const promptForAI = command === 'torvaldsai' ? args.join(' ') : promptText;
-
-			if (promptForAI) {
-				await handleAIChat(promptForAI);
-			} else if (command === 'torvaldsai') {
-				isChatModeActive = true;
-				addSystemMessage(
-					'TorvaldsAi iniciado. Pregúntame sobre Brian, sus proyectos, experiencia o la misma arquitectura de este portfolio.'
-				);
+			let modeMessage = `<span class="ai-success">✓</span> Modo IA cambiado a: <span class="mode-name">${newMode}</span>`;
+			switch (newMode) {
+				case 'arquitecto':
+					modeMessage += '<br>Visión macro activada. ¿Qué sistema analizamos?';
+					break;
+				case 'debugger':
+					modeMessage += '<br>Modo detective. Dame un stack trace y te daré al culpable.';
+					break;
+				case 'documentador':
+					modeMessage += '<br>Generador de READMEs listo. ¿Qué documentamos?';
+					break;
 			}
+			modeMessage +=
+				'<br><br><span class="system-hint">Subcomandos: /arquitecto, /debugger, /documentador, exit</span>';
+			addSystemMessage(modeMessage);
+			currentPrompt = '';
+			return;
+		}
+
+		isLoading = true;
+		await tick();
+		scrollToBottom();
+
+		// Primero verificar comandos legacy (torvaldsai, exit)
+		const legacyHandler = legacyCommands[command];
+		if (legacyHandler) {
+			await legacyHandler(args);
+			isLoading = false;
+			await tick();
+			inputElement?.focus();
+			scrollToBottom();
+			return;
+		}
+
+		// Luego verificar comandos modulares
+		const modularCommand = getCommand(command);
+		if (modularCommand) {
+			const ctx = createCommandContext();
+			const result = modularCommand.execute(args, ctx);
+
+			// Sincronizar estado del modo AI con el componente
+			if (ctx.aiMode !== $iaMode) {
+				iaMode.set(ctx.aiMode || 'arquitecto');
+			}
+
+			// Activar/desactivar modo chat basado en comando torvalds
+			if (command === 'torvalds') {
+				const subCmd = args[0];
+				if (subCmd === 'start') {
+					isChatModeActive = true;
+				} else if (subCmd === 'stop') {
+					isChatModeActive = false;
+				}
+			}
+
+			// Manejar resultado del comando
+			if (result.clear) {
+				history = [];
+				promptHistory = [];
+				historyIndex = -1;
+				isChatModeActive = false;
+				if (typeof window !== 'undefined') {
+					localStorage.removeItem('terminal-history');
+					localStorage.removeItem('terminal-chat-mode');
+				}
+				currentPath.set('C:\\');
+				addSystemMessage("Terminal limpiada. Usa 'help' para ver los comandos.");
+			} else if (result.output) {
+				if (result.isMarkdown) {
+					addHistoryItem({ type: 'response', text: result.output });
+				} else if (result.isHtml) {
+					addSystemMessage(result.output);
+				} else {
+					addSystemMessage(result.output);
+				}
+			}
+		} else if (isChatModeActive) {
+			// Si estamos en modo chat, enviar a IA
+			await handleAIChat(promptText);
 		} else {
-			addErrorMessage(`Comando no reconocido: '${command}'. Escribe '-h' para ver la lista.`);
+			addErrorMessage(`Comando no reconocido: '${command}'. Escribe 'help' para ver la lista.`);
 		}
 
 		isLoading = false;
@@ -285,7 +360,7 @@ Escribí <span class="command-highlight">'exit'</span> para salir del chat.`);
 			const response = await fetch('/api/chat', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ prompt })
+				body: JSON.stringify({ prompt, mode: $iaMode })
 			});
 
 			if (!response.ok || !response.body) {
@@ -346,7 +421,9 @@ Escribí <span class="command-highlight">'exit'</span> para salir del chat.`);
 		});
 	}
 
-	$: promptIndicator = isChatModeActive ? `TorvaldsAi>` : $currentPath + '>';
+	$: promptIndicator = isChatModeActive
+		? `🐧 TorvaldsAi [${$iaMode || 'arquitecto'}]> `
+		: $currentPath + '> ';
 </script>
 
 <div
@@ -382,7 +459,6 @@ Escribí <span class="command-highlight">'exit'</span> para salir del chat.`);
 						<span>{item.text}</span>
 					{:else if item.type === 'response'}
 						<div class="ai-response-wrapper">
-							<span class="prompt-torvalds">TorvaldsAi:</span>
 							<span class="ai-markdown">{@html renderMarkdown(item.text)}</span>
 						</div>
 					{:else if item.type === 'error'}
@@ -399,8 +475,8 @@ Escribí <span class="command-highlight">'exit'</span> para salir del chat.`);
 			{/if}
 		</div>
 
-		<div class="input-line d-flex align-items-center">
-			<span class="prompt-user me-2">{promptIndicator}</span>
+		<div class="input-line d-flex align-items-center flex-nowrap">
+			<span class="prompt-user me-2" style="white-space: nowrap;">{promptIndicator}</span>
 			<input
 				bind:this={inputElement}
 				bind:value={currentPrompt}
@@ -444,13 +520,6 @@ Escribí <span class="command-highlight">'exit'</span> para salir del chat.`);
 	/* Respuesta IA - texto fluido */
 	.ai-response-wrapper {
 		display: block;
-	}
-
-	.prompt-torvalds {
-		color: #569cd6;
-		font-weight: bold;
-		margin-right: 0.5rem;
-		float: left;
 	}
 
 	.ai-markdown {
@@ -566,10 +635,99 @@ Escribí <span class="command-highlight">'exit'</span> para salir del chat.`);
 
 	.system-message {
 		color: #808080;
+		white-space: pre-wrap;
 	}
 
 	:global(.command-highlight) {
 		color: #9cdcfe;
+		font-weight: bold;
+	}
+
+	/* Estilos para TorvaldsAI */
+	:global(.ai-header) {
+		color: #9b59b6;
+	}
+
+	:global(.ai-success) {
+		color: #2ecc71;
+	}
+
+	:global(.ai-warning) {
+		color: #f39c12;
+	}
+
+	:global(.ai-error) {
+		color: #e74c3c;
+	}
+
+	:global(.ai-prompt) {
+		color: #9b59b6;
+		font-style: italic;
+	}
+
+	:global(.ai-prompt-active) {
+		color: #9b59b6;
+		font-weight: bold;
+	}
+
+	:global(.system-header) {
+		color: #00bc8c;
+		font-weight: bold;
+	}
+
+	:global(.system-hint) {
+		color: #666;
+		font-style: italic;
+	}
+
+	:global(.mode-name) {
+		color: #9b59b6;
+		font-weight: bold;
+	}
+
+	:global(.folder-name) {
+		color: #f1c40f;
+	}
+
+	:global(.file-name) {
+		color: #e0e0e0;
+	}
+
+	:global(.error-text) {
+		color: #e74c3c;
+	}
+
+	:global(.ascii-logo) {
+		color: #4ec9b0;
+		white-space: pre;
+		font-size: 11px;
+		line-height: 1.15;
+		font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+		margin: 0;
+		padding: 0;
+		background: transparent;
+		border: none;
+	}
+
+	:global(.welcome-subtitle) {
+		color: #9b59b6;
+		font-weight: bold;
+	}
+
+	:global(.help-box) {
+		color: #3d5a80;
+		white-space: pre;
+		font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+		font-size: 13px;
+		line-height: 1.3;
+		margin: 0;
+		padding: 0;
+		background: transparent;
+		border: none;
+	}
+
+	:global(.category-header) {
+		color: #f39c12;
 		font-weight: bold;
 	}
 

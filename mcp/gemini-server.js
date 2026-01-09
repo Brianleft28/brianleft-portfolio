@@ -8,52 +8,63 @@ import path from "path";
 import { fileURLToPath } from "url";
 
 // Cargar .env desde la raíz del proyecto
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const envPath = path.resolve(__dirname, "..", ".env");
-config({ path: envPath, override: true });
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const projectRoot = path.resolve(__dirname, '..');
+config({ path: path.join(projectRoot, '.env'), override: true });
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-console.error("Usando GEMINI_API_KEY:", GEMINI_API_KEY ? "✅ Configurada" : "❌ No configurada");
-
 if (!GEMINI_API_KEY) {
-  console.error("❌ GEMINI_API_KEY no configurada");
+  console.error("❌ GEMINI_API_KEY no está configurada en .env");
   process.exit(1);
 }
+console.error("Usando GEMINI_API_KEY: ✅ Configurada");
 
 const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
 
-// Cargar el system prompt de Torvalds
-function loadTorvaldsPersonality() {
+// Cargar la personalidad base y los modos
+function loadPersonality(mode = 'arquitecto') {
   try {
-    const agentPath = path.join(process.cwd(), ".github/copilot-agents/torvalds.md");
-    return fs.readFileSync(agentPath, "utf-8");
-  } catch {
+    const basePath = path.join(projectRoot, '.github', 'agents', 'torvalds.agent.md');
+    let personality = fs.readFileSync(basePath, 'utf-8');
+
+    const modePath = path.join(projectRoot, '.github', 'agents', 'modes', `${mode}.md`);
+    if (fs.existsSync(modePath)) {
+      const modeContent = fs.readFileSync(modePath, 'utf-8');
+      personality += `\n\n${modeContent}`;
+    }
+    return personality;
+  } catch (error) {
+    console.error("Error cargando la personalidad:", error);
     return "Actuá como un CTO crítico y directo.";
   }
 }
 
-// Crear servidor MCP con la nueva API
+// Crear servidor MCP
 const server = new McpServer({
-  name: "torvalds-gemini",
-  version: "1.0.0"
+  name: 'torvalds-gemini',
+  version: '1.0.0',
 });
 
-// Registrar herramienta con la nueva sintaxis
+// Registrar la herramienta 'ask_torvalds'
 server.tool(
-  "ask_torvalds",
-  "Consulta a Torvalds (CTO AI) usando tu API de Gemini",
-  { question: z.string().describe("Tu pregunta") },
-  async ({ question }) => {
-    const personality = loadTorvaldsPersonality();
+  'ask_torvalds',
+  'Consulta a Torvalds (CTO AI) usando tu API de Gemini',
+  z.object({
+    question: z.string().describe('Tu pregunta'),
+    mode: z.string().optional().describe('El modo de personalidad a usar (ej. arquitecto, debugger)'),
+  }),
+  async ({ question, mode }) => {
+    const personality = loadPersonality(mode);
     
-    const model = genAI.getGenerativeModel({ 
-      model: "gemini-2.5-flash",
-      systemInstruction: personality
+    const model = genAI.getGenerativeModel({
+      model: 'gemini-1.5-flash',
+      systemInstruction: personality,
     });
 
     const result = await model.generateContent(question);
     return {
-      content: [{ type: "text", text: result.response.text() }]
+      content: [{ type: 'text', text: result.response.text() }],
     };
   }
 );
@@ -61,7 +72,7 @@ server.tool(
 async function main() {
   const transport = new StdioServerTransport();
   await server.connect(transport);
-  console.error("🚀 Torvalds MCP corriendo");
+  console.error('🚀 Torvalds MCP corriendo en modo STIDO');
 }
 
 main().catch(console.error);

@@ -151,3 +151,31 @@ _Objetivo: Crear una interfaz web para gestionar los proyectos, desacoplando el 
 - [ ] **Tarea 3: Refactorizar las Fuentes de Datos**
     - **CRÍTICO:** Modificar el frontend (`+page.svelte`) para que en lugar de importar `fileSystemData`, haga un `fetch` a la API de NestJS para obtener la estructura de archivos.
     - **CRÍTICO:** Modificar el backend de la IA (`/api/chat/+server.ts`) para que en lugar de leer archivos locales `.md`, consulte la base de datos a través de la API para construir la memoria relevante.
+
+---
+
+## Fase 8: Headless API for CLI Integration (Termius) (NUEVO - PENDIENTE)
+
+_Objetivo: Exponer las capacidades de la IA a través de un endpoint de API seguro y sin estado para permitir la integración con terminales externas como Termius. Esto desacopla la IA del frontend de SvelteKit._
+
+- [ ] **Tarea 1: Crear un Nuevo Endpoint de API Autenticado (`/api/cli-chat`)**
+    - **Razón:** Un endpoint dedicado para la interacción CLI previene interferencias con la terminal web pública y permite diferentes requisitos de seguridad y formato de datos.
+    - **Implementación:**
+        - Usar API Keys para autenticación (pasadas vía headers, ej. `Authorization: Bearer <TOKEN>`).
+        - El endpoint aceptará un payload JSON `{ "prompt": "user command" }` y devolverá una respuesta JSON con el output de la IA. No usará streaming como el chat web.
+
+- [ ] **Tarea 2: Implementar Generación y Gestión de API Key**
+    - **Razón:** Se necesita un método seguro para otorgar y revocar el acceso al endpoint CLI.
+    - **Implementación:** Probablemente será un proceso manual por ahora (ej. añadir una key a las variables de entorno), pero la arquitectura debería permitir una UI de admin futura para gestionar keys.
+
+- [ ] **Tarea 3: Crear un Script/Alias de Cliente para Termius**
+    - **Razón:** Para simplificar el uso dentro de Termius, se puede crear un pequeño script wrapper o un alias de shell para manejar la llamada `curl` o `fetch` al nuevo endpoint de la API.
+    - **Ejemplo de Alias (`.zshrc`, `.bashrc`):**
+        ```bash
+        torvalds() {
+          curl -s -X POST https://your-domain.com/api/cli-chat \
+            -H "Authorization: Bearer YOUR_API_KEY" \
+            -H "Content-Type: application/json" \
+            -d "{\"prompt\": \"$1\"}" | jq -r .response
+        }
+        ```
