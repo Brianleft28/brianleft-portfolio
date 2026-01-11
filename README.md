@@ -62,39 +62,53 @@ La pieza central es **TorvaldsAi**, un asistente de inteligencia artificial con 
 
 ## 🏛️ Arquitectura del Sistema
 
+```mermaid
+flowchart TB
+    subgraph Cliente["🖥️ CLIENTE (Navegador)"]
+        UI["📁 Explorador de Archivos"]
+        Terminal["⌨️ Terminal Web"]
+        Markdown["📝 Renderizador Markdown"]
+    end
+
+    subgraph Servidor["⚙️ SERVIDOR (SvelteKit Node)"]
+        API["/api/chat"]
+        Memory["memory.md"]
+        
+        API --> |"1. Recibe prompt"| Memory
+        Memory --> |"2. Inyecta contexto"| API
+    end
+
+    subgraph Externos["☁️ SERVICIOS EXTERNOS"]
+        Gemini["🤖 Google Gemini API<br/>gemini-2.5-flash"]
+    end
+
+    Terminal --> |"POST /api/chat<br/>(streaming)"| API
+    UI --> |"Navegación"| Terminal
+    API --> |"3. Request + System Prompt"| Gemini
+    Gemini --> |"4. ReadableStream"| API
+    API --> |"5. Chunks de texto"| Terminal
+    Terminal --> Markdown
 ```
-┌─────────────────────────────────────────────────────────────────────┐
-│                        CLIENTE (Navegador)                          │
-│  ┌──────────────────┐  ┌──────────────────┐  ┌──────────────────┐   │
-│  │ Explorador de    │  │ Terminal Web     │  │ Renderizador     │   │
-│  │ Archivos (UI)    │  │ (Svelte Component)│  │ Markdown (marked)│  │
-│  └────────┬─────────┘  └────────┬─────────┘  └──────────────────┘   │
-│           │                     │                                   │
-│           │         POST /api/chat (streaming)                      │
-│           ▼                     ▼                                   │
-└─────────────────────────────────────────────────────────────────────┘
-                                  │
-                                  ▼
-┌─────────────────────────────────────────────────────────────────────┐
-│                     SERVIDOR (SvelteKit Node)                       │
-│  ┌──────────────────────────────────────────────────────────────┐   │
-│  │                    /api/chat (+server.ts)                    │   │
-│  │  1. Recibe prompt del usuario                                │   │
-│  │  2. Carga memory.md (contexto de la IA)                      │   │
-│  │  3. Construye System Prompt + User Prompt                    │   │
-│  │  4. Llama a Google Gemini API (streaming)                    │   │
-│  │  5. Retorna ReadableStream al cliente                        │   │
-│  └──────────────────────────────────────────────────────────────┘   │
-└─────────────────────────────────────────────────────────────────────┘
-                                  │
-                                  ▼
-┌─────────────────────────────────────────────────────────────────────┐
-│                    SERVICIOS EXTERNOS                               │
-│  ┌──────────────────┐                                               │
-│  │ Google Gemini    │  Modelo: gemini-2.5-flash                     │
-│  │ (Generative AI)  │  Streaming habilitado                         │
-│  └──────────────────┘                                               │
-└─────────────────────────────────────────────────────────────────────┘
+
+### Flujo de la IA
+
+```mermaid
+sequenceDiagram
+    participant U as Usuario
+    participant T as Terminal
+    participant S as SvelteKit Server
+    participant G as Google Gemini
+
+    U->>T: torvaldsai "¿Cómo funciona esto?"
+    T->>S: POST /api/chat
+    S->>S: Cargar memory.md
+    S->>G: System Prompt + User Prompt
+    
+    loop Streaming
+        G-->>S: Chunk de texto
+        S-->>T: ReadableStream
+        T-->>U: Renderiza Markdown
+    end
 ```
 
 ---
@@ -282,7 +296,8 @@ La documentación técnica profunda sigue el paradigma **Docs as Code** y se enc
 | :------------ | :--------------------------------------------------------------- | :-------------------------------- |
 | Memoria de IA | [`src/lib/data/memory/memory.md`](src/lib/data/memory/memory.md) | Contexto completo para TorvaldsAi |
 | Arquitectura  | [`src/lib/docs/arquitectura.md`](src/lib/docs/arquitectura.md)   | Decisiones de diseño y diagramas  |
-| Componentes   | [`src/lib/docs/componentes.md`](src/lib/docs/componentes.md)     | API de componentes Svelte         |
+| Roadmap       | [`src/lib/docs/roadmap.MD`](src/lib/docs/roadmap.MD)             | Fases de evolución del proyecto   |
+| Dotfiles      | [`dotfiles/README.md`](dotfiles/README.md)                       | Setup portable de terminal        |
 
 > **Tip:** Podés preguntarle directamente a TorvaldsAi sobre cualquier aspecto del proyecto usando el comando `torvaldsai` en la terminal.
 
@@ -290,14 +305,13 @@ La documentación técnica profunda sigue el paradigma **Docs as Code** y se enc
 
 ## 📄 Licencia
 
-Este proyecto está bajo la licencia **MIT**. Consulta el archivo [LICENSE](LICENSE) para más detalles.
+Este proyecto está licenciado bajo **GPL-3.0** (o posterior). Ver [LICENCE](LICENCE) para el texto completo y las instrucciones de uso.
 
 ---
 
 <div align="center">
 
-**Desarrollado con ☕ y pragmatismo por [Brian Benegas](https://portfolio.brianleft.com)**
+**Desarrollado con ☕ y entusiasmo por [Brian Benegas](https://portfolio.brianleft.com)**
 
-_"Talk is cheap. Show me the code."_ — Linus Torvalds
 
 </div>

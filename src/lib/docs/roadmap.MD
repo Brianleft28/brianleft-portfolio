@@ -64,7 +64,20 @@ _Objetivo: Reemplazar los datos estáticos del `file-system.ts` con llamadas a l
 
 ---
 
-## Fase 4.5: La Consola Interactiva (Completada)
+## Fase 4.5: RAG Vectorial y Optimización de Tokens (NUEVO - PENDIENTE)
+
+_Objetivo: Implementar "ese formato que gasta menos" (Embeddings) para dejar de inyectar texto crudo._
+
+- [ ] **Tarea 1: Base de Datos Vectorial (ChromaDB o PGVector)**
+    - Implementar un store para vectores.
+- [ ] **Tarea 2: Pipeline de Ingesta (Embeddings)**
+    - Script para convertir los `.md` a vectores usando `text-embedding-004`.
+- [ ] **Tarea 3: Búsqueda Semántica en NestJS**
+    - Reemplazar el `keyword-matcher` hardcodeado por búsqueda vectorial real.
+
+---
+
+## Fase 4.8: La Consola Interactiva (Completada)
 
 _Objetivo: Implementar una terminal web funcional que permita a los visitantes "chatear" con el asistente._
 
@@ -108,14 +121,6 @@ _Objetivo: Conectar la terminal con el agente MCP para permitir comandos de arqu
     - Añadir estilos específicos en `Terminal.svelte` para diferenciar la salida del chat (`TorvaldsAi:`) de la salida del agente (`@torvalds:`).
     - Implementar renderizado para formatos de salida complejos como diffs de código o tablas de análisis.
 
-
-## Fase 7: Integración del Agente `@torvalds` (PENDIENTE)
-
-_Objetivo: Conectar la terminal con el agente MCP para permitir comandos de arquitectura y análisis de código._
-
-- [ ] **Tarea 1: Modificar `Terminal.svelte` para Parsear Comandos `@agent`**
-- [ ] **Tarea 2: Crear un Nuevo Endpoint de API (`/api/agent`)**
-- [ ] **Tarea 3: Mejorar el Renderizado de la Terminal (Decoradores)**
 
 ---
 ## Fase 7.5: Integración Nativa del Agente en VS Code (NUEVO - PENDIENTE)

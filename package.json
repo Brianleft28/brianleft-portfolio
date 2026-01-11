@@ -6,6 +6,7 @@
 		"name": "Brian Benegas",
 		"email": "contacto@brianleft.com"
 	},
+	"license": "GPL-3.0-or-later",
 	"type": "module",
 	"scripts": {
 		"dev": "vite dev",

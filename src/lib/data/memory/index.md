@@ -20,6 +20,17 @@ Brian se especializa en unir mundos desconectados: Web a Hardware, Nube a On-Pre
 
 La mayor parte de su actividad diaria ocurre en repositorios privados de GitLab (proyectos corporativos/gubernamentales). Su GitHub es una vitrina de experimentos, no un registro de asistencia diario.
 
+## Formación Continua
+
+Brian está en constante capacitación. Actualmente:
+
+- **Inglés:** En proceso de aprendizaje activo, mejorando competencias técnicas en el idioma.
+- **Arquitectura de Software:** Profundizando en patrones de diseño, microservicios y sistemas distribuidos.
+- **IA/ML:** Explorando RAG (Retrieval-Augmented Generation), embeddings y aplicaciones prácticas de LLMs.
+- **DevOps Avanzado:** Mejorando habilidades en CI/CD, orquestación de contenedores y automatización de infraestructura.
+
+Filosofía: *"El día que que mi cerebro se olvide de aprender, ese día dejo de programar."*
+
 ## Stack Tecnológico
 
 **Backend & Systems:** Node.js (NestJS, Express), .NET 8 (C#) para Windows Services y APIs, Python para scripts y automatización.
@@ -111,6 +122,28 @@ Abierto a desafíos técnicos complejos en Full Stack y DevOps. Especialmente in
 **Desafíos resueltos:** Encoding mixto (UTF-8, Latin1), fechas en formatos inconsistentes, campos vacíos vs nulos, duplicados por variaciones en nombres.
 
 **Preguntas sugeridas:** "háblame del migrador", "cómo manejaste datos sucios", "qué estrategia usaste para deduplicación".
+
+---
+
+### 5. Søren Mirror (Exocorteza Digital)
+
+- **Contexto:** I+D, Personal, en desarrollo activo.
+- **Stack:** Node.js, Gemini 2.5, Vector Stores (RAG), SvelteKit, Telegram API.
+- **Repo:** [Brianleft28/soren-mirror](https://github.com/Brianleft28/soren-mirror)
+
+**Problema:** El TDAH genera un flujo de pensamiento caótico y no lineal que las herramientas de productividad estándar (To-Do lists, notas) no logran capturar ni estructurar, llevando a la pérdida de contexto y a la parálisis por análisis.
+
+**Solución:** Una "exocorteza digital" que actúa como una prótesis cognitiva. El sistema ingiere "Vomit Drafts" (volcados de memoria sin estructura) a través de múltiples interfaces (una terminal, un bot de Telegram) y los procesa en un `Søren Core`. Este núcleo utiliza un pipeline de RAG (Retrieval-Augmented Generation) con una base de datos vectorial para encontrar la "señal" dentro del "ruido", permitiendo consultas en lenguaje natural sobre un historial de pensamiento caótico.
+
+**Flujo técnico:**
+1.  **Ingesta:** El usuario envía texto, audio o imágenes a través de SvelteKit o Telegram.
+2.  **Procesamiento:** El `Core` en Node.js genera embeddings de la data y los almacena.
+3.  **Recuperación:** Al recibir una consulta, el sistema convierte la pregunta en un vector, busca los chunks más relevantes en el Vector Store (similitud de coseno) y los inyecta como contexto a Gemini 2.5.
+4.  **Respuesta:** La IA genera una respuesta coherente, basada únicamente en la memoria relevante, no en texto hardcodeado.
+
+**Desafíos resueltos:** Indexación de pensamiento no lineal, recuperación de contexto relevante bajo demanda, desacople de la "memoria" (el Core) de las "interfaces" (SvelteKit, Telegram), soberanía de datos con filosofía `local-first`.
+
+**Preguntas sugeridas:** "qué es soren-mirror", "cómo funciona el RAG en tu exocorteza", "cuál es la arquitectura cognitiva que usas".
 
 ---
 
