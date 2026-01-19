@@ -31,6 +31,19 @@ export const fileSystemData: FolderNode = {
 			type: 'folder',
 			children: [
 				{
+					id: 'rutina-auth',
+					name: 'rutina-auth',
+					type: 'folder',
+					children: [
+						{
+							id: 'rutina-auth-readme',
+							name: 'README.md',
+							type: 'markdown',
+							content: `![Node.js](https://img.shields.io/badge/Node.js-16.13.0-green)\n![Axios](https://img.shields.io/badge/Axios-^1.7.7-blue)\n![Chalk](https://img.shields.io/badge/Chalk-^5.3.0-brightgreen)\n![cli-table3](https://img.shields.io/badge/cli--table3-^0.6.5-orange)\n![dotenv](https://img.shields.io/badge/dotenv-^16.4.5-yellow)\n![Inquirer](https://img.shields.io/badge/Inquirer-^9.1.4-purple)\n\n--- \n## Instalación\n1. Clona el repositorio:\n\`\`\`sh\n  git clone \n\`\`\`\n2. Navega al directorio del projecto:\n\`\`\`sh\n  cd auth_test\n\`\`\`\n3. Instala las dependencias\n\`\`\`sh\n  npm install\n\`\`\`\n4. Crear un archivo \`.env\` en el directorio raíz del projecto con las siguientes variables\n\`\`\`sh\nAPI_URL=\nTIMEOUT=5000\n\`\`\`\n5. Para comenzar la rutina, ejecute el siguiente comando:\n\`\`\`sh\nnpm run check\n\`\`\`\n--- \n\n### Estructura de Datos\nLos archivos \`JSON\` que se listan en la opción para verificar permisos y legajos, se encuentran dentro de \`src/data\`. Los mismos deben estar en formato \`JSON\` y cumplir con el formato: \n\n\`\`\`json\n[\n    {\n        "legajo" : "7683",\n        "password": "123456"\n    },\n    {\n        "legajo": "1234",\n        "password": "123456"\n    }\n] \n\`\`\`\n\n--- \n---\n\n## Notas adicionales\n- Asegurarse de que el archivo .env esté correctamente configurado en el directorio raíz del proyecto.\n- Verifica que el directorio \`src/data\` contenga el archivo \`JSON\` con los usuarios a verificar.`
+						}
+					]
+				},
+				{
 					id: 'sys-elecciones',
 					name: 'sistema-elecciones',
 					type: 'folder',
@@ -50,7 +63,7 @@ export const fileSystemData: FolderNode = {
 						{
 							id: 'elec-docs',
 							name: 'documentacion',
-							type: 'folder', // ¡Carpeta anidada!
+							type: 'folder', 
 							children: [
 								{
 									id: 'doc-carga',
@@ -63,6 +76,19 @@ export const fileSystemData: FolderNode = {
 									name: 'exportacion-datos.md',
 									type: 'markdown',
 									content: `# Exportación a Excel\n\nUtilizamos la librería \`exceljs\` en el frontend para generar reportes sin sobrecargar el servidor.\n\n\`\`\`typescript\n// src/lib/logic/export-excel.ts\nimport ExcelJS from 'exceljs';\n\nexport const exportarResultados = async (data) => {\n  const workbook = new ExcelJS.Workbook();\n  const sheet = workbook.addWorksheet('Resultados');\n  // ... lógica de filas y columnas\n};\n\`\`\`\n`
+								}
+							]
+						},
+						{
+							id: 'elec-fork',
+							name: 'fork-internas',
+							type: 'folder',
+							children: [
+								{
+									id: 'fork-readme',
+									name: 'README.md',
+									type: 'markdown',
+									content: `# Fork: Sistema de Elecciones Internas\n\n## Descripción\nAdaptación del sistema electoral principal para elecciones internas de partidos políticos.\n\n## Diferencias Clave\n- **Cargos:** Presidente PJ, secretarios, delegados partidarios\n- **Estructura:** Listas internas compitiendo dentro del mismo partido\n- **Circuitos:** Adaptados a la organización territorial del partido\n\n## Reutilización\n- ~80% del código base se mantiene intacto\n- Módulos de auth, WebSockets y exportación sin cambios\n- Solo se adaptan módulos de dominio\n\n## Stack (heredado)\n- Frontend: SvelteKit + Socket.io\n- Backend: NestJS + MySQL\n- Infraestructura: Docker + PM2`
 								}
 							]
 						}

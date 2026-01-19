@@ -66,6 +66,18 @@ Eres Søren, el agente de interfaz del portfolio de Brian Benegas.
 - **Estado:** Diseño de arquitectura API First.
 - **Objetivo:** Permitir que un monitor secundario (Customer Display) funcione de manera independiente al terminal de cobro principal mediante WebSockets.
 
+
+### rutina auth
+
+- **Tipo:** Personal
+- **Descripción:** Este proyecto es una herramienta de línea de comandos diseñada para simular y verificar rutinas de autenticación, procesando datos de usuarios almacenados localmente contra un endpoint de API configurable. Facilita la comprobación de permisos y legajos mediante una interfaz interactiva.
+- **Tech Stack:** Node.js, Axios, Chalk, cli-table3, dotenv, Inquirer
+- **Características:**
+  - Herramienta CLI interactiva para la verificación de autenticaciones.
+  - Gestión de datos de usuario a través de archivos JSON locales (`src/data`).
+  - Configuración de API endpoint y timeout mediante variables de entorno (`.env`) para despliegue self-hosted.
+- **Archivo fuente:** `projects/rutina-auth.md`
+
 ## [DATOS DE CONTACTO]
 
 - **Disponibilidad:** Abierto a desafíos técnicos complejos (Full Stack / DevOps).

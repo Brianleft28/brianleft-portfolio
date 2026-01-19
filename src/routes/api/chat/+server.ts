@@ -1,18 +1,18 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import type { RequestHandler } from './$types';
 import { env } from '$env/dynamic/private';
+import { readFileSync, readdirSync } from 'fs';
+import { join } from 'path';
 
-// Memoria modular — carga inteligente por relevancia
+// Memoria base (estática)
 import indexMemory from '$lib/data/memory/index.md?raw';
+import memoryIndex from '$lib/data/memory/memory.md?raw';
 import metaMemory from '$lib/data/memory/meta.md?raw';
-import printServerMemory from '$lib/data/memory/projects/print-server.md?raw';
-import electoralMemory from '$lib/data/memory/projects/electoral.md?raw';
-import portfolioMemory from '$lib/data/memory/projects/portfolio.md?raw';
-import migradorMemory from '$lib/data/memory/projects/migrador.md?raw';
 
 const MODEL_NAME = 'gemini-2.5-flash';
 const MAX_INPUT_CHARS = 4000;
 const MAX_REQUESTS_PER_MINUTE = 10;
+const PROJECTS_PATH = 'src/lib/data/memory/projects';
 
 // Rate limiting simple en memoria (se resetea con cada deploy)
 const requestCounts = new Map<string, { count: number; resetTime: number }>();
@@ -34,59 +34,83 @@ function isRateLimited(ip: string): boolean {
 	return false;
 }
 
-// Keywords que activan cada módulo de memoria
-const projectKeywords: Record<string, string> = {
-	// Print Server
-	print: printServerMemory,
-	impresora: printServerMemory,
-	imprimir: printServerMemory,
-	zpl: printServerMemory,
-	'esc-pos': printServerMemory,
-	térmica: printServerMemory,
-	spooler: printServerMemory,
-	'.net': printServerMemory,
-	// Electoral
-	electoral: electoralMemory,
-	voto: electoralMemory,
-	elección: electoralMemory,
-	elecciones: electoralMemory,
-	fiscal: electoralMemory,
-	gobierno: electoralMemory,
-	concurrencia: electoralMemory,
-	// Portfolio / Meta
-	portfolio: portfolioMemory,
+// Cache de proyectos (se recarga cada request para dev, en prod se puede cachear)
+function loadProjectsFromDisk(): Map<string, string> {
+	const projects = new Map<string, string>();
+	
+	try {
+		const projectsDir = join(process.cwd(), PROJECTS_PATH);
+		const files = readdirSync(projectsDir).filter(f => f.endsWith('.md'));
+		
+		for (const file of files) {
+			const content = readFileSync(join(projectsDir, file), 'utf-8');
+			const projectName = file.replace('.md', '').toLowerCase();
+			projects.set(projectName, content);
+		}
+	} catch (error) {
+		console.error('Error cargando proyectos:', error);
+	}
+	
+	return projects;
+}
+
+// Keywords estáticas para meta/arquitectura
+const staticKeywords: Record<string, string> = {
 	terminal: metaMemory,
 	torvalds: metaMemory,
 	arquitectura: metaMemory,
 	'cómo funciona': metaMemory,
 	'este sitio': metaMemory,
 	'esta web': metaMemory,
-	// Migrador
-	migrador: migradorMemory,
-	migracion: migradorMemory,
-	beneficiarios: migradorMemory,
-	excel: migradorMemory,
-	'datos sucios': migradorMemory
-	// Preguntas generales sobre proyectos (NO cargan docs específicos, pero index.md ya los lista)
-	// Se manejan en la lógica de getRelevantMemory
+	admin: metaMemory,
+	panel: metaMemory
 };
 
 /**
- * Selecciona solo los módulos de memoria relevantes según el prompt del usuario.
- * Siempre incluye el perfil base (index.md) para contexto mínimo.
+ * Selecciona memoria relevante - ahora con carga dinámica de proyectos
  */
 function getRelevantMemory(prompt: string): string {
 	const lowerPrompt = prompt.toLowerCase();
-	const relevantDocs = new Set<string>([indexMemory]); // Siempre incluir perfil base
+	const relevantDocs = new Set<string>([indexMemory, memoryIndex]);
 
-	for (const [keyword, doc] of Object.entries(projectKeywords)) {
+	// Keywords estáticas
+	for (const [keyword, doc] of Object.entries(staticKeywords)) {
 		if (lowerPrompt.includes(keyword)) {
 			relevantDocs.add(doc);
 		}
 	}
 
-	// Si no matcheó nada específico, incluir meta para contexto general
-	if (relevantDocs.size === 1) {
+	// Cargar proyectos dinámicamente y buscar matches
+	const projects = loadProjectsFromDisk();
+	
+	for (const [projectName, content] of projects) {
+		// Match por nombre de proyecto
+		const keywords = projectName.split('-');
+		for (const kw of keywords) {
+			if (kw.length > 2 && lowerPrompt.includes(kw)) {
+				relevantDocs.add(content);
+				break;
+			}
+		}
+		
+		// Match por contenido (primeras 500 chars como "summary")
+		const summary = content.slice(0, 500).toLowerCase();
+		const summaryWords = ['stack', 'tecnolog', 'característica'];
+		if (summaryWords.some(w => lowerPrompt.includes(w))) {
+			// Si pregunta por stack/tecnologías, incluir proyecto si matchea algo
+			const techKeywords = summary.match(/\*\*([^*]+)\*\*/g) || [];
+			for (const tech of techKeywords) {
+				const cleanTech = tech.replace(/\*/g, '').toLowerCase();
+				if (lowerPrompt.includes(cleanTech)) {
+					relevantDocs.add(content);
+					break;
+				}
+			}
+		}
+	}
+
+	// Si no matcheó nada específico, incluir meta
+	if (relevantDocs.size <= 2) {
 		relevantDocs.add(metaMemory);
 	}
 

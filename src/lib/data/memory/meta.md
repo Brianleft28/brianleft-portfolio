@@ -66,6 +66,27 @@ flowchart LR
 - Docker (multi-stage build <100MB)
 - Vite como bundler
 
+## Sistema de Administración (Admin Panel)
+
+El portfolio incluye un panel de administración en `/admin/projects` que permite:
+
+### Cargador de Proyectos con IA
+- **Subir archivos Markdown** (.md) de nuevos proyectos
+- **Selector de carpetas** visual para elegir dónde ubicar en el explorador
+- **Creación de carpetas** nuevas anidadas
+- **Resumen automático con IA** — Gemini genera un resumen estructurado del proyecto
+- **Actualización automática** de:
+  - `memory.md` — Agrega entrada con resumen para la IA
+  - `file-system.ts` — Inserta nodo en el árbol del explorador virtual
+  - `projects/*.md` — Guarda el archivo completo
+
+### Flujo de Indexación
+```
+MD subido → Gemini genera resumen → Guarda en 3 ubicaciones → Disponible en terminal
+```
+
+Esto permite agregar proyectos sin tocar código, solo subiendo un Markdown.
+
 ## Filosofía de Diseño
 
 > "Talk is cheap. Show me the code." — Linus Torvalds
