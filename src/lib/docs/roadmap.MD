@@ -34,7 +34,7 @@ _Objetivo: Reestructurar el repositorio a una estructura de monorepo para soport
 
 ---
 
-## Fase 2: Refactor del Frontend (Completada)
+## Fase 2: Refactor del Frontend (Completada ✅)
 
 _Objetivo: Mover el contenido hardcodeado a archivos `.md` para mejorar la mantenibilidad._
 
@@ -42,6 +42,24 @@ _Objetivo: Mover el contenido hardcodeado a archivos `.md` para mejorar la mante
 - [x] **Tarea 2: Extraer Contenido a Archivos `.md`**
 - [x] **Tarea 3: Actualizar `file-system.ts` para reflejar la nueva estructura**
 - [x] **Tarea 4: Cargar Contenido Dinámicamente en `api/chat`**
+
+---
+
+## Fase 2.5: Sistema de Memoria Modular (Completada ✅)
+
+_Objetivo: Optimizar el consumo de tokens cargando solo el contexto relevante._
+
+- [x] **Tarea 1: Separar memoria en archivos modulares**
+    - `index.md` — Perfil profesional
+    - `memory.md` — Base de conocimiento
+    - `meta.md` — Autoconciencia del sistema
+    - `projects/*.md` — Documentación por proyecto
+- [x] **Tarea 2: Implementar carga dinámica por keywords**
+    - El servidor detecta keywords y carga solo archivos relevantes.
+- [x] **Tarea 3: Optimizar listado de proyectos**
+    - Cuando el usuario pide "todos los proyectos", se devuelven resúmenes en lugar de archivos completos.
+- [x] **Tarea 4: Refactorizar comandos de terminal**
+    - Comandos separados en módulos: `cat`, `cd`, `ls`, `tree`, `pwd`, `cls`, `help`, `torvalds`.
 
 ---
 
@@ -77,13 +95,22 @@ _Objetivo: Implementar "ese formato que gasta menos" (Embeddings) para dejar de 
 
 ---
 
-## Fase 4.8: La Consola Interactiva (Completada)
+## Fase 4.8: La Consola Interactiva (Completada ✅)
 
 _Objetivo: Implementar una terminal web funcional que permita a los visitantes "chatear" con el asistente._
 
 - [x] **Tarea 1: Definir la Personalidad de la IA en el Endpoint**
+    - Personalidad Linus Torvalds, español argentino, pragmático.
 - [x] **Tarea 2: Crear Componente `Terminal.svelte`**
+    - Historial de comandos, emulación de consola, tema retro.
 - [x] **Tarea 3: Crear Endpoint Público en `api/chat` con Streaming**
+    - `ReadableStream` para respuestas en tiempo real.
+- [x] **Tarea 4: Sistema de Comandos Modular**
+    - Registry de comandos en `src/lib/terminal/commands/`.
+    - Comandos: `ls`, `cd`, `cat`, `tree`, `pwd`, `cls`, `help`, `torvalds`.
+    - Aliases: `ll` (ls -l), `dir` (ls), `clear` (cls), `-h` (help).
+- [x] **Tarea 5: Rate Limiting**
+    - 10 requests/minuto por IP para proteger la API de Gemini.
 
 ---
 

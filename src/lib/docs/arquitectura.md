@@ -46,13 +46,53 @@ sequenceDiagram
 
     U->>T: Escribe pregunta
     T->>A: POST { prompt }
-    A->>M: Detecta keywords
-    M-->>A: Carga docs relevantes
+    A->>A: Rate limit check (10/min)
+    A->>M: Detecta keywords en prompt
+    
+    alt Lista de proyectos
+        M-->>A: Devuelve resúmenes (optimizado)
+    else Proyecto específico
+        M-->>A: Carga archivo completo
+    else Pregunta general
+        M-->>A: index.md + memory.md
+    end
+    
     A->>G: System Prompt + Context + User Prompt
 
     loop Streaming
         G-->>A: Chunk de texto
         A-->>T: ReadableStream
-        T-->>U: Renderiza en tiempo real
+        T-->>U: Renderiza Markdown en tiempo real
     end
+```
+
+### Sistema de Memoria Modular
+
+```mermaid
+flowchart TB
+    subgraph Memory ["📁 src/lib/data/memory/"]
+        index["index.md<br/>Perfil profesional"]
+        memory["memory.md<br/>Base conocimiento"]
+        meta["meta.md<br/>Autoconciencia"]
+        projects["projects/*.md<br/>Docs por proyecto"]
+    end
+    
+    subgraph API ["⚙️ /api/chat"]
+        keywords["Detector de Keywords"]
+        loader["Cargador Dinámico"]
+    end
+    
+    prompt["Prompt Usuario"] --> keywords
+    keywords -->|"todos los proyectos"| loader
+    keywords -->|"print server"| loader
+    keywords -->|"arquitectura"| loader
+    
+    loader -->|"Resúmenes"| projects
+    loader -->|"Archivo completo"| projects
+    loader -->|"Meta"| meta
+    loader -->|"Base"| index
+    loader -->|"Base"| memory
+    
+    style Memory fill:#1a1a2e,stroke:#00bc8c,color:#fff
+    style API fill:#16213e,stroke:#3498db,color:#fff
 ```

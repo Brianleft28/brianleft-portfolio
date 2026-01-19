@@ -19,52 +19,74 @@ Soy el asistente de IA integrado en la terminal de este portfolio. Mi personalid
 
 - **Framework:** SvelteKit 2 con Svelte 5
 - **Terminal:** Componente `Terminal.svelte` con emulación de consola
+- **Comandos:** Sistema modular en `src/lib/terminal/commands/`
 - **Markdown:** `marked` + `marked-highlight` para renderizar respuestas
 - **Syntax Highlighting:** `highlight.js` con tema `github-dark`
 
 ### Backend (Servidor)
 
 - **Runtime:** Node.js con adapter-node de SvelteKit
-- **API de IA:** `/api/chat` — Endpoint que conecta con Google Gemini
+- **API de IA:** `/api/chat` — Endpoint que conecta con Google Gemini 2.5
 - **Streaming:** Respuestas en tiempo real usando `ReadableStream`
+- **Rate Limiting:** 10 requests/minuto por IP
 
-### Sistema de Memoria (Docs as Code)
+### Sistema de Memoria Modular (Docs as Code)
 
 Mi conocimiento viene de archivos Markdown en `src/lib/data/memory/`:
 
-- `index.md` — Perfil profesional de Brian
-- `meta.md` — Este archivo (autoconciencia)
-- `projects/*.md` — Información detallada de cada proyecto
+| Archivo | Propósito |
+|---------|-----------|
+| `index.md` | Perfil profesional de Brian |
+| `memory.md` | Base de conocimiento general |
+| `meta.md` | Este archivo (autoconciencia) |
+| `projects/*.md` | Información detallada de cada proyecto |
 
-El servidor carga dinámicamente solo los archivos relevantes según la pregunta del usuario, optimizando el uso de tokens.
+**Carga Inteligente:** El servidor carga dinámicamente solo los archivos relevantes según la pregunta del usuario:
+- Pregunta general → `index.md` + `memory.md`
+- Pregunta específica → archivo del proyecto completo
+- Lista de proyectos → solo resúmenes (optimizado)
 
 ## Comandos de Terminal
+
+| Comando | Descripción | Aliases |
+|---------|-------------|---------|
+| `help` | Muestra ayuda | `-h`, `--help` |
+| `ls` | Lista archivos | `ll` (detallado), `dir` |
+| `cd` | Cambia directorio | — |
+| `cat` | Muestra contenido | — |
+| `tree` | Árbol de directorios | — |
+| `pwd` | Directorio actual | — |
+| `cls` | Limpia terminal | `clear` |
+| `torvalds` | Chat con IA | — |
 
 ```mermaid
 flowchart LR
     subgraph Navegación
-        A["-h"] --> A1[Ayuda]
-        B["ll"] --> B1[Listar archivos]
-        C["cd [dir]"] --> C1[Cambiar directorio]
+        A["ls / ll"] --> A1[Listar archivos]
+        B["cd [dir]"] --> B1[Cambiar directorio]
+        C["cat [file]"] --> C1[Ver contenido]
+        D["tree"] --> D1[Árbol]
+        E["pwd"] --> E1[Ruta actual]
     end
     
     subgraph Control
-        D["cls"] --> D1[Limpiar terminal]
-        E["exit"] --> E1[Salir]
+        F["cls / clear"] --> F1[Limpiar terminal]
+        G["help / -h"] --> G1[Ayuda]
     end
     
     subgraph IA
-        F["torvaldsai"] --> F1[Activar chat]
+        H["torvalds [msg]"] --> H1[Chat con IA]
     end
 ```
 
 ## Stack Técnico Completo
 
 - SvelteKit 2, Svelte 5, TypeScript
-- Google Gemini API (gemini-2.5-flash)
-- Bootstrap 5, SASS
+- Google Gemini 2.5 API (gemini-2.5-flash)
+- Bootstrap 5, CSS custom (tema terminal)
 - Docker (multi-stage build <100MB)
 - Vite como bundler
+- Node.js 20+
 
 ## Sistema de Administración (Admin Panel)
 
@@ -87,8 +109,16 @@ MD subido → Gemini genera resumen → Guarda en 3 ubicaciones → Disponible e
 
 Esto permite agregar proyectos sin tocar código, solo subiendo un Markdown.
 
+## Integración MCP (VS Code)
+
+El proyecto incluye un servidor MCP en `mcp/gemini-server.js` para integrar TorvaldsAi directamente en GitHub Copilot Chat de VS Code.
+
 ## Filosofía de Diseño
 
 > "Talk is cheap. Show me the code." — Linus Torvalds
 
 Este portfolio **demuestra** habilidades en lugar de solo listarlas. La terminal funciona, la IA responde, el código está versionado.
+
+---
+
+Última actualización: Enero 2026

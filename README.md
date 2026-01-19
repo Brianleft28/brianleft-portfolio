@@ -175,20 +175,25 @@ sequenceDiagram
 
 La terminal se abre con `Ctrl + Ñ` o haciendo clic en el botón **"Hablar con Torvalds (AI)"**.
 
-| Comando                 | Descripción                                            |
-| :---------------------- | :----------------------------------------------------- |
-| `-h`                    | Muestra la ayuda con todos los comandos disponibles.   |
-| `ll`                    | Lista archivos y carpetas del directorio actual.       |
-| `cd [dir]`              | Cambia de directorio. Usa `cd ..` para subir un nivel. |
-| `cls`                   | Limpia la terminal y reinicia el contexto del chat.    |
-| `exit`                  | Cierra la terminal o sale del modo chat.               |
-| `torvaldsai`            | Activa el modo chat con TorvaldsAi.                    |
-| `torvaldsai [pregunta]` | Envía una pregunta directa a la IA.                    |
+| Comando                  | Descripción                                            |
+| :----------------------- | :----------------------------------------------------- |
+| `help` / `-h`            | Muestra la ayuda con todos los comandos disponibles.   |
+| `ls` / `ll` / `dir`      | Lista archivos y carpetas del directorio actual.       |
+| `cd [dir]`               | Cambia de directorio. Usa `cd ..` para subir un nivel. |
+| `cat <archivo>`          | Muestra el contenido de un archivo.                    |
+| `tree`                   | Muestra árbol de directorios.                          |
+| `pwd`                    | Muestra el directorio actual.                          |
+| `cls` / `clear`          | Limpia la terminal.                                    |
+| `torvalds`               | Activa el modo chat con TorvaldsAi.                    |
+| `torvalds [pregunta]`    | Envía una pregunta directa a la IA.                    |
 
 **Ejemplo de uso:**
 
-```
-C:\> torvaldsai ¿Cuál es la arquitectura de este proyecto?
+```bash
+C:\> ls
+C:\> cd projects
+C:\projects> cat portfolio.md
+C:\projects> torvalds ¿Cuál es la arquitectura de este proyecto?
 TorvaldsAi: Este portfolio está construido con SvelteKit usando SSR...
 ```
 
@@ -200,45 +205,75 @@ TorvaldsAi: Este portfolio está construido con SvelteKit usando SSR...
 brianleft-portfolio/
 ├── src/
 │   ├── lib/
-│   │   ├── components/        # Componentes Svelte reutilizables
-│   │   │   └── Terminal.svelte    # Emulador de terminal principal
+│   │   ├── components/           # Componentes Svelte reutilizables
+│   │   │   ├── Terminal.svelte       # Emulador de terminal principal
+│   │   │   ├── FileViewer.svelte     # Visor de archivos Markdown
+│   │   │   └── ProjectLoader.svelte  # Cargador de proyectos (Admin)
 │   │   ├── data/
-│   │   │   ├── file-system.ts     # Definición del sistema de archivos virtual
-│   │   │   └── memory/
-│   │   │       └── memory.md      # 🧠 Memoria/contexto de TorvaldsAi
-│   │   ├── docs/              # Documentación interna (Docs as Code)
-│   │   └── stores/            # Stores de Svelte (estado global)
-│   │       ├── ui.ts              # Estado de visibilidad de terminal
-│   │       └── terminal.ts        # Estado del path actual
+│   │   │   ├── file-system.ts        # Sistema de archivos virtual
+│   │   │   └── memory/               # 🧠 Sistema de memoria modular
+│   │   │       ├── index.md          # Perfil profesional
+│   │   │       ├── memory.md         # Base de conocimiento para IA
+│   │   │       ├── meta.md           # Autoconciencia del sistema
+│   │   │       └── projects/         # Documentación por proyecto
+│   │   │           ├── electoral.md
+│   │   │           ├── migrador.md
+│   │   │           ├── portfolio.md
+│   │   │           └── ...
+│   │   ├── terminal/             # Lógica de terminal
+│   │   │   ├── index.ts              # Registry de comandos
+│   │   │   ├── types.ts              # Tipos TypeScript
+│   │   │   └── commands/             # Implementación de comandos
+│   │   │       ├── cat.ts, cd.ts, ls.ts, tree.ts, pwd.ts
+│   │   │       ├── torvalds.ts       # Comando de IA
+│   │   │       └── help.ts
+│   │   ├── docs/                 # Documentación interna (Docs as Code)
+│   │   └── stores/               # Stores de Svelte (estado global)
 │   ├── routes/
-│   │   ├── +layout.svelte     # Layout principal con terminal global
-│   │   ├── +page.svelte       # Página de inicio
+│   │   ├── +layout.svelte        # Layout principal
+│   │   ├── +page.svelte          # Página de inicio
+│   │   ├── admin/projects/       # Panel de administración
 │   │   └── api/
-│   │       └── chat/
-│   │           └── +server.ts # Endpoint de la IA (Gemini)
-│   └── app.html               # Template HTML base
-├── static/                    # Archivos estáticos (robots.txt, etc.)
-├── Dockerfile                 # Build multi-stage optimizado
-├── .env.example               # Plantilla de variables de entorno
-├── package.json
-├── svelte.config.js
-├── tsconfig.json
-└── vite.config.ts
+│   │       ├── chat/+server.ts   # Endpoint de IA (streaming)
+│   │       └── projects/+server.ts  # API de proyectos
+│   └── app.html
+├── mcp/                          # Servidor MCP para VS Code
+│   └── gemini-server.js
+├── dotfiles/                     # Configuración portable
+├── static/
+├── Dockerfile
+└── package.json
 ```
 
 ---
 
 ## 🤖 Configuración de la IA
 
-### Archivo de Memoria (`src/lib/data/memory/memory.md`)
+### Sistema de Memoria Modular (`src/lib/data/memory/`)
 
-Este archivo Markdown contiene **todo el conocimiento** que TorvaldsAi tiene sobre el proyecto, el autor y los proyectos listados. Se inyecta como contexto en cada petición a la API de Gemini.
+La IA utiliza un sistema de memoria **modular y dinámico** que optimiza el uso de tokens:
+
+| Archivo | Propósito |
+|---------|----------|
+| `index.md` | Perfil profesional de Brian |
+| `memory.md` | Base de conocimiento general |
+| `meta.md` | Autoconciencia del sistema (arquitectura, comandos) |
+| `projects/*.md` | Documentación detallada de cada proyecto |
+
+**Carga Inteligente de Contexto:**
+
+El servidor detecta keywords en el prompt del usuario y carga **solo los archivos relevantes**:
+- Pregunta general → `index.md` + `memory.md`
+- Pregunta sobre proyecto específico → archivo del proyecto completo
+- Pregunta sobre arquitectura → `meta.md`
+- Lista de proyectos → resúmenes optimizados (no archivos completos)
 
 **Ventajas de este enfoque:**
 
-- ✅ Versionable con Git
+- ✅ Versionable con Git (Docs as Code)
 - ✅ Fácil de editar (es solo Markdown)
-- ✅ La IA siempre tiene información actualizada
+- ✅ Optimización de tokens (carga selectiva)
+- ✅ Agregar proyectos sin tocar código
 - ✅ Separación clara entre código y contenido
 
 ### Personalidad de la IA
@@ -246,9 +281,10 @@ Este archivo Markdown contiene **todo el conocimiento** que TorvaldsAi tiene sob
 El prompt del sistema en [`src/routes/api/chat/+server.ts`](src/routes/api/chat/+server.ts) define:
 
 - Personalidad tipo Linus Torvalds (directo, técnico, pragmático)
-- Respuestas en español
+- Respuestas en español argentino rioplatense
 - Formato Markdown con syntax highlighting
-- Límite de tokens y manejo de errores
+- Diagramas ASCII para arquitectura
+- Rate limiting (10 req/min por IP)
 
 ---
 
@@ -292,14 +328,17 @@ docker-compose up -d --build
 
 La documentación técnica profunda sigue el paradigma **Docs as Code** y se encuentra en:
 
-| Documento     | Ubicación                                                        | Descripción                       |
-| :------------ | :--------------------------------------------------------------- | :-------------------------------- |
-| Memoria de IA | [`src/lib/data/memory/memory.md`](src/lib/data/memory/memory.md) | Contexto completo para TorvaldsAi |
-| Arquitectura  | [`src/lib/docs/arquitectura.md`](src/lib/docs/arquitectura.md)   | Decisiones de diseño y diagramas  |
-| Roadmap       | [`src/lib/docs/roadmap.MD`](src/lib/docs/roadmap.MD)             | Fases de evolución del proyecto   |
-| Dotfiles      | [`dotfiles/README.md`](dotfiles/README.md)                       | Setup portable de terminal        |
+| Documento        | Ubicación                                                        | Descripción                              |
+| :--------------- | :--------------------------------------------------------------- | :--------------------------------------- |
+| Perfil           | [`src/lib/data/memory/index.md`](src/lib/data/memory/index.md)   | Perfil profesional y proyectos           |
+| Base Conocimiento| [`src/lib/data/memory/memory.md`](src/lib/data/memory/memory.md) | Contexto general para TorvaldsAi         |
+| Autoconciencia   | [`src/lib/data/memory/meta.md`](src/lib/data/memory/meta.md)     | Arquitectura y funcionamiento interno    |
+| Proyectos        | [`src/lib/data/memory/projects/`](src/lib/data/memory/projects/) | Documentación detallada por proyecto     |
+| Arquitectura     | [`src/lib/docs/arquitectura.md`](src/lib/docs/arquitectura.md)   | Diagramas Mermaid del sistema            |
+| Roadmap          | [`src/lib/docs/roadmap.MD`](src/lib/docs/roadmap.MD)             | Fases de evolución del proyecto          |
+| Dotfiles         | [`dotfiles/README.md`](dotfiles/README.md)                       | Setup portable de terminal               |
 
-> **Tip:** Podés preguntarle directamente a TorvaldsAi sobre cualquier aspecto del proyecto usando el comando `torvaldsai` en la terminal.
+> **Tip:** Podés preguntarle directamente a TorvaldsAi sobre cualquier aspecto del proyecto usando el comando `torvalds` en la terminal.
 
 ---
 

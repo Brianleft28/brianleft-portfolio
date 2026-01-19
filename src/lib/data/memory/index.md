@@ -94,7 +94,7 @@ Abierto a desafíos técnicos complejos en Full Stack y DevOps. Especialmente in
 ### 3. Portfolio Interactivo (Este sitio)
 
 - **Contexto:** I+D, demostrador técnico, en producción.
-- **Stack:** SvelteKit, TypeScript, Gemini 2.0 API, Docker, Nginx.
+- **Stack:** SvelteKit, TypeScript, Gemini 2.5 API, Docker, Nginx.
 
 **Problema:** Mostrar habilidades técnicas de forma memorable, no solo un CV estático.
 
@@ -161,5 +161,5 @@ Brian estructura sus proyectos en capas claras:
 
 ---
 
-Documento optimizado para consumo por IA. Sin diagramas visuales. Última actualización: 2025.
+Documento optimizado para consumo por IA. Sin diagramas visuales. Última actualización: Enero 2026.
 

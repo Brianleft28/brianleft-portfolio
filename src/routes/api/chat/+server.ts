@@ -14,7 +14,6 @@ const MAX_INPUT_CHARS = 4000;
 const MAX_REQUESTS_PER_MINUTE = 10;
 const PROJECTS_PATH = 'src/lib/data/memory/projects';
 
-// Rate limiting simple en memoria (se resetea con cada deploy)
 const requestCounts = new Map<string, { count: number; resetTime: number }>();
 
 function isRateLimited(ip: string): boolean {
@@ -34,59 +33,103 @@ function isRateLimited(ip: string): boolean {
 	return false;
 }
 
-// Keywords que activan cada módulo de memoria
-const projectKeywords: Record<string, string> = {
-	// Print Server
-	print: printServerMemory,
-	impresora: printServerMemory,
-	imprimir: printServerMemory,
-	zpl: printServerMemory,
-	'esc-pos': printServerMemory,
-	térmica: printServerMemory,
-	spooler: printServerMemory,
-	'.net': printServerMemory,
-	// Electoral
-	electoral: electoralMemory,
-	voto: electoralMemory,
-	elección: electoralMemory,
-	elecciones: electoralMemory,
-	fiscal: electoralMemory,
-	gobierno: electoralMemory,
-	concurrencia: electoralMemory,
-	// Portfolio / Meta
-	portfolio: portfolioMemory,
+// Carga dinámica de proyectos desde disco
+function loadProjectsFromDisk(): Map<string, string> {
+	const projects = new Map<string, string>();
+
+	try {
+		const projectsDir = join(process.cwd(), PROJECTS_PATH);
+		const files = readdirSync(projectsDir).filter((f) => f.endsWith('.md'));
+
+		for (const file of files) {
+			const content = readFileSync(join(projectsDir, file), 'utf-8');
+			const projectName = file.replace('.md', '').toLowerCase();
+			projects.set(projectName, content);
+		}
+	} catch (error) {
+		console.error('Error cargando proyectos:', error);
+	}
+
+	return projects;
+}
+
+// Keywords estáticas para meta/arquitectura
+const staticKeywords: Record<string, string> = {
 	terminal: metaMemory,
 	torvalds: metaMemory,
 	arquitectura: metaMemory,
 	'cómo funciona': metaMemory,
 	'este sitio': metaMemory,
 	'esta web': metaMemory,
-	// Migrador
-	migrador: migradorMemory,
-	migracion: migradorMemory,
-	beneficiarios: migradorMemory,
-	excel: migradorMemory,
-	'datos sucios': migradorMemory
-	// Preguntas generales sobre proyectos (NO cargan docs específicos, pero index.md ya los lista)
-	// Se manejan en la lógica de getRelevantMemory
+	admin: metaMemory,
+	panel: metaMemory
 };
 
 /**
- * Selecciona solo los módulos de memoria relevantes según el prompt del usuario.
- * Siempre incluye el perfil base (index.md) para contexto mínimo.
+ * Extrae solo el título y descripción breve de un proyecto
+ */
+function getProjectSummary(content: string, name: string): string {
+	const lines = content.split('\n').filter((l) => l.trim());
+	const title = lines.find((l) => l.startsWith('#'))?.replace(/^#+\s*/, '') || name;
+	const desc = lines.find((l) => !l.startsWith('#') && l.length > 20)?.slice(0, 150) || '';
+	return `- **${title}**: ${desc}`;
+}
+
+/**
+ * Detecta si el usuario quiere una lista general de proyectos
+ */
+function wantsProjectList(prompt: string): boolean {
+	const listPatterns = [
+		'todos los proyectos',
+		'todos sus proyectos',
+		'lista de proyectos',
+		'qué proyectos',
+		'cuáles proyectos',
+		'proyectos tiene',
+		'proyectos hizo',
+		'proyectos de brian'
+	];
+	return listPatterns.some((p) => prompt.includes(p));
+}
+
+/**
+ * Selecciona memoria relevante - carga dinámica de proyectos
  */
 function getRelevantMemory(prompt: string): string {
 	const lowerPrompt = prompt.toLowerCase();
-	const relevantDocs = new Set<string>([indexMemory]); // Siempre incluir perfil base
+	const relevantDocs = new Set<string>([indexMemory, memoryIndex]);
 
-	for (const [keyword, doc] of Object.entries(projectKeywords)) {
+	// Keywords estáticas
+	for (const [keyword, doc] of Object.entries(staticKeywords)) {
 		if (lowerPrompt.includes(keyword)) {
 			relevantDocs.add(doc);
 		}
 	}
 
-	// Si no matcheó nada específico, incluir meta para contexto general
-	if (relevantDocs.size === 1) {
+	// Cargar proyectos dinámicamente
+	const projects = loadProjectsFromDisk();
+
+	// Si pide lista general, devolver solo resúmenes
+	if (wantsProjectList(lowerPrompt)) {
+		const summaries = Array.from(projects.entries())
+			.map(([name, content]) => getProjectSummary(content, name))
+			.join('\n');
+		relevantDocs.add(`## Proyectos de Brian:\n${summaries}`);
+	} else {
+		// Match específico por nombre de proyecto
+		for (const [projectName, content] of projects) {
+			const keywords = projectName.split('-');
+			for (const kw of keywords) {
+				if (kw.length > 2 && lowerPrompt.includes(kw)) {
+					relevantDocs.add(content);
+					break;
+				}
+			}
+		}
+	}
+
+	// Si no matcheó nada específico, incluir meta
+	if (relevantDocs.size <= 2) {
 		relevantDocs.add(metaMemory);
 	}
 
@@ -95,7 +138,6 @@ function getRelevantMemory(prompt: string): string {
 
 export const POST: RequestHandler = async ({ request, getClientAddress }) => {
 	try {
-		// Rate limiting
 		const clientIp = getClientAddress();
 		if (isRateLimited(clientIp)) {
 			return new Response('Demasiadas peticiones. Espera un momento.', { status: 429 });
@@ -113,68 +155,53 @@ export const POST: RequestHandler = async ({ request, getClientAddress }) => {
 			return new Response('Error: Mensaje vacío.', { status: 400 });
 		}
 
-		// Cargar solo memoria relevante según keywords
 		const memoryContent = getRelevantMemory(userPrompt);
 
 		const genAI = new GoogleGenerativeAI(apiKey);
 		const model = genAI.getGenerativeModel({ model: MODEL_NAME });
 
 		const fullPrompt = `
-        ## CONTEXTO
-        ${memoryContent}
+## CONTEXTO
+${memoryContent}
 
-        ---
-        ## SISTEMA
+---
+## SISTEMA
 
 Eres TorvaldsAi, asistente técnico del portfolio de Brian Benegas.
 Personalidad: Linus Torvalds - directo, pragmático, técnicamente exigente pero respetuoso.
 
 REGLAS:
 
-1. **IDIOMA**: Español argentino rioplatense sutil. Si el usuario escribe en otro idioma, respondé en ese idioma naturalmente. Brian está aprendiendo inglés activamente, así que si preguntan en inglés, respondé en inglés claro y técnico.
+1. **IDIOMA**: Español argentino rioplatense sutil. Si el usuario escribe en otro idioma, respondé en ese idioma naturalmente.
 
 2. **LONGITUD**: Adapta según complejidad.
    - Preguntas simples: 1-3 líneas.
    - Explicaciones técnicas: hasta 350 palabras.
    - Arquitectura/flujos: diagramas ASCII obligatorios.
 
-3. **FORMATO PERMITIDO** (usalo libremente):
+3. **FORMATO PERMITIDO**:
    - **Negritas** para términos clave
    - \`código inline\` para archivos, funciones, comandos
    - Bloques de código con \`\`\`lenguaje
    - Listas con - o números
    - Tablas cuando compares opciones
    - Diagramas ASCII para arquitectura
-   - Emojis con moderación (🔧⚡✅❌ etc.)
+   - Emojis con moderación (🔧⚡✅❌)
 
 4. **FORMATO PROHIBIDO**:
    - Títulos con # o ## (NUNCA)
-   - Líneas en blanco excesivas (máximo 1 entre secciones)
+   - Líneas en blanco excesivas
    - Párrafos largos sin estructura
 
-5. **EJEMPLO DE RESPUESTA IDEAL**:
-   El sistema usa **SvelteKit** con \`adapter-node\`. Arquitectura:
-   \`\`\`
-   [Browser] --> [SSR] --> [API Routes]
-                               |
-                         [Gemini API]
-   \`\`\`
-   Componentes clave:
-   - \`Terminal.svelte\`: emulador de consola
-   - \`/api/chat\`: endpoint de IA con streaming
-   
-   Todo corre en Docker 🐳 con build multi-stage.
+5. **LÍMITES**: Solo portfolio, proyectos y experiencia de Brian.
 
-6. **LÍMITES**: Solo portfolio, proyectos y experiencia de Brian. Pero siempre respondé con respeto.
-
-7. **TONO**: Sé técnicamente exigente y directo, pero nunca despectivo sobre el aprendizaje o crecimiento personal de nadie. El sarcasmo va para código malo, no para personas.
+6. **PROVOCACIONES**: Sarcasmo técnico breve, después redirigí al tema.
 
 USUARIO: "${userPrompt}"
 
 RESPUESTA:`;
 
 		const result = await model.generateContentStream(fullPrompt);
-		console.log('[API] Respuesta recibida, comenzando stream...');
 
 		const stream = new ReadableStream({
 			async start(controller) {
