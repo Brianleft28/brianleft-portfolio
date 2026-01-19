@@ -1,4 +1,21 @@
-import type { Component } from 'svelte'; // <--- Cambio: Usamos 'Component' en lugar de 'ComponentType'
+import type { Component } from 'svelte';
+
+// Memoria centralizada (Single Source of Truth)
+// Cuando migres a NestJS (Fase 4), esto se reemplaza por fetch a la API
+import {
+    indexMemory,
+    metaMemory,
+    printServerMemory,
+    electoralMemory,
+    portfolioMemory,
+    migradorMemory,
+    sorenMirrorMemory,
+    arquitecturaDoc,
+    roadmapDoc,
+    databaseSchemaDoc,
+    monorepoSetupDoc
+} from '$lib/data/memory/loader';
+
 
 export type FileType = 'markdown' | 'component';
 
@@ -19,7 +36,6 @@ export type FolderNode = {
 };
 
 export type FileSystemNode = FolderNode | FileNode;
-
 export const fileSystemData: FolderNode = {
 	id: 'root',
 	type: 'folder',
@@ -105,105 +121,31 @@ export const fileSystemData: FolderNode = {
 									type: 'markdown',
 									content: `# Migrador de Beneficiarios - Desarrollo Social
 
-## Descripción
-Herramienta CLI para automatizar la ingesta y normalización de datos de beneficiarios desde archivos Excel heterogéneos hacia MySQL.
+## Navegación
 
-## Stack Técnico
+Explorá usando:
+- **Explorador de Archivos** → Panel izquierdo
+- **Terminal** → \`Ctrl + Ñ\` (comandos: \`cd\`, \`ls\`, \`cat\`)
 
-| Tecnología | Uso |
-|------------|-----|
-| **Node.js** | Runtime environment |
-| **MySQL2** | Driver con soporte de promesas |
-| **ExcelJS** | Parsing de hojas de cálculo |
-| **Inquirer.js** | Interfaz interactiva de consola |
+## Estructura
 
-## Características
+\`\`\`
+C:\\
+├── proyectos/          # Mis proyectos reales
+│   |
+├── docs/               # Arquitectura y roadmap
+├── perfil/             # Sobre mí
+└── apps/     
+	|Contacto.exe 	          		# Componentes interactivos
+\`\`\`
 
-- 🚀 **Batch Processing** — Inserta en lotes de 1000
-- 🔄 **Multi-formato** — Hojas múltiples o tabla única
-- 🛡️ **Staging Table** — Limpia antes de insertar
-- 🧩 **Arquitectura Modular** — Entities, DataMigrator, Singleton
+## ¿Querés hablar con mi IA?
 
-## Ejecución
-
-\`\`\`bash
-npm install
-npm run start
-\`\`\`				
-`
-								}
-							]
-						}
-			]
-		},
-		{
-			id: 'apps',
-			name: 'apps',
-			type: 'folder',
-			children: [
-				{
-					id: 'contacto-app',
-					name: 'Contacto.exe',
-					type: 'component'
-				}
-			]
-		},
-		{
-			id: 'welcome',
-			name: 'LEEME.md',
-			type: 'markdown',
-			content: `# Bienvenido a mi portfolio
-
-Este portfolio es interactivo. Podés navegar usando:
-
-- El **Explorador de Archivos** a la izquierda.
-- La **Terminal** abajo, abrila con \`CTRL\` + \`Ñ\` (probá comandos como \`cd\` o \`ll\`).
-
----
-
-## Sobre este proyecto
-
-Este sitio simula un **sistema operativo web**. No es solo una página estática con mi CV, es un demostrador técnico de cómo pienso y construyo software.
-
-### Stack Técnico
-
-| Capa | Tecnología |
-|------|------------|
-| Frontend | SvelteKit 2 + Svelte 5 |
-| Estilos | Bootstrap 5 + SASS |
-| IA | Google Gemini API |
-| Deploy | Docker multi-stage |
-
-### Características
-
-- 🖥️ **Terminal interactiva** con comandos reales (\`cd\`, \`ll\`, \`cls\`)
-- 🤖 **TorvaldsAi** - Asistente IA con personalidad de Linus Torvalds criado a mate y pitusas
-- 📁 **Sistema de archivos virtual** - Navegá los proyectos como directorios
-- ⚡ **Streaming de respuestas** - La IA responde en tiempo real
-- 📝 **Docs as Code** - La memoria de la IA está en archivos Markdown
-
----
-
-## ¿Querés saber más?
-
-Escribí \`torvaldsai\` en la terminal y preguntale lo que quieras sobre:
-- Mi experiencia profesional
-- La arquitectura de este portfolio
-- Detalles técnicos de mis proyectos
-
-**Tip:** Probá preguntarle "¿Cómo funciona el sistema de memoria modular?"
-
----
-
-## Contacto
-
-- 🌐 [brianleft.com](https://brianleft.com)
-- 💼 [LinkedIn](https://linkedin.com/in/brianbenegas)
-- 🐙 [GitHub](https://github.com/brianleft)
+Escribí \`torvalds start\` en la terminal y preguntale lo que quieras.
 
 ---
 
 *"Talk is cheap. Show me the code."* — Linus Torvalds`
-		}
-	]
+        }
+    ]
 };

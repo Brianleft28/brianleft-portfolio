@@ -34,83 +34,59 @@ function isRateLimited(ip: string): boolean {
 	return false;
 }
 
-// Cache de proyectos (se recarga cada request para dev, en prod se puede cachear)
-function loadProjectsFromDisk(): Map<string, string> {
-	const projects = new Map<string, string>();
-	
-	try {
-		const projectsDir = join(process.cwd(), PROJECTS_PATH);
-		const files = readdirSync(projectsDir).filter(f => f.endsWith('.md'));
-		
-		for (const file of files) {
-			const content = readFileSync(join(projectsDir, file), 'utf-8');
-			const projectName = file.replace('.md', '').toLowerCase();
-			projects.set(projectName, content);
-		}
-	} catch (error) {
-		console.error('Error cargando proyectos:', error);
-	}
-	
-	return projects;
-}
-
-// Keywords estáticas para meta/arquitectura
-const staticKeywords: Record<string, string> = {
+// Keywords que activan cada módulo de memoria
+const projectKeywords: Record<string, string> = {
+	// Print Server
+	print: printServerMemory,
+	impresora: printServerMemory,
+	imprimir: printServerMemory,
+	zpl: printServerMemory,
+	'esc-pos': printServerMemory,
+	térmica: printServerMemory,
+	spooler: printServerMemory,
+	'.net': printServerMemory,
+	// Electoral
+	electoral: electoralMemory,
+	voto: electoralMemory,
+	elección: electoralMemory,
+	elecciones: electoralMemory,
+	fiscal: electoralMemory,
+	gobierno: electoralMemory,
+	concurrencia: electoralMemory,
+	// Portfolio / Meta
+	portfolio: portfolioMemory,
 	terminal: metaMemory,
 	torvalds: metaMemory,
 	arquitectura: metaMemory,
 	'cómo funciona': metaMemory,
 	'este sitio': metaMemory,
 	'esta web': metaMemory,
-	admin: metaMemory,
-	panel: metaMemory
+	// Migrador
+	migrador: migradorMemory,
+	migracion: migradorMemory,
+	beneficiarios: migradorMemory,
+	excel: migradorMemory,
+	'datos sucios': migradorMemory
+	// Preguntas generales sobre proyectos (NO cargan docs específicos, pero index.md ya los lista)
+	// Se manejan en la lógica de getRelevantMemory
 };
 
 /**
- * Selecciona memoria relevante - ahora con carga dinámica de proyectos
+ * Selecciona solo los módulos de memoria relevantes según el prompt del usuario.
+ * Siempre incluye el perfil base (index.md) para contexto mínimo.
  */
 function getRelevantMemory(prompt: string): string {
 	const lowerPrompt = prompt.toLowerCase();
-	const relevantDocs = new Set<string>([indexMemory, memoryIndex]);
+	const relevantDocs = new Set<string>([indexMemory]); // Siempre incluir perfil base
 
-	// Keywords estáticas
-	for (const [keyword, doc] of Object.entries(staticKeywords)) {
+	for (const [keyword, doc] of Object.entries(projectKeywords)) {
 		if (lowerPrompt.includes(keyword)) {
 			relevantDocs.add(doc);
 		}
 	}
 
-	// Cargar proyectos dinámicamente y buscar matches
-	const projects = loadProjectsFromDisk();
-	
-	for (const [projectName, content] of projects) {
-		// Match por nombre de proyecto
-		const keywords = projectName.split('-');
-		for (const kw of keywords) {
-			if (kw.length > 2 && lowerPrompt.includes(kw)) {
-				relevantDocs.add(content);
-				break;
-			}
-		}
-		
-		// Match por contenido (primeras 500 chars como "summary")
-		const summary = content.slice(0, 500).toLowerCase();
-		const summaryWords = ['stack', 'tecnolog', 'característica'];
-		if (summaryWords.some(w => lowerPrompt.includes(w))) {
-			// Si pregunta por stack/tecnologías, incluir proyecto si matchea algo
-			const techKeywords = summary.match(/\*\*([^*]+)\*\*/g) || [];
-			for (const tech of techKeywords) {
-				const cleanTech = tech.replace(/\*/g, '').toLowerCase();
-				if (lowerPrompt.includes(cleanTech)) {
-					relevantDocs.add(content);
-					break;
-				}
-			}
-		}
-	}
-
-	// Si no matcheó nada específico, incluir meta
-	if (relevantDocs.size <= 2) {
+	// Si no matcheó nada específico, incluir meta para contexto general
+	if (relevantDocs.size === 1) {
 		relevantDocs.add(metaMemory);
 	}
 
@@ -151,11 +127,11 @@ export const POST: RequestHandler = async ({ request, getClientAddress }) => {
         ## SISTEMA
 
 Eres TorvaldsAi, asistente técnico del portfolio de Brian Benegas.
-Personalidad: Linus Torvalds - directo, pragmático, sarcástico cuando corresponde.
+Personalidad: Linus Torvalds - directo, pragmático, técnicamente exigente pero respetuoso.
 
 REGLAS:
 
-1. **IDIOMA**: Español argentino rioplatense sutil. Si el usuario escribe en otro idioma, responde en ese idioma con sarcasmo inicial.
+1. **IDIOMA**: Español argentino rioplatense sutil. Si el usuario escribe en otro idioma, respondé en ese idioma naturalmente. Brian está aprendiendo inglés activamente, así que si preguntan en inglés, respondé en inglés claro y técnico.
 
 2. **LONGITUD**: Adapta según complejidad.
    - Preguntas simples: 1-3 líneas.
@@ -189,9 +165,9 @@ REGLAS:
    
    Todo corre en Docker 🐳 con build multi-stage.
 
-6. **LÍMITES**: Solo portfolio, proyectos y experiencia de Brian.
+6. **LÍMITES**: Solo portfolio, proyectos y experiencia de Brian. Pero siempre respondé con respeto.
 
-7. **PROVOCACIONES**: Sarcasmo técnico breve, después redirigí al tema. Si te bardean, bardeá mejor pero con datos.
+7. **TONO**: Sé técnicamente exigente y directo, pero nunca despectivo sobre el aprendizaje o crecimiento personal de nadie. El sarcasmo va para código malo, no para personas.
 
 USUARIO: "${userPrompt}"
 
