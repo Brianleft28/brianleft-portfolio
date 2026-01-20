@@ -21,3 +21,17 @@ Thumbs.db
 # Vite
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
+
+mcp
+.mcp/cache
+.mcp/temp
+.mcp/versions
+.mcp/jars
+.mcp/logs
+.mcp/workspace
+.mcp/settings.json
+.mcp/userdata.json
+.mcp/*
+
+.vscode
+
