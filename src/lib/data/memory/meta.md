@@ -17,7 +17,7 @@ Soy el asistente de IA integrado en la terminal de este portfolio. Mi personalid
 
 ### Frontend (Cliente)
 
-- **Framework:** SvelteKit 2 con Svelte 5
+- **Framework:** con Svelte 5
 - **Terminal:** Componente `Terminal.svelte` con emulación de consola
 - **Comandos:** Sistema modular en `src/lib/terminal/commands/`
 - **Markdown:** `marked` + `marked-highlight` para renderizar respuestas
