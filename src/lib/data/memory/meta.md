@@ -105,6 +105,34 @@ El portfolio incluye un panel de administración en `/admin/projects` que permit
   - `file-system.ts` — Inserta nodo en el árbol del explorador virtual
   - `projects/*.md` — Guarda el archivo completo
 
+### Sistema de Autenticación
+
+El admin panel está protegido con autenticación basada en cookies de sesión:
+
+| Archivo | Propósito |
+|---------|-----------|
+| `src/lib/server/auth.ts` | Funciones de creación/validación de tokens HMAC |
+| `src/routes/admin/login/` | Página de login con form action |
+| `src/routes/admin/+layout.server.ts` | Guard que protege rutas `/admin/*` |
+| `src/hooks.server.ts` | Middleware que valida sesión en cada request |
+
+**Flujo de autenticación:**
+```
+Usuario → /admin/* → hooks.server.ts valida cookie → Si inválida → /admin/login
+                                                    → Si válida → Acceso permitido
+```
+
+**Variables de entorno requeridas:**
+- `ADMIN_USERNAME` — Usuario administrador
+- `ADMIN_PASSWORD` — Contraseña
+- `SESSION_SECRET` — Clave para firmar cookies (HMAC-SHA256)
+
+**Características de seguridad:**
+- Cookies `httpOnly`, `secure`, `sameSite: strict`
+- Tokens firmados con HMAC-SHA256
+- Expiración de sesión: 24 horas
+- Endpoint `/api/projects` POST protegido
+
 ### Flujo de Indexación
 ```
 MD subido → Gemini genera resumen → Guarda en 3 ubicaciones → Disponible en terminal
