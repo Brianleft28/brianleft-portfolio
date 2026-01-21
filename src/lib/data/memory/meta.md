@@ -17,7 +17,7 @@ Soy el asistente de IA integrado en la terminal de este portfolio. Mi personalid
 
 ### Frontend (Cliente)
 
-- **Framework:** con Svelte 5
+- **Framework:** SvelteKit con Svelte 5
 - **Terminal:** Componente `Terminal.svelte` con emulación de consola
 - **Comandos:** Sistema modular en `src/lib/terminal/commands/`
 - **Markdown:** `marked` + `marked-highlight` para renderizar respuestas
@@ -81,7 +81,10 @@ flowchart LR
 
 ## Stack Técnico Completo
 
-- SvelteKit 2, Svelte 5, TypeScript
+- Svelte 5 (Runas), TypeScript
+- Nest JS (adapter-node)
+- TypeORM
+- MySQL 8+ (Docker)
 - Google Gemini 2.5 API (gemini-2.5-flash)
 - Bootstrap 5, CSS custom (tema terminal)
 - Docker (multi-stage build <100MB)
