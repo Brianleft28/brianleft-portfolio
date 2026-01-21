@@ -71,11 +71,14 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GH_ACTOR: ${{ steps.prep.outputs.ACTOR_LOWER }}
           GEMINI_KEY: ${{ secrets.GEMINI_API_KEY }}
+          ADMIN_USER: ${{ secrets.ADMIN_USERNAME }}
+          ADMIN_PASS: ${{ secrets.ADMIN_PASSWORD }}
+          SESSION_KEY: ${{ secrets.SESSION_SECRET }}
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
-          envs: FULL_IMAGE,GH_TOKEN,GH_ACTOR,GEMINI_KEY
+          envs: FULL_IMAGE,GH_TOKEN,GH_ACTOR,GEMINI_KEY,ADMIN_USER,ADMIN_PASS,SESSION_KEY
           script: |
             echo "🔐 Logging into GitHub Container Registry..."
             echo "$GH_TOKEN" | docker login ghcr.io -u "$GH_ACTOR" --password-stdin
@@ -94,6 +97,9 @@ jobs:
               -p 3000:3000 \
               -e NODE_ENV=production \
               -e GEMINI_API_KEY="$GEMINI_KEY" \
+              -e ADMIN_USERNAME="$ADMIN_USER" \
+              -e ADMIN_PASSWORD="$ADMIN_PASS" \
+              -e SESSION_SECRET="$SESSION_KEY" \
               "$FULL_IMAGE"
             
             echo "🧹 Cleaning up old images..."

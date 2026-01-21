@@ -65,7 +65,12 @@ ${content.slice(0, 4000)}`;
 	}
 }
 
-export const POST: RequestHandler = async ({ request }) => {
+export const POST: RequestHandler = async ({ request, locals }) => {
+	// Verificar autenticación
+	if (!locals.user?.authenticated) {
+		return json({ error: 'No autorizado. Debe iniciar sesión.' }, { status: 401 });
+	}
+
 	try {
 		const project: ProjectPayload = await request.json();
 
