@@ -4,19 +4,25 @@ import {
   Column,
   CreateDateColumn,
   UpdateDateColumn,
+  ManyToOne,
+  JoinColumn,
+  Index,
 } from 'typeorm';
+import { User } from './user.entity';
 
 /**
  * Configuraciones key-value del portfolio
  * Permite parametrizar: nombre del owner, contacto, links, etc.
+ * Cada usuario tiene sus propias configuraciones
  */
 @Entity('settings')
+@Index(['key', 'userId'], { unique: true }) // Key única por usuario
 export class Setting {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column({ unique: true, length: 100 })
-  key: string;
+  @Column({ length: 100 })
+  key: string; // Ya no es unique globalmente, sino por usuario
 
   @Column({ type: 'text' })
   value: string;
@@ -29,6 +35,13 @@ export class Setting {
 
   @Column({ type: 'text', nullable: true })
   description: string | null;
+
+  @Column({ name: 'user_id' })
+  userId: number;
+
+  @ManyToOne(() => User, (user) => user.settings, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'user_id' })
+  user: User;
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;

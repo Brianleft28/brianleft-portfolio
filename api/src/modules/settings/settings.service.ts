@@ -12,44 +12,45 @@ export class SettingsService {
   ) {}
 
   /**
-   * Obtiene todos los settings
+   * Obtiene todos los settings de un usuario
    */
-  async findAll(): Promise<Setting[]> {
+  async findAll(userId: number): Promise<Setting[]> {
     return this.settingsRepository.find({
+      where: { userId },
       order: { category: 'ASC', key: 'ASC' },
     });
   }
 
   /**
-   * Obtiene settings por categoría
+   * Obtiene settings por categoría de un usuario
    */
-  async findByCategory(category: string): Promise<Setting[]> {
+  async findByCategory(category: string, userId: number): Promise<Setting[]> {
     return this.settingsRepository.find({
-      where: { category },
+      where: { category, userId },
       order: { key: 'ASC' },
     });
   }
 
   /**
-   * Obtiene un setting por key
+   * Obtiene un setting por key de un usuario
    */
-  async findByKey(key: string): Promise<Setting | null> {
-    return this.settingsRepository.findOne({ where: { key } });
+  async findByKey(key: string, userId: number): Promise<Setting | null> {
+    return this.settingsRepository.findOne({ where: { key, userId } });
   }
 
   /**
-   * Obtiene el valor de un setting
+   * Obtiene el valor de un setting de un usuario
    */
-  async getValue(key: string): Promise<string | null> {
-    const setting = await this.findByKey(key);
+  async getValue(key: string, userId: number): Promise<string | null> {
+    const setting = await this.findByKey(key, userId);
     return setting?.value || null;
   }
 
   /**
-   * Actualiza un setting por ID
+   * Actualiza un setting por ID (verificando ownership)
    */
-  async update(id: number, value: string): Promise<Setting> {
-    const setting = await this.settingsRepository.findOne({ where: { id } });
+  async update(id: number, value: string, userId: number): Promise<Setting> {
+    const setting = await this.settingsRepository.findOne({ where: { id, userId } });
 
     if (!setting) {
       throw new NotFoundException(`Setting con ID ${id} no encontrado`);
@@ -66,25 +67,25 @@ export class SettingsService {
         const firstName =
           setting.key === 'owner_first_name'
             ? value
-            : (await this.getValue('owner_first_name')) || '';
+            : (await this.getValue('owner_first_name', userId)) || '';
         const lastName =
           setting.key === 'owner_last_name'
             ? value
-            : (await this.getValue('owner_last_name')) || '';
+            : (await this.getValue('owner_last_name', userId)) || '';
         const fullName = `${firstName} ${lastName}`.trim();
-        await this.updateByKey('owner_name', fullName);
+        await this.updateByKey('owner_name', fullName, userId);
       }
-      await this.regenerateAsciiBanner();
+      await this.regenerateAsciiBanner(userId);
     }
 
     return savedSetting;
   }
 
   /**
-   * Actualiza un setting por key
+   * Actualiza un setting por key de un usuario
    */
-  async updateByKey(key: string, value: string): Promise<Setting> {
-    const setting = await this.findByKey(key);
+  async updateByKey(key: string, value: string, userId: number): Promise<Setting> {
+    const setting = await this.findByKey(key, userId);
 
     if (!setting) {
       throw new NotFoundException(`Setting "${key}" no encontrado`);
@@ -96,7 +97,7 @@ export class SettingsService {
     // Si es un campo relacionado con nombre o rol, regenerar ASCII banner
     const bannerTriggerKeys = ['owner_name', 'owner_first_name', 'owner_last_name', 'owner_role'];
     if (bannerTriggerKeys.includes(key)) {
-      await this.regenerateAsciiBanner();
+      await this.regenerateAsciiBanner(userId);
     }
 
     return savedSetting;
@@ -120,17 +121,17 @@ export class SettingsService {
   }
 
   /**
-   * Regenera el ASCII banner basado en owner_name y owner_role
+   * Regenera el ASCII banner basado en owner_name y owner_role de un usuario
    */
-  async regenerateAsciiBanner(): Promise<string> {
-    const ownerName = (await this.getValue('owner_name')) || 'Portfolio';
-    const ownerRole = (await this.getValue('owner_role')) || 'Developer';
+  async regenerateAsciiBanner(userId: number): Promise<string> {
+    const ownerName = (await this.getValue('owner_name', userId)) || 'Portfolio';
+    const ownerRole = (await this.getValue('owner_role', userId)) || 'Developer';
 
     const nameBanner = await this.generateAsciiBanner(ownerName);
     const fullBanner = `${nameBanner}\n                  ${ownerRole}`;
 
     // Guardar o actualizar el banner
-    let bannerSetting = await this.findByKey('ascii_banner');
+    let bannerSetting = await this.findByKey('ascii_banner', userId);
     if (bannerSetting) {
       bannerSetting.value = fullBanner;
       await this.settingsRepository.save(bannerSetting);
@@ -141,25 +142,25 @@ export class SettingsService {
         type: 'string',
         category: 'branding',
         description: 'Banner ASCII generado automáticamente',
-      });
+      }, userId);
     }
 
     return fullBanner;
   }
 
   /**
-   * Obtiene el ASCII banner actual
+   * Obtiene el ASCII banner actual de un usuario
    */
-  async getAsciiBanner(): Promise<string> {
-    const banner = await this.getValue('ascii_banner');
+  async getAsciiBanner(userId: number): Promise<string> {
+    const banner = await this.getValue('ascii_banner', userId);
     if (banner) return banner;
 
     // Generar uno por defecto si no existe
-    return this.regenerateAsciiBanner();
+    return this.regenerateAsciiBanner(userId);
   }
 
   /**
-   * Crea un nuevo setting
+   * Crea un nuevo setting para un usuario
    */
   async create(data: {
     key: string;
@@ -167,32 +168,33 @@ export class SettingsService {
     type?: 'string' | 'number' | 'boolean' | 'json';
     category?: string;
     description?: string;
-  }): Promise<Setting> {
+  }, userId: number): Promise<Setting> {
     const setting = new Setting();
     setting.key = data.key;
     setting.value = data.value;
     setting.type = data.type || 'string';
     setting.category = data.category || 'general';
     setting.description = data.description || '';
+    setting.userId = userId;
 
     return this.settingsRepository.save(setting);
   }
 
   /**
-   * Elimina un setting
+   * Elimina un setting (verificando ownership)
    */
-  async delete(id: number): Promise<void> {
-    const result = await this.settingsRepository.delete(id);
+  async delete(id: number, userId: number): Promise<void> {
+    const result = await this.settingsRepository.delete({ id, userId });
     if (result.affected === 0) {
       throw new NotFoundException(`Setting con ID ${id} no encontrado`);
     }
   }
 
   /**
-   * Obtiene settings como mapa key-value
+   * Obtiene settings como mapa key-value de un usuario
    */
-  async getAsMap(): Promise<Map<string, string>> {
-    const settings = await this.findAll();
+  async getAsMap(userId: number): Promise<Map<string, string>> {
+    const settings = await this.findAll(userId);
     const map = new Map<string, string>();
 
     for (const setting of settings) {
@@ -200,5 +202,34 @@ export class SettingsService {
     }
 
     return map;
+  }
+
+  /**
+   * Inicializa settings por defecto para un nuevo usuario
+   */
+  async initializeForUser(userId: number, data: {
+    ownerName: string;
+    ownerFirstName: string;
+    ownerLastName: string;
+    ownerRole: string;
+    email: string;
+  }): Promise<void> {
+    // Settings básicos para el nuevo usuario
+    const defaultSettings = [
+      { key: 'owner_name', value: data.ownerName, category: 'owner', description: 'Nombre completo' },
+      { key: 'owner_first_name', value: data.ownerFirstName, category: 'owner', description: 'Nombre' },
+      { key: 'owner_last_name', value: data.ownerLastName, category: 'owner', description: 'Apellido' },
+      { key: 'owner_role', value: data.ownerRole, category: 'owner', description: 'Rol/Título profesional' },
+      { key: 'owner_email', value: data.email, category: 'contact', description: 'Email de contacto' },
+      { key: 'theme_color', value: '#00ff00', category: 'branding', description: 'Color principal' },
+      { key: 'terminal_prompt', value: 'C:\\>', category: 'branding', description: 'Prompt de terminal' },
+    ];
+
+    for (const setting of defaultSettings) {
+      await this.create(setting, userId);
+    }
+
+    // Generar banner ASCII
+    await this.regenerateAsciiBanner(userId);
   }
 }

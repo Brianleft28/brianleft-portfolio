@@ -22,6 +22,9 @@ class ChatDto {
   @IsString()
   @IsOptional()
   mode?: string; // 'arquitecto' o 'asistente'
+
+  @IsOptional()
+  userId?: number; // ID del usuario (default: 1 para endpoints públicos)
 }
 
 // Free tier: 5 intentos por IP usando la key del servidor
@@ -134,7 +137,8 @@ export class ChatController {
       }
 
       // Generar respuesta con streaming (usa la key del usuario si está disponible)
-      for await (const chunk of this.chatService.chat(dto.prompt, userApiKey, dto.mode)) {
+      const userId = dto.userId || 1; // Default to admin user for public endpoints
+      for await (const chunk of this.chatService.chat(dto.prompt, userApiKey, dto.mode, userId)) {
         res.write(chunk);
       }
 

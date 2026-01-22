@@ -34,3 +34,40 @@ export const GET: RequestHandler = async () => {
 		});
 	}
 };
+
+/**
+ * POST /api/filesystem - Sincroniza el filesystem con los proyectos de memoria
+ */
+export const POST: RequestHandler = async () => {
+	try {
+		const response = await fetch(`${API_URL}/filesystem/sync`, {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' }
+		});
+
+		if (!response.ok) {
+			const errorText = await response.text();
+			return new Response(
+				JSON.stringify({ success: false, error: errorText || 'Error al sincronizar' }),
+				{
+					status: response.status,
+					headers: { 'Content-Type': 'application/json' }
+				}
+			);
+		}
+
+		const result = await response.json();
+		return new Response(JSON.stringify(result), {
+			headers: { 'Content-Type': 'application/json' }
+		});
+	} catch (error) {
+		console.error('[Filesystem Sync API Error]', error);
+		return new Response(
+			JSON.stringify({ success: false, error: 'Error de conexión al sincronizar' }),
+			{
+				status: 500,
+				headers: { 'Content-Type': 'application/json' }
+			}
+		);
+	}
+};

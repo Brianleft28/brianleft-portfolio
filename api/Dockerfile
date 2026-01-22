@@ -37,11 +37,18 @@ RUN mkdir -p /app/data/memory && chown -R nestjs:nodejs /app/data
 # Copiar archivos de dependencias
 COPY package*.json ./
 
-# Instalar solo dependencias de producción
-RUN npm ci --only=production && npm cache clean --force
+# Instalar solo dependencias de producción + ts-node para seeders
+RUN npm ci --only=production && \
+    npm install ts-node typescript && \
+    npm cache clean --force
 
 # Copiar build desde builder
 COPY --from=builder /app/dist ./dist
+
+# Copiar fuentes de seeders para poder ejecutarlos con ts-node
+COPY --from=builder /app/src/seeders ./src/seeders
+COPY --from=builder /app/src/entities ./src/entities
+COPY --from=builder /app/tsconfig.json ./tsconfig.json
 
 # Cambiar ownership de todo
 RUN chown -R nestjs:nodejs /app

@@ -249,9 +249,9 @@ export async function seedSettings(dataSource: DataSource): Promise<void> {
   ];
 
   for (const setting of settings) {
-    const exists = await settingRepo.findOne({ where: { key: setting.key } });
+    const exists = await settingRepo.findOne({ where: { key: setting.key, userId: 1 } });
     if (!exists) {
-      await settingRepo.save(setting);
+      await settingRepo.save({ ...setting, userId: 1 });
       console.log(`  ✓ Setting: ${setting.key}`);
     }
   }

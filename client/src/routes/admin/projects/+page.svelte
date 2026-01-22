@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import { invalidateAll } from '$app/navigation';
 	import type { PageData, ActionData } from './$types';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
@@ -8,6 +9,9 @@
 	let activeTab = $state<'projects' | 'filesystem' | 'create'>('projects');
 	let expandedFolders = $state<Set<number>>(new Set());
 	let confirmDelete = $state<{ type: 'folder' | 'file'; id: number; name: string } | null>(null);
+	let syncing = $state(false);
+	let generatingSummaries = $state(false);
+	let syncMessage = $state<string | null>(null);
 	
 	// Form de nuevo proyecto
 	let newProject = $state({
@@ -48,6 +52,69 @@
 	function resetForm() {
 		newProject = { name: '', slug: '', content: '', keywords: '', folderId: '' };
 		newFolder = { name: '', parentId: '' };
+	}
+
+	// Formatear título de proyecto (capitalización correcta)
+	function formatTitle(title: string): string {
+		const words = title.replace(/-/g, ' ').split(/\s+/);
+		return words.map(word => {
+			// Mantener siglas en mayúsculas
+			if (word.toUpperCase() === word && word.length <= 4) {
+				return word;
+			}
+			// Palabras especiales que van en minúscula
+			const lowerWords = ['de', 'del', 'la', 'el', 'los', 'las', 'y', 'e', 'o', 'u'];
+			if (lowerWords.includes(word.toLowerCase())) {
+				return word.toLowerCase();
+			}
+			// Capitalizar primera letra
+			return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+		}).join(' ');
+	}
+
+	// Sincronizar filesystem con proyectos
+	async function syncFilesystem() {
+		syncing = true;
+		syncMessage = null;
+		try {
+			const res = await fetch('/api/filesystem/sync', { method: 'POST' });
+			const result = await res.json();
+			if (result.created?.length > 0) {
+				syncMessage = `✅ Carpetas creadas: ${result.created.join(', ')}`;
+			} else {
+				syncMessage = '✅ Filesystem ya sincronizado';
+			}
+			await invalidateAll();
+		} catch (e) {
+			syncMessage = '❌ Error sincronizando filesystem';
+		} finally {
+			syncing = false;
+		}
+	}
+
+	// Generar resúmenes con IA
+	async function generateSummaries() {
+		generatingSummaries = true;
+		syncMessage = null;
+		try {
+			const res = await fetch('/api/memories/generate-summaries', { 
+				method: 'POST',
+				credentials: 'include'
+			});
+			const result = await res.json();
+			if (result.updated?.length > 0) {
+				syncMessage = `✅ Resúmenes generados: ${result.updated.join(', ')}`;
+			} else if (result.failed?.length > 0) {
+				syncMessage = `⚠️ Algunos fallaron: ${result.failed.join(', ')}`;
+			} else {
+				syncMessage = '✅ Todos los proyectos ya tienen resumen';
+			}
+			await invalidateAll();
+		} catch (e) {
+			syncMessage = '❌ Error generando resúmenes';
+		} finally {
+			generatingSummaries = false;
+		}
 	}
 
 	// Función recursiva para renderizar filesystem
@@ -97,6 +164,12 @@
 	{#if form?.success}
 		<div class="success-message">
 			<span>✓</span> Operación completada correctamente
+			{#if form.memoriesDeleted?.length > 0}
+				<br><small>🧠 Memorias eliminadas: {form.memoriesDeleted.join(', ')}</small>
+			{/if}
+			{#if form.memoryDeleted}
+				<br><small>🧠 Memoria eliminada: {form.memoryDeleted}</small>
+			{/if}
 		</div>
 	{/if}
 
@@ -128,6 +201,28 @@
 	<!-- Content -->
 	<div class="tab-content">
 		{#if activeTab === 'projects'}
+			<!-- Toolbar de acciones -->
+			<div class="projects-toolbar">
+				<button 
+					class="btn-action"
+					onclick={syncFilesystem}
+					disabled={syncing}
+				>
+					{#if syncing}⏳{:else}🔄{/if} Sincronizar Filesystem
+				</button>
+				<button 
+					class="btn-action btn-ai"
+					onclick={generateSummaries}
+					disabled={generatingSummaries}
+				>
+					{#if generatingSummaries}⏳ Generando...{:else}🤖 Generar Resúmenes con IA{/if}
+				</button>
+			</div>
+			
+			{#if syncMessage}
+				<div class="sync-message">{syncMessage}</div>
+			{/if}
+			
 			<div class="projects-list">
 				{#if data.projects?.length === 0}
 					<div class="empty-state">
@@ -140,14 +235,14 @@
 					{#each data.projects as project}
 						<div class="project-card">
 							<div class="project-header">
-								<h3>{project.title}</h3>
+								<h3>{formatTitle(project.title)}</h3>
 								<span class="slug">/{project.slug}</span>
 							</div>
 							<p class="summary">
 								{#if project.summary}
 									{project.summary}
 								{:else}
-									<span class="no-summary">Sin resumen - Ejecutá los seeders o creá un proyecto nuevo para generar</span>
+									<span class="no-summary">Sin resumen - Usá el botón "Generar Resúmenes con IA"</span>
 								{/if}
 							</p>
 							{#if project.keywords?.length}
@@ -212,7 +307,8 @@
 					<h4>🧠 Retroalimentación de Memoria Automática</h4>
 					<p>Al crear un proyecto, el sistema automáticamente:</p>
 					<ul>
-						<li>✓ Genera un resumen con IA del contenido</li>
+						<li>✓ Genera un <strong>resumen con IA</strong> del contenido</li>
+						<li>✓ Genera <strong>15 keywords con IA</strong> para búsqueda semántica</li>
 						<li>✓ Actualiza <code>memory.md</code> con el nuevo proyecto</li>
 						<li>✓ Actualiza <code>index.md</code> con nuevas tecnologías detectadas</li>
 						<li>✓ Crea la memoria específica del proyecto en la BD</li>
@@ -305,15 +401,30 @@
 
 <!-- Modal de confirmación -->
 {#if confirmDelete}
-	<div class="modal-overlay" role="button" tabindex="-1" onclick={() => confirmDelete = null} onkeydown={(e) => e.key === 'Escape' && (confirmDelete = null)}>
-		<div class="modal" role="dialog" aria-modal="true" tabindex="-1" onclick={(e) => e.stopPropagation()} onkeydown={(e) => e.stopPropagation()}>
+	<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
+	<div 
+		class="modal-overlay" 
+		role="presentation"
+		onclick={() => confirmDelete = null}
+		onkeydown={(e) => e.key === 'Escape' && (confirmDelete = null)}
+	>
+		<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
+		<div 
+			class="modal" 
+			role="dialog" 
+			aria-modal="true"
+			onclick={(e) => e.stopPropagation()}
+			onkeydown={(e) => e.stopPropagation()}
+		>
 			<h3>⚠️ Confirmar Eliminación</h3>
 			<p>¿Estás seguro de que querés eliminar {confirmDelete.type === 'folder' ? 'la carpeta' : 'el archivo'} <strong>{confirmDelete.name}</strong>?</p>
 			{#if confirmDelete.type === 'folder'}
-				<p class="warning">Esto eliminará todo el contenido dentro de la carpeta.</p>
+				<p class="warning">Esto eliminará todo el contenido dentro de la carpeta y las memorias de proyectos asociadas.</p>
+			{:else}
+				<p class="warning">Si existe una memoria de proyecto asociada, también será eliminada.</p>
 			{/if}
 			<div class="modal-actions">
-				<button class="btn-cancel" onclick={() => confirmDelete = null}>Cancelar</button>
+				<button type="button" class="btn-cancel" onclick={() => confirmDelete = null}>Cancelar</button>
 				<form 
 					method="POST" 
 					action={confirmDelete.type === 'folder' ? '?/deleteFolder' : '?/deleteFile'}
@@ -861,5 +972,69 @@
 	.form-group select option {
 		background: #222;
 		color: #ddd;
+	}
+
+	/* Projects Toolbar */
+	.projects-toolbar {
+		display: flex;
+		gap: 0.75rem;
+		margin-bottom: 1rem;
+		flex-wrap: wrap;
+	}
+
+	.btn-action {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.5rem;
+		padding: 0.5rem 1rem;
+		background: rgba(0, 255, 0, 0.1);
+		border: 1px solid #00ff00;
+		color: #00ff00;
+		border-radius: 4px;
+		font-family: 'Courier New', monospace;
+		font-size: 0.85rem;
+		cursor: pointer;
+		transition: all 0.2s ease;
+	}
+
+	.btn-action:hover:not(:disabled) {
+		background: rgba(0, 255, 0, 0.2);
+		box-shadow: 0 0 10px rgba(0, 255, 0, 0.3);
+	}
+
+	.btn-action:disabled {
+		opacity: 0.5;
+		cursor: not-allowed;
+	}
+
+	.btn-ai {
+		background: rgba(138, 43, 226, 0.1);
+		border-color: #8a2be2;
+		color: #bb86fc;
+	}
+
+	.btn-ai:hover:not(:disabled) {
+		background: rgba(138, 43, 226, 0.2);
+		box-shadow: 0 0 10px rgba(138, 43, 226, 0.3);
+	}
+
+	.sync-message {
+		padding: 0.5rem 1rem;
+		border-radius: 4px;
+		font-family: 'Courier New', monospace;
+		font-size: 0.85rem;
+		margin-bottom: 1rem;
+	}
+
+	.sync-message.success {
+		background: rgba(0, 255, 0, 0.1);
+		border: 1px solid #00ff00;
+		color: #00ff00;
+	}
+
+	.sync-message.error {
+		background: rgba(255, 0, 0, 0.1);
+		border: 1px solid #ff4444;
+		color: #ff4444;
 	}
 </style>

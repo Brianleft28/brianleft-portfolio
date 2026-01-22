@@ -8,10 +8,11 @@ import { cv } from './cv';
 import { help } from './help';
 import { ls } from './ls';
 import { pwd } from './pwd';
+import { register } from './register';
 import { tree } from './tree';
 import { torvalds } from './torvalds';
 
-const allCommands: Command[] = [admin, apikey, cat, cd, cls, cv, help, ls, pwd, tree, torvalds];
+const allCommands: Command[] = [admin, apikey, cat, cd, cls, cv, help, ls, pwd, register, tree, torvalds];
 const commandRegistry: Map<string, Command> = new Map();
 
 // Registrar todos los comandos
@@ -34,6 +35,10 @@ commandRegistry.set('panel', admin);
 commandRegistry.set('ai', torvalds);
 commandRegistry.set('torvalds', torvalds);
 commandRegistry.set('assistant', torvalds);
+
+// Aliases para register
+commandRegistry.set('signup', register);
+commandRegistry.set('createuser', register);
 
 // ll es ls -l (alias especial)
 const llCommand: Command = {
@@ -88,4 +93,4 @@ export function generateHelp(): string {
 }
 
 // Re-exportar comandos individuales
-export { apikey, cat, cd, cls, cv, help, ls, pwd, tree, torvalds };
+export { apikey, cat, cd, cls, cv, help, ls, pwd, register, tree, torvalds };

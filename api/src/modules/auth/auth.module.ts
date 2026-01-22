@@ -7,10 +7,14 @@ import { AuthController } from './auth.controller';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { JwtRefreshStrategy } from './strategies/jwt-refresh.strategy';
 import { UsersModule } from '../users/users.module';
+import { SettingsModule } from '../settings/settings.module';
+import { FilesystemModule } from '../filesystem/filesystem.module';
 
 @Module({
   imports: [
     UsersModule,
+    SettingsModule,
+    FilesystemModule,
     PassportModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],

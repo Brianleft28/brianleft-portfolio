@@ -44,7 +44,7 @@ export class ProjectsService {
    * 3. Actualiza memory.md con el nuevo proyecto
    * 4. Actualiza index.md con nuevas habilidades
    */
-  async createProject(dto: CreateProjectDto) {
+  async createProject(dto: CreateProjectDto, userId: number = 1) {
     this.logger.log(`Creando proyecto: ${dto.name}`);
 
     // 1. Extraer tecnologías del contenido
@@ -59,18 +59,26 @@ export class ProjectsService {
     );
     this.logger.log(`Resumen estructurado generado para ${dto.name}`);
 
-    // 3. Crear memoria del proyecto
+    // 3. Generar keywords con IA si no se proporcionan
+    let keywords = dto.keywords;
+    if (!keywords || keywords.length === 0) {
+      // Usar el servicio de memoria para generar keywords con IA
+      keywords = await this.memoryService.generateKeywords(dto.name, dto.content);
+      this.logger.log(`Keywords generadas con IA: ${keywords.join(', ')}`);
+    }
+
+    // 4. Crear memoria del proyecto
     const memory = await this.memoryService.create({
       type: MemoryType.PROJECT,
       slug: dto.slug,
       title: dto.name,
       content: dto.content,
       summary: structuredSummary.description,
-      keywords: dto.keywords || this.extractKeywords(dto.name, dto.content),
-    });
+      keywords: keywords,
+    }, userId);
     this.logger.log(`Memoria creada: ${memory.id}`);
 
-    // 4. Crear archivo en filesystem (si se especifica carpeta)
+    // 5. Crear archivo en filesystem (si se especifica carpeta)
     let file = null;
     if (dto.folderId) {
       file = await this.filesystemService.createFile({
@@ -78,16 +86,16 @@ export class ProjectsService {
         type: FileType.MARKDOWN,
         content: dto.content,
         folderId: dto.folderId,
-      });
+      }, userId);
       this.logger.log(`Archivo creado: ${file.id}`);
     }
 
-    // 5. Actualizar memory.md con el nuevo proyecto
-    await this.updateMemoryMd(dto.name, structuredSummary);
+    // 6. Actualizar memory.md con el nuevo proyecto
+    await this.updateMemoryMd(dto.name, structuredSummary, userId);
     this.logger.log(`memory.md actualizado`);
 
-    // 6. Actualizar index.md con nuevas tecnologías y proyecto
-    await this.updateIndexMd(dto.name, structuredSummary, detectedTech);
+    // 7. Actualizar index.md con nuevas tecnologías y proyecto
+    await this.updateIndexMd(dto.name, structuredSummary, detectedTech, userId);
     this.logger.log(`index.md actualizado`);
 
     return {
@@ -95,6 +103,7 @@ export class ProjectsService {
       file,
       summary: structuredSummary,
       technologiesAdded: detectedTech,
+      keywords: keywords,
     };
   }
 
@@ -155,8 +164,9 @@ export class ProjectsService {
   private async updateMemoryMd(
     projectName: string,
     summary: ProjectSummaryForMemory,
+    userId: number,
   ): Promise<void> {
-    const memoryDoc = await this.memoryRepository.findOne({ where: { slug: 'memory' } });
+    const memoryDoc = await this.memoryRepository.findOne({ where: { slug: 'memory', userId } });
     if (!memoryDoc) {
       this.logger.warn('memory.md no encontrado en BD, no se puede actualizar');
       return;
@@ -200,8 +210,9 @@ ${summary.keyFeatures.length > 0 ? '- **Características:**\n' + summary.keyFeat
     projectName: string,
     summary: ProjectSummaryForMemory,
     newTech: string[],
+    userId: number,
   ): Promise<void> {
-    const indexDoc = await this.memoryRepository.findOne({ where: { slug: 'index' } });
+    const indexDoc = await this.memoryRepository.findOne({ where: { slug: 'index', userId } });
     if (!indexDoc) {
       this.logger.warn('index.md no encontrado en BD, no se puede actualizar');
       return;
@@ -326,8 +337,8 @@ ${summary.keyFeatures.length > 0 ? '**Características:** ' + summary.keyFeature
   /**
    * Lista todos los proyectos con sus resúmenes
    */
-  async listProjects() {
-    const memories = await this.memoryService.findByType(MemoryType.PROJECT);
+  async listProjects(userId: number = 1) {
+    const memories = await this.memoryService.findByType(MemoryType.PROJECT, userId);
 
     return memories.map((m) => ({
       id: m.id,
@@ -342,8 +353,8 @@ ${summary.keyFeatures.length > 0 ? '**Características:** ' + summary.keyFeature
   /**
    * Obtiene un proyecto completo por slug
    */
-  async getProject(slug: string) {
-    const memory = await this.memoryService.findBySlug(slug);
+  async getProject(slug: string, userId: number = 1) {
+    const memory = await this.memoryService.findBySlug(slug, userId);
     if (!memory) {
       return null;
     }

@@ -4,19 +4,25 @@ import {
   Column,
   CreateDateColumn,
   UpdateDateColumn,
+  ManyToOne,
+  JoinColumn,
+  Index,
 } from 'typeorm';
+import { User } from './user.entity';
 
 /**
  * Personalidades de IA parametrizables
  * TorvaldsAi es solo una opción - se pueden crear otras
+ * userId NULL = personalidad global (disponible para todos)
  */
 
 @Entity('ai_personalities')
+@Index(['slug', 'userId'], { unique: true }) // Slug único por usuario (o global si userId es null)
 export class AiPersonality {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column({ unique: true, length: 100 })
+  @Column({ length: 100 })
   slug: string; // 'torvalds', 'jobs', 'custom'
 
   @Column({ length: 255 })
@@ -51,6 +57,13 @@ export class AiPersonality {
 
   @Column({ default: false })
   isDefault: boolean; // Solo una puede ser default
+
+  @Column({ name: 'user_id', nullable: true })
+  userId: number | null; // NULL = personalidad global
+
+  @ManyToOne(() => User, (user) => user.aiPersonalities, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'user_id' })
+  user: User | null;
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;

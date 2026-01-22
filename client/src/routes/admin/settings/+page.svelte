@@ -374,6 +374,7 @@
   .settings-page {
     max-width: 900px;
     margin: 0 auto;
+    font-family: 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
   }
 
   .page-header {
@@ -381,14 +382,15 @@
   }
 
   .page-header h1 {
-    font-size: 1.4rem;
+    font-size: 1.5rem;
     color: #00ff00;
     margin-bottom: 0.25rem;
+    font-weight: 600;
   }
 
   .subtitle {
-    color: #999;
-    font-size: 0.85rem;
+    color: #aaa;
+    font-size: 0.9rem;
   }
 
   .alert {
@@ -419,15 +421,17 @@
   }
 
   .ascii-section h2 {
-    font-size: 1rem;
+    font-size: 1.05rem;
     color: #00ff00;
     margin-bottom: 0.25rem;
+    font-weight: 600;
   }
 
   .hint {
-    font-size: 0.8rem;
-    color: #888;
+    font-size: 0.85rem;
+    color: #999;
     margin-bottom: 0.75rem;
+    line-height: 1.4;
   }
 
   .ascii-preview {
@@ -451,20 +455,21 @@
   }
 
   .loading-text, .no-banner {
-    color: #888;
+    color: #999;
     font-style: italic;
-    font-size: 0.85rem;
+    font-size: 0.9rem;
   }
 
   .btn-regenerate {
     margin-top: 0.75rem;
-    padding: 0.35rem 0.7rem;
+    padding: 0.4rem 0.8rem;
     background: transparent;
     border: 1px solid #444;
-    color: #888;
+    color: #999;
     border-radius: 4px;
     cursor: pointer;
-    font-size: 0.75rem;
+    font-size: 0.85rem;
+    font-family: 'Segoe UI', system-ui, sans-serif;
     transition: all 0.2s;
   }
 
@@ -482,11 +487,12 @@
   }
 
   .settings-section h2 {
-    font-size: 0.95rem;
+    font-size: 1.05rem;
     color: #00ff00;
     margin-bottom: 1rem;
     padding-bottom: 0.5rem;
     border-bottom: 1px solid #222;
+    font-weight: 600;
   }
 
   .settings-list {
@@ -497,7 +503,7 @@
 
   .setting-row {
     display: grid;
-    grid-template-columns: 180px 1fr;
+    grid-template-columns: 200px 1fr;
     gap: 1rem;
     align-items: start;
     padding: 0.5rem;
@@ -517,29 +523,30 @@
   .setting-info {
     display: flex;
     flex-direction: column;
-    gap: 0.2rem;
+    gap: 0.25rem;
   }
 
   .setting-info label {
     color: #e0e0e0;
-    font-size: 0.85rem;
+    font-size: 0.9rem;
     font-weight: 600;
   }
 
   .setting-hint {
-    font-size: 0.75rem;
-    color: #888;
+    font-size: 0.8rem;
+    color: #999;
+    line-height: 1.4;
   }
 
   .setting-input {
     width: 100%;
-    padding: 0.5rem 0.65rem;
+    padding: 0.6rem 0.75rem;
     background: #161622;
     border: 1px solid #333;
     border-radius: 4px;
     color: #e0e0e0;
-    font-family: inherit;
-    font-size: 0.85rem;
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    font-size: 0.9rem;
     transition: all 0.2s;
   }
 
@@ -569,7 +576,7 @@
   }
 
   .json-field-label {
-    font-size: 0.75rem;
+    font-size: 0.8rem;
     color: #4ec9b0;
     text-transform: capitalize;
     font-weight: 500;
@@ -578,7 +585,8 @@
   .empty-state {
     text-align: center;
     padding: 2rem;
-    color: #888;
+    color: #999;
+    font-size: 0.95rem;
   }
 
   .actions-bar {
@@ -589,16 +597,18 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 0.65rem 2rem;
+    padding: 0.75rem 2rem;
     background: rgba(13, 13, 26, 0.98);
     border-top: 1px solid #00ff00;
     backdrop-filter: blur(10px);
     z-index: 100;
+    font-family: 'Segoe UI', system-ui, sans-serif;
   }
 
   .changes-count {
     color: #00ff00;
-    font-size: 0.85rem;
+    font-size: 0.9rem;
+    font-weight: 500;
   }
 
   .actions {
@@ -607,11 +617,12 @@
   }
 
   .btn {
-    padding: 0.45rem 1rem;
+    padding: 0.5rem 1.1rem;
     border-radius: 4px;
     border: none;
     cursor: pointer;
-    font-size: 0.85rem;
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    font-size: 0.9rem;
     transition: all 0.2s;
   }
 
@@ -642,6 +653,12 @@
 
   form {
     display: contents;
+  }
+
+  /* Estilos para alertas */
+  .alert {
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    font-size: 0.9rem;
   }
 
   @media (max-width: 700px) {

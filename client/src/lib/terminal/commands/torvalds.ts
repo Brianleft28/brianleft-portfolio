@@ -30,33 +30,47 @@ export function getAiModes(): Record<string, AiMode> {
 export const torvalds: Command = {
 	name: 'ai',
 	description: 'Asistente AI con modos especializados',
-	usage: 'ai <subcomando> [args]',
+	usage: 'ai [subcomando] [args] o ai <pregunta directa>',
 
 	execute(args, ctx) {
 		const subcommand = args[0];
 		const aiName = ctx?.aiDisplayName || 'AI Assistant';
 		const aiCmd = ctx?.aiCommandName || 'ai';
 
+		// Si no hay argumentos, iniciar en modo asistente directamente
 		if (!subcommand) {
-			return showAiHelp(aiName, aiCmd);
+			return startAi(undefined, ctx, aiName, aiCmd);
 		}
 
-		switch (subcommand) {
-			case 'start':
-				return startAi(args[1], ctx, aiName, aiCmd);
-			case 'stop':
-				return stopAi(ctx, aiName);
-			case 'mode':
-				return changeMode(args[1], ctx, aiCmd);
-			case 'modes':
-				return listModes(aiName);
-			case 'status':
-				return showStatus(ctx, aiName);
-			default:
-				return {
-					output: `'${subcommand}' no es un subcomando válido\nUsa '${aiCmd}' para ver la ayuda`
-				};
+		// Verificar si es un subcomando válido
+		const validSubcommands = ['start', 'stop', 'mode', 'modes', 'status', 'help', '-h'];
+		if (validSubcommands.includes(subcommand.toLowerCase())) {
+			switch (subcommand.toLowerCase()) {
+				case 'start':
+					return startAi(args[1], ctx, aiName, aiCmd);
+				case 'stop':
+					return stopAi(ctx, aiName);
+				case 'mode':
+					return changeMode(args[1], ctx, aiCmd);
+				case 'modes':
+					return listModes(aiName);
+				case 'status':
+					return showStatus(ctx, aiName);
+				case 'help':
+				case '-h':
+					return showAiHelp(aiName, aiCmd);
+				default:
+					return showAiHelp(aiName, aiCmd);
+			}
 		}
+
+		// Si no es un subcomando válido, asumir que es una pregunta directa
+		// Activar el modo y devolver señal para procesar la pregunta
+		ctx.setAiMode(ctx.aiMode || 'asistente');
+		return {
+			output: '',
+			startChatWith: args.join(' ') // Señal especial para el Terminal
+		};
 	}
 };
 

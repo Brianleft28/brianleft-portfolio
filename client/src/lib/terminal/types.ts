@@ -17,6 +17,7 @@ export interface CommandResult {
     isHtml?: boolean;
     isMarkdown?: boolean;
     clear?: boolean;
+    startChatWith?: string; // Señal para iniciar chat con un prompt inicial
 }
 
 export interface Command {

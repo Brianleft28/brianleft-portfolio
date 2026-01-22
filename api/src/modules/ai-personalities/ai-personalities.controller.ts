@@ -6,12 +6,14 @@ import {
   Delete,
   Body,
   Param,
+  Query,
   UseGuards,
   ParseIntPipe,
 } from '@nestjs/common';
 import { JwtAuthGuard } from '../../guards/jwt-auth.guard';
 import { AiPersonalitiesService } from './ai-personalities.service';
 import { AiPersonality } from '../../entities/ai-personality.entity';
+import { UserId } from '../../decorators';
 
 @Controller('ai-personalities')
 export class AiPersonalitiesController {
@@ -22,25 +24,25 @@ export class AiPersonalitiesController {
    */
   @Get()
   @UseGuards(JwtAuthGuard)
-  async findAll() {
-    return this.aiPersonalitiesService.findAll();
+  async findAll(@UserId() userId: number) {
+    return this.aiPersonalitiesService.findAll(userId);
   }
 
   /**
    * GET /ai-personalities/active - Obtiene la personalidad activa (público para el chat)
    */
   @Get('active')
-  async getActive() {
-    return this.aiPersonalitiesService.findActive();
+  async getActive(@Query('userId') userId?: number) {
+    return this.aiPersonalitiesService.findActive(userId || 1);
   }
 
   /**
    * PUT /ai-personalities/active - Actualiza la personalidad activa
-   * Nota: La autenticación se maneja en el proxy de SvelteKit (session-based)
    */
   @Put('active')
-  async updateActive(@Body() data: Partial<AiPersonality>) {
-    return this.aiPersonalitiesService.updateActive(data);
+  @UseGuards(JwtAuthGuard)
+  async updateActive(@Body() data: Partial<AiPersonality>, @UserId() userId: number) {
+    return this.aiPersonalitiesService.updateActive(data, userId);
   }
 
   /**
@@ -48,8 +50,8 @@ export class AiPersonalitiesController {
    */
   @Get(':id')
   @UseGuards(JwtAuthGuard)
-  async findById(@Param('id', ParseIntPipe) id: number) {
-    return this.aiPersonalitiesService.findById(id);
+  async findById(@Param('id', ParseIntPipe) id: number, @UserId() userId: number) {
+    return this.aiPersonalitiesService.findById(id, userId);
   }
 
   /**
@@ -57,8 +59,8 @@ export class AiPersonalitiesController {
    */
   @Post()
   @UseGuards(JwtAuthGuard)
-  async create(@Body() data: Partial<AiPersonality>) {
-    return this.aiPersonalitiesService.create(data);
+  async create(@Body() data: Partial<AiPersonality>, @UserId() userId: number) {
+    return this.aiPersonalitiesService.create(data, userId);
   }
 
   /**
@@ -66,8 +68,12 @@ export class AiPersonalitiesController {
    */
   @Put(':id')
   @UseGuards(JwtAuthGuard)
-  async update(@Param('id', ParseIntPipe) id: number, @Body() data: Partial<AiPersonality>) {
-    return this.aiPersonalitiesService.update(id, data);
+  async update(
+    @Param('id', ParseIntPipe) id: number, 
+    @Body() data: Partial<AiPersonality>,
+    @UserId() userId: number,
+  ) {
+    return this.aiPersonalitiesService.update(id, data, userId);
   }
 
   /**
@@ -75,8 +81,8 @@ export class AiPersonalitiesController {
    */
   @Put(':id/default')
   @UseGuards(JwtAuthGuard)
-  async setDefault(@Param('id', ParseIntPipe) id: number) {
-    return this.aiPersonalitiesService.setDefault(id);
+  async setDefault(@Param('id', ParseIntPipe) id: number, @UserId() userId: number) {
+    return this.aiPersonalitiesService.setDefault(id, userId);
   }
 
   /**
@@ -84,8 +90,8 @@ export class AiPersonalitiesController {
    */
   @Delete(':id')
   @UseGuards(JwtAuthGuard)
-  async delete(@Param('id', ParseIntPipe) id: number) {
-    await this.aiPersonalitiesService.delete(id);
+  async delete(@Param('id', ParseIntPipe) id: number, @UserId() userId: number) {
+    await this.aiPersonalitiesService.delete(id, userId);
     return { success: true, message: 'Personalidad eliminada' };
   }
 }

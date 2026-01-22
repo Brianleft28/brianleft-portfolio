@@ -356,14 +356,34 @@
 				iaMode.set(ctx.aiMode || 'arquitecto');
 			}
 
-			// Activar/desactivar modo chat basado en comando torvalds
-			if (command === 'torvalds') {
-				const subCmd = args[0];
-				if (subCmd === 'start') {
+			// Activar/desactivar modo chat basado en comando AI
+			// Detectar si es un comando AI (ai, torvalds, assistant, o alias dinámico)
+			const isAiCommand = command === 'ai' || command === 'torvalds' || command === 'assistant' || command === aiCommandName.toLowerCase();
+			if (isAiCommand) {
+				const subCmd = args[0]?.toLowerCase();
+				// Activar modo chat si: no hay subcomando, es 'start', o no es un subcomando válido
+				const validSubcommands = ['stop', 'modes', 'status', 'help', '-h'];
+				if (!subCmd || subCmd === 'start' || !validSubcommands.includes(subCmd)) {
 					isChatModeActive = true;
-				} else if (subCmd === 'stop') {
+				}
+				if (subCmd === 'stop') {
 					isChatModeActive = false;
 				}
+			}
+
+			// Si hay un prompt inicial para el chat, procesarlo
+			if (result.startChatWith) {
+				// Mostrar output si existe
+				if (result.output) {
+					addSystemMessage(result.output);
+				}
+				// Procesar la pregunta directa
+				isLoading = false;
+				await tick();
+				await handleAIChat(result.startChatWith);
+				inputElement?.focus();
+				scrollToBottom();
+				return;
 			}
 
 			// Manejar resultado del comando
@@ -813,6 +833,11 @@
 	:global(.welcome-subtitle) {
 		color: #9b59b6;
 		font-weight: bold;
+		display: block;
+		margin-top: 1rem;
+		margin-bottom: 1rem;
+		font-size: 0.9em;
+		letter-spacing: 0.5px;
 	}
 
 	:global(.help-box) {

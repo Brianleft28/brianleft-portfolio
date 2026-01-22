@@ -1,9 +1,19 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, ConflictException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcrypt';
 import { User, UserRole } from '../../entities/user.entity';
+import * as crypto from 'crypto';
+
+export interface CreateUserDto {
+  username: string;
+  email: string;
+  password?: string; // Si no se proporciona, se genera automáticamente
+  displayName?: string;
+  subdomain?: string;
+  role?: UserRole;
+}
 
 @Injectable()
 export class UsersService {
@@ -23,12 +33,90 @@ export class UsersService {
     return this.usersRepository.findOne({ where: { username } });
   }
 
+  async findByEmail(email: string): Promise<User | null> {
+    return this.usersRepository.findOne({ where: { email } });
+  }
+
+  async findBySubdomain(subdomain: string): Promise<User | null> {
+    return this.usersRepository.findOne({ where: { subdomain } });
+  }
+
   async updateRefreshToken(userId: number, refreshToken: string | null): Promise<void> {
     const hashedRefreshToken = refreshToken ? await bcrypt.hash(refreshToken, 10) : null;
 
     await this.usersRepository.update(userId, {
       refreshToken: hashedRefreshToken,
     });
+  }
+
+  /**
+   * Genera una contraseña segura aleatoria
+   */
+  generateSecurePassword(): string {
+    const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*';
+    const length = 16;
+    let password = '';
+    const randomBytes = crypto.randomBytes(length);
+    for (let i = 0; i < length; i++) {
+      password += chars[randomBytes[i] % chars.length];
+    }
+    return password;
+  }
+
+  /**
+   * Crea un nuevo usuario
+   */
+  async createUser(dto: CreateUserDto): Promise<{ user: User; plainPassword: string }> {
+    // Validaciones
+    if (!dto.username || dto.username.length < 3) {
+      throw new BadRequestException('Username debe tener al menos 3 caracteres');
+    }
+
+    if (!dto.email || !dto.email.includes('@')) {
+      throw new BadRequestException('Email inválido');
+    }
+
+    // Verificar si ya existe el username
+    const existingUsername = await this.findByUsername(dto.username);
+    if (existingUsername) {
+      throw new ConflictException(`Username "${dto.username}" ya está en uso`);
+    }
+
+    // Verificar si ya existe el email
+    const existingEmail = await this.findByEmail(dto.email);
+    if (existingEmail) {
+      throw new ConflictException(`Email "${dto.email}" ya está registrado`);
+    }
+
+    // Generar subdomain si no se proporciona
+    const subdomain = dto.subdomain || dto.username.toLowerCase().replace(/[^a-z0-9]/g, '');
+    
+    // Verificar subdomain
+    const existingSubdomain = await this.findBySubdomain(subdomain);
+    if (existingSubdomain) {
+      throw new ConflictException(`Subdomain "${subdomain}" ya está en uso`);
+    }
+
+    // Generar contraseña si no se proporciona
+    const plainPassword = dto.password || this.generateSecurePassword();
+    const hashedPassword = await bcrypt.hash(plainPassword, 10);
+
+    const user = this.usersRepository.create({
+      username: dto.username,
+      email: dto.email,
+      password: hashedPassword,
+      displayName: dto.displayName || dto.username,
+      subdomain,
+      role: dto.role || UserRole.ADMIN, // Por defecto admin (cada uno administra su portfolio)
+    });
+
+    const savedUser = await this.usersRepository.save(user);
+    this.logger.log(`Usuario "${dto.username}" creado con subdomain "${subdomain}"`);
+
+    // No devolver la contraseña hasheada ni token
+    const { password: _, refreshToken: __, ...userWithoutSensitive } = savedUser;
+
+    return { user: userWithoutSensitive as User, plainPassword };
   }
 
   async createAdminIfNotExists(): Promise<void> {
@@ -56,5 +144,19 @@ export class UsersService {
 
     await this.usersRepository.save(admin);
     this.logger.log(`Usuario admin "${adminUsername}" creado correctamente`);
+  }
+
+  /**
+   * Lista todos los usuarios (para admin)
+   */
+  async findAll(): Promise<User[]> {
+    const users = await this.usersRepository.find({
+      order: { createdAt: 'DESC' },
+    });
+    // Limpiar datos sensibles
+    return users.map(u => {
+      const { password: _, refreshToken: __, ...userWithoutSensitive } = u;
+      return userWithoutSensitive as User;
+    });
   }
 }

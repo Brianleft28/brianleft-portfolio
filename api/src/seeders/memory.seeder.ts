@@ -50,8 +50,8 @@ export async function seedMemories(dataSource: DataSource): Promise<void> {
     const content = fs.readFileSync(filePath, 'utf-8');
     const title = extractTitle(content) || slug;
 
-    // Verificar si ya existe
-    const existing = await memoryRepo.findOne({ where: { slug } });
+    // Verificar si ya existe para userId=1
+    const existing = await memoryRepo.findOne({ where: { slug, userId: 1 } });
     if (existing) {
       console.log(`⏭️ Memoria "${slug}" ya existe, saltando...`);
       continue;
@@ -63,6 +63,7 @@ export async function seedMemories(dataSource: DataSource): Promise<void> {
       title,
       content,
       priority: type === MemoryType.META ? 10 : 5,
+      userId: 1, // Admin user
     });
 
     await memoryRepo.save(memory);
@@ -80,8 +81,8 @@ export async function seedMemories(dataSource: DataSource): Promise<void> {
       const content = fs.readFileSync(filePath, 'utf-8');
       const title = extractTitle(content) || slug;
 
-      // Verificar si ya existe
-      const existing = await memoryRepo.findOne({ where: { slug } });
+      // Verificar si ya existe para userId=1
+      const existing = await memoryRepo.findOne({ where: { slug, userId: 1 } });
       if (existing) {
         console.log(`⏭️ Proyecto "${slug}" ya existe, saltando...`);
         continue;
@@ -94,6 +95,7 @@ export async function seedMemories(dataSource: DataSource): Promise<void> {
         content,
         summary: extractSummary(content),
         priority: 0,
+        userId: 1, // Admin user
       });
 
       const savedMemory = await memoryRepo.save(memory);
@@ -120,45 +122,41 @@ export async function seedFilesystem(dataSource: DataSource): Promise<void> {
   const fileRepo = dataSource.getRepository(File);
   const memoryRepo = dataSource.getRepository(Memory);
 
-  // Verificar si ya existe estructura
-  let root = await folderRepo.findOne({ where: { name: 'C:' } });
+  // Verificar si ya existe estructura para userId=1
+  let root = await folderRepo.findOne({ where: { name: 'C:', userId: 1 } });
   let proyectos: Folder | null;
   let apps: Folder | null;
 
   if (root) {
     console.log('📂 Estructura de carpetas existente encontrada');
-    proyectos = await folderRepo.findOne({ where: { name: 'proyectos' } });
-    apps = await folderRepo.findOne({ where: { name: 'apps' } });
+    proyectos = await folderRepo.findOne({ where: { name: 'proyectos', userId: 1 } });
+    apps = await folderRepo.findOne({ where: { name: 'apps', userId: 1 } });
   } else {
     console.log('📂 Creando estructura del filesystem...');
 
     // 1. Crear raíz
-    root = folderRepo.create({ name: 'C:', parentId: null, order: 0 });
+    root = folderRepo.create({ name: 'C:', parentId: null, order: 0, userId: 1 });
     await folderRepo.save(root);
 
     // 2. Crear carpetas principales
-    proyectos = folderRepo.create({ name: 'proyectos', parentId: root.id, order: 1 });
+    proyectos = folderRepo.create({ name: 'proyectos', parentId: root.id, order: 1, userId: 1 });
     await folderRepo.save(proyectos);
 
-    apps = folderRepo.create({ name: 'apps', parentId: root.id, order: 2 });
+    apps = folderRepo.create({ name: 'apps', parentId: root.id, order: 2, userId: 1 });
     await folderRepo.save(apps);
   }
 
-  // Verificar si ya hay archivos
-  const existingFilesCount = await fileRepo.count();
-  if (existingFilesCount > 0) {
-    console.log(`⏭️ Ya existen ${existingFilesCount} archivos, saltando creación...`);
-    return;
-  }
+  console.log('📄 Verificando archivos del filesystem...');
 
-  console.log('📄 Creando archivos del filesystem...');
-
-  // 3. Crear LEEME.md en raíz
-  const leeme = fileRepo.create({
-    name: 'LEEME.md',
-    type: FileType.MARKDOWN,
-    folderId: root.id,
-    content: `# Bienvenido a mi portfolio
+  // 3. Crear LEEME.md en raíz (si no existe)
+  const existingLeeme = await fileRepo.findOne({ where: { folderId: root.id, name: 'LEEME.md', userId: 1 } });
+  if (!existingLeeme) {
+    const leeme = fileRepo.create({
+      name: 'LEEME.md',
+      type: FileType.MARKDOWN,
+      folderId: root.id,
+      userId: 1,
+      content: `# Bienvenido a mi portfolio
 
 Este portfolio es interactivo. Podés navegar usando:
 
@@ -182,61 +180,90 @@ Este sitio simula un **sistema operativo web**. No es solo una página estática
 ## Características
 
 * 🖥️ **Terminal interactiva** con comandos reales (\`cd\`, \`ls\`, \`cls\`)
-* 🤖 **TorvaldsAi** - Asistente IA con personalidad de Linus Torvalds
+* 🤖 **Asistente IA** - Preguntale lo que quieras sobre mis proyectos
 * 📁 **Sistema de archivos virtual** - Navegá los proyectos como directorios
 * ⚡ **Streaming de respuestas** - La IA responde en tiempo real
 
 ## ¿Querés saber más?
 
-Escribí \`torvalds start\` en la terminal y preguntale lo que quieras.
+Abrí la terminal con \`Ctrl+Ñ\` y escribí el comando de IA para comenzar.
 `,
-  });
-  await fileRepo.save(leeme);
+    });
+    await fileRepo.save(leeme);
+    console.log('📄 Creado LEEME.md en raíz');
+  } else {
+    console.log('⏭️ LEEME.md ya existe en raíz');
+  }
 
   // 4. Crear archivos para cada proyecto (si hay memorias de proyectos)
   if (proyectos) {
-    const projects = await memoryRepo.find({ where: { type: MemoryType.PROJECT } });
+    const projects = await memoryRepo.find({ where: { type: MemoryType.PROJECT, userId: 1 } });
 
     for (const project of projects) {
-      // Crear carpeta del proyecto
-      const projectFolder = folderRepo.create({
-        name: project.slug,
-        parentId: proyectos.id,
-        order: 0,
+      // Verificar si ya existe la carpeta del proyecto
+      let projectFolder = await folderRepo.findOne({ 
+        where: { name: project.slug, parentId: proyectos.id, userId: 1 } 
       });
-      await folderRepo.save(projectFolder);
 
-      // Crear README.md con el contenido
-      const readme = fileRepo.create({
-        name: 'README.md',
-        type: FileType.MARKDOWN,
-        folderId: projectFolder.id,
-        content: project.content,
+      if (!projectFolder) {
+        // Crear carpeta del proyecto
+        projectFolder = folderRepo.create({
+          name: project.slug,
+          parentId: proyectos.id,
+          order: 0,
+          userId: 1,
+        });
+        await folderRepo.save(projectFolder);
+        console.log(`📁 Creada carpeta: ${project.slug}`);
+      }
+
+      // Verificar si ya existe el README
+      const existingReadme = await fileRepo.findOne({ 
+        where: { folderId: projectFolder.id, name: 'README.md', userId: 1 } 
       });
-      await fileRepo.save(readme);
 
-      console.log(`📄 Creada carpeta y README para: ${project.slug}`);
+      if (!existingReadme) {
+        // Crear README.md con el contenido
+        const readme = fileRepo.create({
+          name: 'README.md',
+          type: FileType.MARKDOWN,
+          folderId: projectFolder.id,
+          userId: 1,
+          content: project.content,
+        });
+        await fileRepo.save(readme);
+        console.log(`📄 Creado README.md para: ${project.slug}`);
+      } else {
+        console.log(`⏭️ README.md ya existe para: ${project.slug}`);
+      }
     }
   }
 
   // 5. Crear archivos para la carpeta apps (si existe)
   if (apps) {
-    const appsReadme = fileRepo.create({
-      name: 'LEEME.md',
-      type: FileType.MARKDOWN,
-      folderId: apps.id,
-      content: `# Aplicaciones
+    const existingAppsLeeme = await fileRepo.findOne({ where: { folderId: apps.id, name: 'LEEME.md', userId: 1 } });
+    if (!existingAppsLeeme) {
+      const appsReadme = fileRepo.create({
+        name: 'LEEME.md',
+        type: FileType.MARKDOWN,
+        folderId: apps.id,
+        userId: 1,
+        content: `# Aplicaciones
 
 Esta carpeta contiene documentación sobre aplicaciones y herramientas desarrolladas.
 
-## TorvaldsAI
-Asistente de IA integrado en la terminal. Escribí \`torvalds start\` para comenzar.
+## Asistente IA
+El portfolio incluye un asistente de IA integrado en la terminal. Abrí la consola con \`Ctrl+Ñ\` y escribí el comando de IA para comenzar.
 
 ## Herramientas
-Explora las diferentes herramientas disponibles en este portfolio.
+Explora las diferentes herramientas disponibles en este portfolio navegando por el sistema de archivos.
 `,
-    });
-    await fileRepo.save(appsReadme);
+      });
+      await fileRepo.save(appsReadme);
+      console.log('📄 Creado LEEME.md en apps');
+    } else {
+      console.log('⏭️ LEEME.md ya existe en apps');
+    }
   }
 
   console.log('🎉 Seeding de filesystem completado');

@@ -166,7 +166,12 @@ export const actions = {
 				throw new Error(err.message || 'Error borrando carpeta');
 			}
 
-			return { success: true, action: 'deleteFolder' };
+			const result = await response.json();
+			return { 
+				success: true, 
+				action: 'deleteFolder',
+				memoriesDeleted: result.memoriesDeleted || []
+			};
 		} catch (e) {
 			return fail(500, { error: e instanceof Error ? e.message : 'Error desconocido' });
 		}
@@ -197,7 +202,12 @@ export const actions = {
 				throw new Error(err.message || 'Error borrando archivo');
 			}
 
-			return { success: true, action: 'deleteFile' };
+			const result = await response.json();
+			return { 
+				success: true, 
+				action: 'deleteFile',
+				memoryDeleted: result.memoryDeleted || null
+			};
 		} catch (e) {
 			return fail(500, { error: e instanceof Error ? e.message : 'Error desconocido' });
 		}

@@ -8,14 +8,24 @@
 	import { dynamicFilesystem, loadConfig, type FileSystemNode as DynamicFSNode } from '$lib/stores/config';
 	import { onMount } from 'svelte';
 
+	// Tipos para resúmenes de proyectos
+	interface ProjectSummary {
+		slug: string;
+		title: string;
+		summary: string;
+	}
+
 	let currentPathIds = $state<string[]>([]);
 	let activeFileId = $state<string | null>(null);
 	let dynamicFs = $state<DynamicFSNode[]>([]);
 	let initialLoadDone = $state(false);
+	let isSelectingReadme = $state(false);
+	let projectSummaries = $state<ProjectSummary[]>([]);
 
 	// Cargar configuración y filesystem al montar
 	onMount(() => {
 		loadConfig();
+		loadProjectSummaries();
 		
 		// Suscribirse al store dinámico
 		const unsubscribe = dynamicFilesystem.subscribe((value) => {
@@ -23,18 +33,30 @@
 			// Cuando se carga el filesystem por primera vez, auto-seleccionar LEEME.md
 			if (value && value.length > 0 && !initialLoadDone) {
 				initialLoadDone = true;
-				// Esperar al próximo tick para que fileSystemData esté actualizado
+				// Esperar un poco más para evitar parpadeo durante el render inicial
 				setTimeout(() => {
 					const root = fileSystemData();
-					if (root && root.children) {
+					if (root && root.children && !activeFileId) {
 						autoSelectReadme(root);
 					}
-				}, 0);
+				}, 100);
 			}
 		});
 		
 		return unsubscribe;
 	});
+
+	// Cargar resúmenes de proyectos desde la API
+	async function loadProjectSummaries() {
+		try {
+			const res = await fetch('/api/memories/summaries');
+			if (res.ok) {
+				projectSummaries = await res.json();
+			}
+		} catch (e) {
+			console.error('Error loading project summaries:', e);
+		}
+	}
 
 	// Transform dynamic filesystem to match static types
 	function transformDynamicNode(node: DynamicFSNode): FileSystemNode {
@@ -97,6 +119,20 @@
 		return findFileById(fileSystemData(), activeFileId);
 	});
 
+	// Obtener el resumen del proyecto actual (si estamos en una carpeta de proyecto)
+	let currentProjectSummary = $derived(() => {
+		const dir = currentDirectory();
+		if (!dir || dir.name === 'C:' || dir.name === 'C:\\') return null;
+		
+		// Buscar por nombre de carpeta (slug)
+		const folderName = dir.name.toLowerCase().replace(/\s+/g, '-');
+		const summary = projectSummaries.find(s => 
+			s.slug.toLowerCase() === folderName || 
+			s.title.toLowerCase() === dir.name.toLowerCase()
+		);
+		return summary || null;
+	});
+
 	// Construir el path con nombres de carpetas, no IDs
 	let currentPathString = $derived(() => {
 		let pathNames: string[] = [];
@@ -124,11 +160,14 @@
 
 	// Auto-seleccionar README/LEEME.md al entrar a una carpeta
 	function autoSelectReadme(folder: FolderNode) {
+		if (isSelectingReadme) return; // Evitar llamadas múltiples
+		
 		if (!folder.children) {
 			activeFileId = null;
 			return;
 		}
 		
+		isSelectingReadme = true;
 		const readmeNames = ['leeme.md', 'readme.md', 'leeme', 'readme'];
 		const readmeFile = folder.children.find((child) => 
 			child.type !== 'folder' && 
@@ -140,6 +179,11 @@
 		} else {
 			activeFileId = null;
 		}
+		
+		// Reset flag después de un breve delay
+		setTimeout(() => {
+			isSelectingReadme = false;
+		}, 50);
 	}
 
 	function navigateUp() {
@@ -240,6 +284,19 @@
 				>
 					{#if activeItem()}
 						<FileViewer file={activeItem()!} />
+					{:else if currentProjectSummary()}
+						<!-- Mostrar resumen del proyecto -->
+						<div class="project-summary p-4">
+							<h2 class="summary-title">{currentProjectSummary()!.title}</h2>
+							<div class="summary-content">
+								<p>{currentProjectSummary()!.summary}</p>
+							</div>
+							<div class="summary-hint mt-3">
+								<small class="text-muted">
+									Seleccioná un archivo del panel izquierdo para ver más detalles.
+								</small>
+							</div>
+						</div>
 					{:else}
 						<div
 							class="empty-state h-100 d-flex flex-column justify-content-center align-items-center"
@@ -257,6 +314,37 @@
 	</div>
 </div>
 <style>
+    /* Estilos para resumen de proyecto */
+    .project-summary {
+        color: #adb5bd;
+        line-height: 1.7;
+    }
+
+    .summary-title {
+        color: #00bc8c;
+        font-size: 1.4rem;
+        font-weight: 600;
+        margin-bottom: 1rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 1px solid #333;
+    }
+
+    .summary-content {
+        color: #e0e0e0;
+        font-size: 0.95rem;
+        line-height: 1.8;
+    }
+
+    .summary-content p {
+        margin-bottom: 0;
+        white-space: pre-wrap;
+    }
+
+    .summary-hint {
+        border-top: 1px solid #333;
+        padding-top: 1rem;
+    }
+
     /* Scrollbar estilo neon para columna izquierda */
     .col-md-5::-webkit-scrollbar {
         width: 4px;

@@ -1,8 +1,10 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, IsNull } from 'typeorm';
 import { Folder } from '../../entities/folder.entity';
-import { File } from '../../entities/file.entity';
+import { File, FileType } from '../../entities/file.entity';
+import { Memory, MemoryType } from '../../entities/memory.entity';
+import { MemoryKeyword } from '../../entities/memory-keyword.entity';
 import { CreateFolderDto, CreateFileDto, UpdateFileDto } from './dto';
 
 export interface FileSystemNode {
@@ -16,27 +18,33 @@ export interface FileSystemNode {
 
 @Injectable()
 export class FilesystemService {
+  private readonly logger = new Logger(FilesystemService.name);
+
   constructor(
     @InjectRepository(Folder)
     private foldersRepository: Repository<Folder>,
     @InjectRepository(File)
     private filesRepository: Repository<File>,
+    @InjectRepository(Memory)
+    private memoriesRepository: Repository<Memory>,
+    @InjectRepository(MemoryKeyword)
+    private keywordsRepository: Repository<MemoryKeyword>,
   ) {}
 
   /**
-   * Obtiene el árbol completo del filesystem
+   * Obtiene el árbol completo del filesystem para un usuario
    */
-  async getTree(): Promise<FileSystemNode[]> {
-    // Obtener carpetas raíz (sin parent)
+  async getTree(userId: number): Promise<FileSystemNode[]> {
+    // Obtener carpetas raíz (sin parent) del usuario
     const rootFolders = await this.foldersRepository.find({
-      where: { parentId: IsNull() },
+      where: { parentId: IsNull(), userId },
       order: { order: 'ASC' },
     });
 
     // Construir árbol recursivamente
     const tree: FileSystemNode[] = [];
     for (const folder of rootFolders) {
-      tree.push(await this.buildFolderNode(folder));
+      tree.push(await this.buildFolderNode(folder, userId));
     }
 
     return tree;
@@ -45,23 +53,23 @@ export class FilesystemService {
   /**
    * Construye un nodo de carpeta con sus hijos
    */
-  private async buildFolderNode(folder: Folder): Promise<FileSystemNode> {
-    // Obtener subcarpetas
+  private async buildFolderNode(folder: Folder, userId: number): Promise<FileSystemNode> {
+    // Obtener subcarpetas del usuario
     const subfolders = await this.foldersRepository.find({
-      where: { parentId: folder.id },
+      where: { parentId: folder.id, userId },
       order: { order: 'ASC' },
     });
 
-    // Obtener archivos
+    // Obtener archivos del usuario
     const files = await this.filesRepository.find({
-      where: { folderId: folder.id },
+      where: { folderId: folder.id, userId },
     });
 
     const children: FileSystemNode[] = [];
 
     // Agregar subcarpetas recursivamente
     for (const subfolder of subfolders) {
-      children.push(await this.buildFolderNode(subfolder));
+      children.push(await this.buildFolderNode(subfolder, userId));
     }
 
     // Agregar archivos
@@ -84,11 +92,14 @@ export class FilesystemService {
   }
 
   /**
-   * Obtiene una carpeta por ID con sus archivos
+   * Obtiene una carpeta por ID verificando ownership
    */
-  async getFolderById(id: number): Promise<Folder> {
+  async getFolderById(id: number, userId?: number): Promise<Folder> {
+    const whereClause: any = { id };
+    if (userId) whereClause.userId = userId;
+
     const folder = await this.foldersRepository.findOne({
-      where: { id },
+      where: whereClause,
       relations: ['files', 'children'],
     });
 
@@ -100,9 +111,9 @@ export class FilesystemService {
   }
 
   /**
-   * Obtiene una carpeta por path (ej: "C:/proyectos/portfolio")
+   * Obtiene una carpeta por path (ej: "C:/proyectos/portfolio") para un usuario
    */
-  async getFolderByPath(path: string): Promise<Folder | null> {
+  async getFolderByPath(path: string, userId: number): Promise<Folder | null> {
     const parts = path.split('/').filter(Boolean);
 
     let currentFolder: Folder | null = null;
@@ -112,6 +123,7 @@ export class FilesystemService {
         where: {
           name: part,
           parentId: currentFolder ? currentFolder.id : IsNull(),
+          userId,
         },
       });
 
@@ -124,11 +136,14 @@ export class FilesystemService {
   }
 
   /**
-   * Obtiene un archivo por ID
+   * Obtiene un archivo por ID verificando ownership
    */
-  async getFileById(id: number): Promise<File> {
+  async getFileById(id: number, userId?: number): Promise<File> {
+    const whereClause: any = { id };
+    if (userId) whereClause.userId = userId;
+
     const file = await this.filesRepository.findOne({
-      where: { id },
+      where: whereClause,
       relations: ['folder'],
     });
 
@@ -142,11 +157,12 @@ export class FilesystemService {
   /**
    * Crea una nueva carpeta
    */
-  async createFolder(dto: CreateFolderDto): Promise<Folder> {
+  async createFolder(dto: CreateFolderDto, userId: number): Promise<Folder> {
     const folder = this.foldersRepository.create({
       name: dto.name,
       parentId: dto.parentId,
       order: dto.order || 0,
+      userId,
     });
 
     return this.foldersRepository.save(folder);
@@ -155,15 +171,16 @@ export class FilesystemService {
   /**
    * Crea un nuevo archivo
    */
-  async createFile(dto: CreateFileDto): Promise<File> {
-    // Verificar que la carpeta existe
-    await this.getFolderById(dto.folderId);
+  async createFile(dto: CreateFileDto, userId: number): Promise<File> {
+    // Verificar que la carpeta existe y pertenece al usuario
+    await this.getFolderById(dto.folderId, userId);
 
     const file = this.filesRepository.create({
       name: dto.name,
       type: dto.type,
       content: dto.content,
       folderId: dto.folderId,
+      userId,
     });
 
     return this.filesRepository.save(file);
@@ -172,8 +189,8 @@ export class FilesystemService {
   /**
    * Actualiza un archivo
    */
-  async updateFile(id: number, dto: UpdateFileDto): Promise<File> {
-    const file = await this.getFileById(id);
+  async updateFile(id: number, dto: UpdateFileDto, userId?: number): Promise<File> {
+    const file = await this.getFileById(id, userId);
 
     if (dto.name) file.name = dto.name;
     if (dto.content !== undefined) file.content = dto.content;
@@ -184,25 +201,89 @@ export class FilesystemService {
 
   /**
    * Elimina una carpeta y todo su contenido
+   * También elimina las memorias asociadas si es una carpeta de proyecto
    */
-  async deleteFolder(id: number): Promise<void> {
-    const folder = await this.getFolderById(id);
+  async deleteFolder(id: number, userId: number): Promise<{ deleted: string[]; memoriesDeleted: string[] }> {
+    const folder = await this.getFolderById(id, userId);
+    const memoriesDeleted: string[] = [];
+
+    // Verificar si es una carpeta de proyecto (tiene un slug que coincide con memoria del usuario)
+    const memory = await this.memoriesRepository.findOne({
+      where: { slug: folder.name, type: MemoryType.PROJECT, userId },
+    });
+
+    if (memory) {
+      // Eliminar keywords primero
+      await this.keywordsRepository.delete({ memoryId: memory.id });
+      // Eliminar memoria
+      await this.memoriesRepository.remove(memory);
+      memoriesDeleted.push(folder.name);
+      this.logger.log(`Memoria eliminada: ${folder.name}`);
+    }
+
+    // Buscar y eliminar memorias de archivos dentro de la carpeta
+    const files = await this.filesRepository.find({ where: { folderId: id, userId } });
+    for (const file of files) {
+      const fileSlug = file.name.replace(/\.(md|txt)$/i, '');
+      const fileMemory = await this.memoriesRepository.findOne({
+        where: { slug: fileSlug, type: MemoryType.PROJECT, userId },
+      });
+      if (fileMemory) {
+        await this.keywordsRepository.delete({ memoryId: fileMemory.id });
+        await this.memoriesRepository.remove(fileMemory);
+        memoriesDeleted.push(fileSlug);
+        this.logger.log(`Memoria de archivo eliminada: ${fileSlug}`);
+      }
+    }
+
+    // Eliminar subcarpetas recursivamente
+    const subfolders = await this.foldersRepository.find({ where: { parentId: id, userId } });
+    for (const subfolder of subfolders) {
+      const subResult = await this.deleteFolder(subfolder.id, userId);
+      memoriesDeleted.push(...subResult.memoriesDeleted);
+    }
+
     await this.foldersRepository.remove(folder);
+    this.logger.log(`Carpeta eliminada: ${folder.name}`);
+
+    return { deleted: [folder.name], memoriesDeleted };
   }
 
   /**
    * Elimina un archivo
+   * También elimina la memoria asociada si existe
    */
-  async deleteFile(id: number): Promise<void> {
-    const file = await this.getFileById(id);
+  async deleteFile(id: number, userId: number): Promise<{ deleted: string; memoryDeleted: string | null }> {
+    const file = await this.getFileById(id, userId);
+    let memoryDeleted: string | null = null;
+
+    // Intentar encontrar memoria asociada por slug (nombre sin extensión)
+    const slug = file.name.replace(/\.(md|txt)$/i, '');
+    const memory = await this.memoriesRepository.findOne({
+      where: { slug, type: MemoryType.PROJECT, userId },
+    });
+
+    if (memory) {
+      // Eliminar keywords primero
+      await this.keywordsRepository.delete({ memoryId: memory.id });
+      // Eliminar memoria
+      await this.memoriesRepository.remove(memory);
+      memoryDeleted = slug;
+      this.logger.log(`Memoria eliminada junto con archivo: ${slug}`);
+    }
+
     await this.filesRepository.remove(file);
+    this.logger.log(`Archivo eliminado: ${file.name}`);
+
+    return { deleted: file.name, memoryDeleted };
   }
 
   /**
-   * Obtiene lista plana de todas las carpetas (para selectores)
+   * Obtiene lista plana de todas las carpetas (para selectores) de un usuario
    */
-  async getAllFolders(): Promise<{ id: number; name: string; path: string }[]> {
+  async getAllFolders(userId: number): Promise<{ id: number; name: string; path: string }[]> {
     const folders = await this.foldersRepository.find({
+      where: { userId },
       order: { name: 'ASC' },
     });
 
@@ -237,5 +318,128 @@ export class FilesystemService {
     }
 
     return parts.join('\\');
+  }
+
+  /**
+   * Sincroniza el filesystem con los proyectos de memoria
+   * Crea carpetas y archivos README para proyectos que no existan
+   */
+  async syncWithProjects(userId: number): Promise<{ created: string[]; existing: string[] }> {
+    const created: string[] = [];
+    const existing: string[] = [];
+
+    // Obtener carpeta proyectos del usuario
+    let proyectos = await this.foldersRepository.findOne({ 
+      where: { name: 'proyectos', userId } 
+    });
+
+    if (!proyectos) {
+      // Crear estructura base si no existe
+      let root = await this.foldersRepository.findOne({ where: { name: 'C:', userId } });
+      if (!root) {
+        root = this.foldersRepository.create({ name: 'C:', parentId: null, order: 0, userId });
+        await this.foldersRepository.save(root);
+      }
+
+      proyectos = this.foldersRepository.create({ 
+        name: 'proyectos', 
+        parentId: root.id, 
+        order: 1,
+        userId,
+      });
+      await this.foldersRepository.save(proyectos);
+    }
+
+    // Obtener todos los proyectos de memoria del usuario
+    const projects = await this.memoriesRepository.find({ 
+      where: { type: MemoryType.PROJECT, active: true, userId } 
+    });
+
+    for (const project of projects) {
+      // Verificar si ya existe la carpeta del proyecto
+      const existingFolder = await this.foldersRepository.findOne({
+        where: { name: project.slug, parentId: proyectos.id, userId }
+      });
+
+      if (existingFolder) {
+        existing.push(project.slug);
+        
+        // Actualizar contenido del README si cambió
+        const existingReadme = await this.filesRepository.findOne({
+          where: { folderId: existingFolder.id, name: 'README.md', userId }
+        });
+        
+        if (existingReadme && existingReadme.content !== project.content) {
+          existingReadme.content = project.content;
+          await this.filesRepository.save(existingReadme);
+        }
+        continue;
+      }
+
+      // Crear carpeta del proyecto
+      const projectFolder = this.foldersRepository.create({
+        name: project.slug,
+        parentId: proyectos.id,
+        order: 0,
+        userId,
+      });
+      await this.foldersRepository.save(projectFolder);
+
+      // Crear README.md
+      const readme = this.filesRepository.create({
+        name: 'README.md',
+        type: FileType.MARKDOWN,
+        folderId: projectFolder.id,
+        content: project.content,
+        userId,
+      });
+      await this.filesRepository.save(readme);
+
+      created.push(project.slug);
+    }
+
+    return { created, existing };
+  }
+
+  /**
+   * Inicializa el filesystem base para un nuevo usuario
+   */
+  async initializeForUser(userId: number): Promise<void> {
+    // Verificar si ya tiene carpeta raíz
+    const existingRoot = await this.foldersRepository.findOne({ 
+      where: { name: 'C:', userId, parentId: IsNull() } 
+    });
+
+    if (existingRoot) {
+      this.logger.log(`Usuario ${userId} ya tiene filesystem inicializado`);
+      return;
+    }
+
+    // Crear estructura base
+    const root = this.foldersRepository.create({ 
+      name: 'C:', 
+      parentId: null, 
+      order: 0, 
+      userId 
+    });
+    await this.foldersRepository.save(root);
+
+    const proyectos = this.foldersRepository.create({ 
+      name: 'proyectos', 
+      parentId: root.id, 
+      order: 1, 
+      userId 
+    });
+    await this.foldersRepository.save(proyectos);
+
+    const apps = this.foldersRepository.create({ 
+      name: 'apps', 
+      parentId: root.id, 
+      order: 2, 
+      userId 
+    });
+    await this.foldersRepository.save(apps);
+
+    this.logger.log(`Filesystem inicializado para usuario ${userId}`);
   }
 }

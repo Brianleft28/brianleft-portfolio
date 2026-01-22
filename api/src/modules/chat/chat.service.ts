@@ -65,8 +65,9 @@ export class ChatService {
    * @param prompt El mensaje del usuario
    * @param userApiKey API key opcional del usuario (de localStorage)
    * @param mode Modo de personalidad: 'arquitecto' o 'asistente'
+   * @param userId ID del usuario (default: 1 para admin)
    */
-  async *chat(prompt: string, userApiKey?: string, mode?: string): AsyncGenerator<string> {
+  async *chat(prompt: string, userApiKey?: string, mode?: string, userId: number = 1): AsyncGenerator<string> {
     const model = this.getModel(userApiKey);
 
     if (!model) {
@@ -79,10 +80,10 @@ export class ChatService {
       const isListRequest = this.isProjectListRequest(prompt);
 
       // Obtener contexto relevante
-      const context = await this.buildContext(prompt, isListRequest);
+      const context = await this.buildContext(prompt, isListRequest, userId);
 
       // Construir prompt completo (ahora es async, con modo)
-      const fullPrompt = await this.buildFullPrompt(prompt, context, isListRequest, mode);
+      const fullPrompt = await this.buildFullPrompt(prompt, context, isListRequest, mode, userId);
 
       // Generar respuesta con streaming
       const result = await model.generateContentStream(fullPrompt);
@@ -157,9 +158,9 @@ RESUMEN:`;
    * Construye el contexto para el prompt
    * Usa memory.md como fuente principal de conocimiento sobre proyectos
    */
-  private async buildContext(prompt: string, isListRequest: boolean): Promise<string> {
+  private async buildContext(prompt: string, isListRequest: boolean, userId: number): Promise<string> {
     // SIEMPRE cargar memory.md como base de conocimiento
-    const memoryDoc = await this.memoryService.findBySlug('memory');
+    const memoryDoc = await this.memoryService.findBySlug('memory', userId);
     const baseContext = memoryDoc?.content || '';
 
     if (isListRequest) {
@@ -168,11 +169,11 @@ RESUMEN:`;
     }
 
     // Buscar memorias relevantes adicionales
-    const memories = await this.memoryService.findRelevant(prompt);
+    const memories = await this.memoryService.findRelevant(prompt, userId);
 
     if (memories.length === 0) {
       // Si no hay match específico, usar memory.md + meta
-      const metaMemory = await this.memoryService.findByType(MemoryType.META);
+      const metaMemory = await this.memoryService.findByType(MemoryType.META, userId);
       const metaContext = metaMemory.map((m) => m.content).join('\n\n');
       return `${baseContext}\n\n---\n\n${metaContext}`;
     }
@@ -192,9 +193,10 @@ RESUMEN:`;
     context: string,
     isListRequest: boolean,
     mode?: string,
+    userId: number = 1,
   ): Promise<string> {
-    // Cargar settings para placeholders
-    const settings = await this.settingsRepository.find();
+    // Cargar settings para placeholders (del usuario específico)
+    const settings = await this.settingsRepository.find({ where: { userId } });
     const settingsMap = new Map(settings.map((s) => [s.key, s.value]));
 
     const ownerName =
@@ -203,13 +205,13 @@ RESUMEN:`;
       'Brian';
     const aiName = settingsMap.get('ai_name') || 'TorvaldsAI';
 
-    // Obtener personalidad según el modo o la activa por default
+    // Obtener personalidad según el modo o la activa por default (del usuario)
     let personality;
     if (mode) {
-      personality = await this.aiPersonalitiesService.findByMode(mode);
+      personality = await this.aiPersonalitiesService.findByMode(mode, userId);
     }
     if (!personality) {
-      personality = await this.aiPersonalitiesService.findActive();
+      personality = await this.aiPersonalitiesService.findActive(userId);
     }
 
     // Usar el system prompt de la personalidad o un fallback MUY RESTRICTIVO

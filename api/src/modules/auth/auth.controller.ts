@@ -7,8 +7,8 @@ import {
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
-import { AuthService } from './auth.service';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiBody } from '@nestjs/swagger';
+import { AuthService, RegisterDto } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { TokensDto } from './dto/tokens.dto';
 import { JwtRefreshGuard } from '../../guards/jwt-refresh.guard';
@@ -26,6 +26,41 @@ export class AuthController {
   @ApiResponse({ status: 401, description: 'Credenciales inválidas' })
   async login(@Body() loginDto: LoginDto): Promise<TokensDto> {
     return this.authService.login(loginDto);
+  }
+
+  @Post('register')
+  @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({ summary: 'Registrar nuevo usuario (crear portfolio)' })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      required: ['username', 'email'],
+      properties: {
+        username: { type: 'string', example: 'johndoe', description: 'Username único' },
+        email: { type: 'string', example: 'john@example.com', description: 'Email único' },
+        password: { type: 'string', description: 'Contraseña (opcional, se genera automáticamente)' },
+        firstName: { type: 'string', example: 'John', description: 'Nombre' },
+        lastName: { type: 'string', example: 'Doe', description: 'Apellido' },
+        role: { type: 'string', example: 'Full Stack Developer', description: 'Rol/Título profesional' },
+      },
+    },
+  })
+  @ApiResponse({ 
+    status: 201, 
+    description: 'Usuario registrado exitosamente',
+    schema: {
+      type: 'object',
+      properties: {
+        user: { type: 'object' },
+        password: { type: 'string', description: 'Contraseña generada (guardar de forma segura)' },
+        subdomain: { type: 'string', description: 'Subdomain del portfolio' },
+        message: { type: 'string' },
+      },
+    },
+  })
+  @ApiResponse({ status: 409, description: 'Username o email ya existe' })
+  async register(@Body() registerDto: RegisterDto) {
+    return this.authService.register(registerDto);
   }
 
   @Post('refresh')

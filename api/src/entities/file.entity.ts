@@ -8,6 +8,7 @@ import {
   JoinColumn,
 } from 'typeorm';
 import { Folder } from './folder.entity';
+import { User } from './user.entity';
 
 export enum FileType {
   MARKDOWN = 'markdown',
@@ -34,6 +35,13 @@ export class File {
 
   @Column({ name: 'folder_id' })
   folderId: number;
+
+  @Column({ name: 'user_id' })
+  userId: number;
+
+  @ManyToOne(() => User, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'user_id' })
+  user: User;
 
   @ManyToOne(() => Folder, (folder) => folder.files, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'folder_id' })

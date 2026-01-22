@@ -12,6 +12,7 @@ import {
 } from '@nestjs/common';
 import { JwtAuthGuard } from '../../guards/jwt-auth.guard';
 import { SettingsService } from './settings.service';
+import { UserId } from '../../decorators';
 
 @Controller('settings')
 export class SettingsController {
@@ -22,11 +23,12 @@ export class SettingsController {
    */
   @Get()
   @UseGuards(JwtAuthGuard)
-  async findAll(@Query('category') category?: string) {
+  async findAll(@Query('category') category?: string, @UserId() userId?: number) {
+    const targetUserId = userId || 1;
     if (category) {
-      return this.settingsService.findByCategory(category);
+      return this.settingsService.findByCategory(category, targetUserId);
     }
-    return this.settingsService.findAll();
+    return this.settingsService.findAll(targetUserId);
   }
 
   /**
@@ -34,9 +36,9 @@ export class SettingsController {
    * Devuelve todos los settings necesarios para el frontend
    */
   @Get('public')
-  async findPublic() {
+  async findPublic(@Query('userId') userId?: number) {
     const publicCategories = ['branding', 'social', 'owner', 'ai', 'contact'];
-    const settings = await this.settingsService.findAll();
+    const settings = await this.settingsService.findAll(userId || 1);
 
     return settings.filter((s) => s.category && publicCategories.includes(s.category));
   }
@@ -46,10 +48,11 @@ export class SettingsController {
    * Si el banner actual no coincide con owner_name, lo regenera automáticamente
    */
   @Get('banner')
-  async getBanner() {
+  async getBanner(@Query('userId') userId?: number) {
+    const targetUserId = userId || 1;
     // Obtener el nombre actual y el banner
-    const ownerName = await this.settingsService.getValue('owner_name');
-    const currentBanner = await this.settingsService.getValue('ascii_banner');
+    const ownerName = await this.settingsService.getValue('owner_name', targetUserId);
+    const currentBanner = await this.settingsService.getValue('ascii_banner', targetUserId);
 
     // Si el banner no contiene el nombre actual (ignorando mayúsculas y caracteres especiales)
     // regenerarlo automáticamente
@@ -60,7 +63,7 @@ export class SettingsController {
     );
 
     if (needsRegeneration || !currentBanner) {
-      const banner = await this.settingsService.regenerateAsciiBanner();
+      const banner = await this.settingsService.regenerateAsciiBanner(targetUserId);
       return { ascii_banner: banner };
     }
 
@@ -72,8 +75,8 @@ export class SettingsController {
    */
   @Post('banner/regenerate')
   @UseGuards(JwtAuthGuard)
-  async regenerateBanner() {
-    const banner = await this.settingsService.regenerateAsciiBanner();
+  async regenerateBanner(@UserId() userId: number) {
+    const banner = await this.settingsService.regenerateAsciiBanner(userId);
     return { ascii_banner: banner, message: 'Banner regenerado exitosamente' };
   }
 
@@ -92,8 +95,8 @@ export class SettingsController {
    */
   @Get('key/:key')
   @UseGuards(JwtAuthGuard)
-  async findByKey(@Param('key') key: string) {
-    return this.settingsService.findByKey(key);
+  async findByKey(@Param('key') key: string, @UserId() userId: number) {
+    return this.settingsService.findByKey(key, userId);
   }
 
   /**
@@ -101,8 +104,12 @@ export class SettingsController {
    */
   @Patch(':id')
   @UseGuards(JwtAuthGuard)
-  async update(@Param('id', ParseIntPipe) id: number, @Body('value') value: string) {
-    return this.settingsService.update(id, value);
+  async update(
+    @Param('id', ParseIntPipe) id: number, 
+    @Body('value') value: string,
+    @UserId() userId: number,
+  ) {
+    return this.settingsService.update(id, value, userId);
   }
 
   /**
@@ -119,8 +126,9 @@ export class SettingsController {
       category?: string;
       description?: string;
     },
+    @UserId() userId: number,
   ) {
-    return this.settingsService.create(body);
+    return this.settingsService.create(body, userId);
   }
 
   /**
@@ -128,8 +136,8 @@ export class SettingsController {
    */
   @Delete(':id')
   @UseGuards(JwtAuthGuard)
-  async delete(@Param('id', ParseIntPipe) id: number) {
-    await this.settingsService.delete(id);
+  async delete(@Param('id', ParseIntPipe) id: number, @UserId() userId: number) {
+    await this.settingsService.delete(id, userId);
     return { success: true, message: 'Setting eliminado' };
   }
 }

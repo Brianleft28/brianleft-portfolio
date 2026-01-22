@@ -9,6 +9,7 @@ import {
   JoinColumn,
 } from 'typeorm';
 import { File } from './file.entity';
+import { User } from './user.entity';
 
 @Entity('folders')
 export class Folder {
@@ -20,6 +21,13 @@ export class Folder {
 
   @Column({ name: 'parent_id', nullable: true })
   parentId: number | null;
+
+  @Column({ name: 'user_id' })
+  userId: number;
+
+  @ManyToOne(() => User, (user) => user.folders, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'user_id' })
+  user: User;
 
   @ManyToOne(() => Folder, (folder) => folder.children, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'parent_id' })

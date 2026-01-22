@@ -11,8 +11,8 @@ export async function seedAiPersonalities(dataSource: DataSource): Promise<void>
   const personalityRepo = dataSource.getRepository(AiPersonality);
   const settingsRepo = dataSource.getRepository(Setting);
 
-  // Obtener ai_name de settings (si existe)
-  const aiNameSetting = await settingsRepo.findOne({ where: { key: 'ai_name' } });
+  // Obtener ai_name de settings para userId=1 (admin) (si existe)
+  const aiNameSetting = await settingsRepo.findOne({ where: { key: 'ai_name', userId: 1 } });
   const aiName = aiNameSetting?.value || 'AI Assistant';
 
   const personalities: Partial<AiPersonality>[] = [
@@ -137,8 +137,10 @@ Si piden código o ayuda técnica genérica:
   // No necesitamos más modos por ahora - arquitecto y asistente cubren todo
 
   for (const personality of personalities) {
+    // Las personalidades del seeder son globales (userId: null) pero también 
+    // creamos una copia para el usuario admin (userId: 1)
     const exists = await personalityRepo.findOne({
-      where: { slug: personality.slug },
+      where: { slug: personality.slug, userId: 1 },
     });
     if (exists) {
       // ACTUALIZAR personalidad existente con nuevos prompts
@@ -151,7 +153,7 @@ Si piden código o ayuda técnica genérica:
       });
       console.log(`  ↻ AI Personality actualizada: ${personality.name}`);
     } else {
-      await personalityRepo.save(personality);
+      await personalityRepo.save({ ...personality, userId: 1 });
       console.log(`  ✓ AI Personality creada: ${personality.name}`);
     }
   }

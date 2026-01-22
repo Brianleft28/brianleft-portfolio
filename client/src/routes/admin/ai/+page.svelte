@@ -58,7 +58,10 @@
 		{ value: 'casual', label: 'Casual' },
 		{ value: 'formal', label: 'Formal' },
 		{ value: 'technical', label: 'Técnico' },
-		{ value: 'friendly', label: 'Amigable' }
+		{ value: 'friendly', label: 'Amigable' },
+		{ value: 'technical-casual', label: 'Técnico Casual' },
+		{ value: 'technical-focused', label: 'Técnico Enfocado' },
+		{ value: 'professional', label: 'Profesional' }
 	];
 
 	onMount(async () => {
@@ -243,6 +246,46 @@
 			<div class="form-section">
 				<h3>System Prompt</h3>
 
+				<div class="variables-help">
+					<details>
+						<summary>📋 Variables disponibles para usar en prompts y saludos</summary>
+						<div class="variables-content">
+							<p>Usá estas variables con doble llave <code>{'{{'}</code>variable<code>{'}}'}</code> y se reemplazarán automáticamente:</p>
+							<div class="variables-grid">
+								<div class="var-group">
+									<h5>👤 Owner</h5>
+									<code>{'{{owner_name}}'}</code>
+									<code>{'{{owner_first_name}}'}</code>
+									<code>{'{{owner_last_name}}'}</code>
+									<code>{'{{owner_role}}'}</code>
+									<code>{'{{owner_role_short}}'}</code>
+									<code>{'{{owner_location}}'}</code>
+									<code>{'{{owner_philosophy}}'}</code>
+								</div>
+								<div class="var-group">
+									<h5>📧 Contacto</h5>
+									<code>{'{{owner_email}}'}</code>
+									<code>{'{{owner_email_alt}}'}</code>
+									<code>{'{{contact_availability}}'}</code>
+									<code>{'{{contact_cta}}'}</code>
+								</div>
+								<div class="var-group">
+									<h5>🔗 Social</h5>
+									<code>{'{{github_url}}'}</code>
+									<code>{'{{github_username}}'}</code>
+									<code>{'{{linkedin_url}}'}</code>
+								</div>
+								<div class="var-group">
+									<h5>🤖 IA</h5>
+									<code>{'{{ai_name}}'}</code>
+									<code>{'{{ai_command}}'}</code>
+									<code>{'{{ai_greeting}}'}</code>
+								</div>
+							</div>
+						</div>
+					</details>
+				</div>
+
 				<div class="form-group">
 					<label for="systemPrompt">Instrucciones del Sistema</label>
 					<textarea
@@ -253,7 +296,7 @@
 					></textarea>
 					<span class="hint">
 						Este prompt define cómo se comportará el agente. Incluye contexto,
-						restricciones y estilo de respuesta.
+						restricciones y estilo de respuesta. Podés usar las variables de arriba.
 					</span>
 				</div>
 
@@ -263,8 +306,11 @@
 						id="greeting"
 						bind:value={formGreeting}
 						rows={3}
-						placeholder="Mensaje que se muestra al activar el agente..."
+						placeholder="Ej: ¡Buenas! Soy {{ai_name}}, el asistente de {{owner_name}}..."
 					></textarea>
+					<span class="hint">
+						Mensaje que se muestra al activar el agente. Usa <code>{'{{ai_name}}'}</code> y <code>{'{{owner_name}}'}</code> para personalizar.
+					</span>
 				</div>
 			</div>
 
@@ -463,6 +509,77 @@
 		text-align: center;
 		padding: 2rem;
 		color: #888;
+	}
+
+	/* Variables Help Panel */
+	.variables-help {
+		margin-bottom: 1.5rem;
+	}
+
+	.variables-help details {
+		background: rgba(0, 255, 0, 0.05);
+		border: 1px solid #333;
+		border-radius: 4px;
+	}
+
+	.variables-help summary {
+		padding: 0.75rem 1rem;
+		cursor: pointer;
+		color: #00ff00;
+		font-size: 0.9rem;
+		user-select: none;
+	}
+
+	.variables-help summary:hover {
+		background: rgba(0, 255, 0, 0.1);
+	}
+
+	.variables-content {
+		padding: 1rem;
+		border-top: 1px solid #333;
+	}
+
+	.variables-content p {
+		color: #aaa;
+		font-size: 0.85rem;
+		margin-bottom: 1rem;
+	}
+
+	.variables-content p code {
+		background: #222;
+		padding: 0.1rem 0.3rem;
+		border-radius: 3px;
+		color: #00ff00;
+	}
+
+	.variables-grid {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+		gap: 1rem;
+	}
+
+	.var-group {
+		background: #1a1a2e;
+		padding: 0.75rem;
+		border-radius: 4px;
+	}
+
+	.var-group h5 {
+		color: #888;
+		font-size: 0.8rem;
+		margin-bottom: 0.5rem;
+		font-weight: normal;
+	}
+
+	.var-group code {
+		display: block;
+		background: #0d0d1a;
+		color: #50fa7b;
+		padding: 0.25rem 0.5rem;
+		border-radius: 3px;
+		font-size: 0.75rem;
+		margin-bottom: 0.25rem;
+		font-family: 'Courier New', monospace;
 	}
 
 	@media (max-width: 600px) {

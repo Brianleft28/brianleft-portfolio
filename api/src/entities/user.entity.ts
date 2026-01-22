@@ -4,7 +4,12 @@ import {
   Column,
   CreateDateColumn,
   UpdateDateColumn,
+  OneToMany,
 } from 'typeorm';
+import { Folder } from './folder.entity';
+import { Memory } from './memory.entity';
+import { Setting } from './setting.entity';
+import { AiPersonality } from './ai-personality.entity';
 
 export enum UserRole {
   ADMIN = 'admin',
@@ -19,6 +24,9 @@ export class User {
   @Column({ unique: true, length: 50 })
   username: string;
 
+  @Column({ unique: true, length: 255, nullable: true })
+  email: string | null;
+
   @Column({ length: 255 })
   password: string;
 
@@ -29,8 +37,26 @@ export class User {
   })
   role: UserRole;
 
+  @Column({ name: 'display_name', length: 100, nullable: true })
+  displayName: string | null;
+
+  @Column({ name: 'subdomain', unique: true, length: 50, nullable: true })
+  subdomain: string | null; // Para white-label: username.portfolio.dev
+
   @Column({ name: 'refresh_token', type: 'varchar', nullable: true, length: 500 })
   refreshToken: string | null;
+
+  @OneToMany(() => Folder, (folder) => folder.user)
+  folders: Folder[];
+
+  @OneToMany(() => Memory, (memory) => memory.user)
+  memories: Memory[];
+
+  @OneToMany(() => Setting, (setting) => setting.user)
+  settings: Setting[];
+
+  @OneToMany(() => AiPersonality, (personality) => personality.user)
+  aiPersonalities: AiPersonality[];
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;

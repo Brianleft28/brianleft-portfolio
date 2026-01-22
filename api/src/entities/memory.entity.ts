@@ -5,8 +5,12 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   OneToMany,
+  ManyToOne,
+  JoinColumn,
+  Index,
 } from 'typeorm';
 import { MemoryKeyword } from './memory-keyword.entity';
+import { User } from './user.entity';
 
 export enum MemoryType {
   PROJECT = 'project',
@@ -17,6 +21,7 @@ export enum MemoryType {
 }
 
 @Entity('memories')
+@Index(['slug', 'userId'], { unique: true }) // Slug único por usuario
 export class Memory {
   @PrimaryGeneratedColumn()
   id: number;
@@ -27,8 +32,8 @@ export class Memory {
   })
   type: MemoryType;
 
-  @Column({ unique: true, length: 100 })
-  slug: string;
+  @Column({ length: 100 })
+  slug: string; // Ya no es unique globalmente, sino por usuario
 
   @Column({ length: 255 })
   title: string;
@@ -44,6 +49,13 @@ export class Memory {
 
   @Column({ default: true })
   active: boolean;
+
+  @Column({ name: 'user_id' })
+  userId: number;
+
+  @ManyToOne(() => User, (user) => user.memories, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'user_id' })
+  user: User;
 
   @OneToMany(() => MemoryKeyword, (keyword) => keyword.memory, {
     cascade: true,
