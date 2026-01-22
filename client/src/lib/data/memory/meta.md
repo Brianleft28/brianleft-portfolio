@@ -2,153 +2,171 @@
 
 ## ¿Qué es este proyecto?
 
-Este portfolio es una **experiencia interactiva** que simula un sistema operativo dentro del navegador. No es solo una página estática con CVs, sino un demostrador técnico de las capacidades de Brian.
+Este portfolio es una **experiencia interactiva** que simula un sistema operativo dentro del navegador. No es solo una página estática con CVs, sino un demostrador técnico completo de capacidades.
 
-## ¿Quién soy yo (TorvaldsAi)?
+## ¿Quién soy yo?
 
-Soy el asistente de IA integrado en la terminal de este portfolio. Mi personalidad está basada en Linus Torvalds:
+Soy el asistente de IA integrado en la terminal de este portfolio. Mi configuración (nombre, personalidad, modos) se define desde el panel de administración.
 
-- Directo y sin rodeos
-- Técnicamente preciso
-- Crítico con el código malo, admirador del código bueno
-- Pragmático sobre dogmático
+### Modos disponibles
 
-## Arquitectura de este Portfolio
+| Modo | Descripción |
+|------|-------------|
+| **arquitecto** | Diseño de sistemas, decisiones técnicas, code review. Tono técnico y directo. |
+| **asistente** | Consultas generales, ayuda técnica, conversación. Tono amigable y claro. |
 
-### Frontend (Cliente)
+Ambos modos usan sarcasmo e ironía rioplatense sutil - como un senior que tira comentarios ingeniosos sin pasarse.
 
-- **Framework:** SvelteKit con Svelte 5
-- **Terminal:** Componente `Terminal.svelte` con emulación de consola
-- **Comandos:** Sistema modular en `src/lib/terminal/commands/`
-- **Markdown:** `marked` + `marked-highlight` para renderizar respuestas
-- **Syntax Highlighting:** `highlight.js` con tema `github-dark`
+## Arquitectura del Sistema
 
-### Backend (Servidor)
+### Frontend (SvelteKit + Svelte 5)
 
-- **Runtime:** Node.js con adapter-node de SvelteKit
-- **API de IA:** `/api/chat` — Endpoint que conecta con Google Gemini 2.5
-- **Streaming:** Respuestas en tiempo real usando `ReadableStream`
-- **Rate Limiting:** 10 requests/minuto por IP
+```
+client/
+├── src/
+│   ├── lib/
+│   │   ├── components/
+│   │   │   └── Terminal.svelte      # Terminal interactiva
+│   │   ├── terminal/
+│   │   │   ├── commands/            # Comandos modulares
+│   │   │   │   ├── apikey.ts        # Config de API key
+│   │   │   │   ├── torvalds.ts      # Comando AI
+│   │   │   │   └── ...
+│   │   │   └── types.ts
+│   │   ├── stores/
+│   │   │   ├── config.ts            # Configuración dinámica
+│   │   │   └── terminal.ts          # Estado de terminal
+│   │   └── data/
+│   │       └── memory/              # Base de conocimiento
+│   └── routes/
+│       ├── admin/                   # Panel de administración
+│       └── api/                     # Endpoints del cliente
+```
 
-### Sistema de Memoria Modular (Docs as Code)
+### Backend (NestJS + TypeORM)
 
-Mi conocimiento viene de archivos Markdown en `src/lib/data/memory/`:
+```
+api/
+├── src/
+│   ├── modules/
+│   │   ├── ai-personalities/        # Modos de IA configurables
+│   │   ├── chat/                    # Integración Gemini
+│   │   ├── filesystem/              # Sistema de archivos virtual
+│   │   ├── memory/                  # Base de conocimiento
+│   │   └── settings/                # Configuración dinámica
+│   ├── entities/                    # Modelos de BD
+│   └── seeders/                     # Datos iniciales
+```
 
-| Archivo | Propósito |
-|---------|-----------|
-| `index.md` | Perfil profesional de Brian |
-| `memory.md` | Base de conocimiento general |
-| `meta.md` | Este archivo (autoconciencia) |
-| `projects/*.md` | Información detallada de cada proyecto |
+### Base de Datos (MySQL 8)
 
-**Carga Inteligente:** El servidor carga dinámicamente solo los archivos relevantes según la pregunta del usuario:
-- Pregunta general → `index.md` + `memory.md`
-- Pregunta específica → archivo del proyecto completo
-- Lista de proyectos → solo resúmenes (optimizado)
+| Tabla | Propósito |
+|-------|-----------|
+| `settings` | Configuración dinámica (nombre, branding, etc) |
+| `ai_personalities` | Modos de IA con prompts y configuración |
+| `memories` | Base de conocimiento para la IA |
+| `memory_keywords` | Keywords para búsqueda semántica |
+| `folders` / `files` | Sistema de archivos virtual |
+| `users` | Autenticación admin |
 
 ## Comandos de Terminal
 
-| Comando | Descripción | Aliases |
-|---------|-------------|---------|
-| `help` | Muestra ayuda | `-h`, `--help` |
-| `ls` | Lista archivos | `ll` (detallado), `dir` |
-| `cd` | Cambia directorio | — |
+| Comando | Descripción | Opciones |
+|---------|-------------|----------|
+| `help` | Muestra ayuda | `-h` para detalles |
+| `ls` | Lista archivos | `ll` detallado |
+| `cd` | Cambia directorio | `cd ..` subir |
 | `cat` | Muestra contenido | — |
 | `tree` | Árbol de directorios | — |
 | `pwd` | Directorio actual | — |
-| `cls` | Limpia terminal | `clear` |
-| `torvalds` | Chat con IA | — |
+| `cls` | Limpia terminal | `Ctrl+L` |
+| `apikey` | Configura API key Gemini | `set`, `show`, `clear` |
+| `admin` | Panel de administración | — |
+| `{ai_cmd}` | Chat con IA | `start`, `modes`, `status` |
 
-```mermaid
-flowchart LR
-    subgraph Navegación
-        A["ls / ll"] --> A1[Listar archivos]
-        B["cd [dir]"] --> B1[Cambiar directorio]
-        C["cat [file]"] --> C1[Ver contenido]
-        D["tree"] --> D1[Árbol]
-        E["pwd"] --> E1[Ruta actual]
-    end
-    
-    subgraph Control
-        F["cls / clear"] --> F1[Limpiar terminal]
-        G["help / -h"] --> G1[Ayuda]
-    end
-    
-    subgraph IA
-        H["torvalds [msg]"] --> H1[Chat con IA]
-    end
+## Sistema de API Key de Usuario
+
+Los usuarios pueden usar su propia API key de Gemini:
+
+```
+apikey set <TU_API_KEY>   # Configura la key
+apikey show               # Muestra key (parcial)
+apikey clear              # Elimina la key
+apikey status             # Verifica estado
 ```
 
-## Stack Técnico Completo
+**Seguridad:**
+- ✅ La key se guarda SOLO en localStorage del navegador
+- ✅ El servidor NUNCA almacena keys de usuarios
+- ✅ Se envía directo a Gemini API via header
 
-- Svelte 5 (Runas), TypeScript
-- Nest JS (adapter-node)
-- TypeORM
-- MySQL 8+ (Docker)
-- Google Gemini 2.5 API (gemini-2.5-flash)
-- Bootstrap 5, CSS custom (tema terminal)
-- Docker (multi-stage build <100MB)
-- Vite como bundler
-- Node.js 20+
+## Sistema de Memoria
 
-## Sistema de Administración (Admin Panel)
+La IA tiene acceso a diferentes tipos de memoria:
 
-El portfolio incluye un panel de administración en `/admin/projects` que permite:
+| Tipo | Archivo | Propósito |
+|------|---------|-----------|
+| `INDEX` | `index.md` | Perfil profesional |
+| `META` | `meta.md` | Este archivo (autoconciencia) |
+| `DOCS` | `memory.md` | Base de conocimiento general |
+| `PROJECT` | `projects/*.md` | Detalles de cada proyecto |
 
-### Cargador de Proyectos con IA
-- **Subir archivos Markdown** (.md) de nuevos proyectos
-- **Selector de carpetas** visual para elegir dónde ubicar en el explorador
-- **Creación de carpetas** nuevas anidadas
-- **Resumen automático con IA** — Gemini genera un resumen estructurado del proyecto
-- **Actualización automática** de:
-  - `memory.md` — Agrega entrada con resumen para la IA
-  - `file-system.ts` — Inserta nodo en el árbol del explorador virtual
-  - `projects/*.md` — Guarda el archivo completo
+**Carga inteligente:** El sistema carga dinámicamente solo lo relevante según la pregunta.
 
-### Sistema de Autenticación
+## Panel de Administración
 
-El admin panel está protegido con autenticación basada en cookies de sesión:
+Accesible en `/admin` con autenticación JWT:
 
-| Archivo | Propósito |
-|---------|-----------|
-| `src/lib/server/auth.ts` | Funciones de creación/validación de tokens HMAC |
-| `src/routes/admin/login/` | Página de login con form action |
-| `src/routes/admin/+layout.server.ts` | Guard que protege rutas `/admin/*` |
-| `src/hooks.server.ts` | Middleware que valida sesión en cada request |
+### Configuración disponible
 
-**Flujo de autenticación:**
+- **Owner:** Nombre, rol, ubicación, filosofía
+- **Contacto:** Email, disponibilidad
+- **Social:** GitHub, LinkedIn
+- **Branding:** Título del sitio, descripción, banner ASCII
+- **IA:** Nombre del asistente, comando, saludo
+- **Modos:** Configuración de arquitecto/asistente
+
+### Sistema de archivos
+
+- Crear/editar/eliminar carpetas y archivos
+- Contenido Markdown con preview
+
+### Memorias
+
+- CRUD de memorias para la IA
+- Keywords para búsqueda
+
+## Stack Técnico
+
+- **Frontend:** Svelte 5 (runes), SvelteKit, TypeScript
+- **Backend:** NestJS, TypeORM, Node.js 20+
+- **Base de datos:** MySQL 8+
+- **IA:** Google Gemini 2.5 API
+- **Infraestructura:** Docker (multi-stage build)
+- **Estilos:** Bootstrap 5 + CSS custom
+
+## Variables de Entorno
+
+```bash
+# Base de datos
+DB_HOST, DB_PORT, DB_USER, DB_PASSWORD, DB_NAME
+
+# Auth
+JWT_SECRET, JWT_REFRESH_SECRET
+ADMIN_USERNAME, ADMIN_PASSWORD
+
+# IA (solo si no se usa key de usuario)
+GEMINI_API_KEY
 ```
-Usuario → /admin/* → hooks.server.ts valida cookie → Si inválida → /admin/login
-                                                    → Si válida → Acceso permitido
-```
 
-**Variables de entorno requeridas:**
-- `ADMIN_USERNAME` — Usuario administrador
-- `ADMIN_PASSWORD` — Contraseña
-- `SESSION_SECRET` — Clave para firmar cookies (HMAC-SHA256)
+## White Label
 
-**Características de seguridad:**
-- Cookies `httpOnly`, `secure`, `sameSite: strict`
-- Tokens firmados con HMAC-SHA256
-- Expiración de sesión: 24 horas
-- Endpoint `/api/projects` POST protegido
+Este portfolio está diseñado para ser completamente configurable:
 
-### Flujo de Indexación
-```
-MD subido → Gemini genera resumen → Guarda en 3 ubicaciones → Disponible en terminal
-```
-
-Esto permite agregar proyectos sin tocar código, solo subiendo un Markdown.
-
-## Integración MCP (VS Code)
-
-El proyecto incluye un servidor MCP en `mcp/gemini-server.js` para integrar TorvaldsAi directamente en GitHub Copilot Chat de VS Code.
-
-## Filosofía de Diseño
-
-> "Talk is cheap. Show me the code." — Linus Torvalds
-
-Este portfolio **demuestra** habilidades en lugar de solo listarlas. La terminal funciona, la IA responde, el código está versionado.
+1. **Sin hardcoding:** Todos los textos vienen de la BD
+2. **Modos configurables:** Los modos de IA se definen en `ai_personalities`
+3. **Branding dinámico:** Título, descripción, colores desde settings
+4. **Memorias editables:** El conocimiento de la IA se puede modificar sin código
 
 ---
 

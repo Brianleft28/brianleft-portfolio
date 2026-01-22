@@ -13,6 +13,7 @@ import { ProjectsModule } from './modules/projects/projects.module';
 import { HealthModule } from './modules/health/health.module';
 import { UploadsModule } from './modules/uploads/uploads.module';
 import { SettingsModule } from './modules/settings/settings.module';
+import { AiPersonalitiesModule } from './modules/ai-personalities/ai-personalities.module';
 
 // Entities
 import { User } from './entities/user.entity';
@@ -78,6 +79,7 @@ import { AiPersonality } from './entities/ai-personality.entity';
     HealthModule,
     UploadsModule,
     SettingsModule,
+    AiPersonalitiesModule,
   ],
 })
 export class AppModule {}

@@ -43,6 +43,9 @@ export class AiPersonality {
   @Column({ type: 'varchar', length: 100, nullable: true })
   voiceStyle: string | null; // 'casual', 'formal', 'technical'
 
+  @Column({ type: 'varchar', length: 50, default: 'assistant' })
+  mode: string; // 'arquitecto', 'debugger', 'documentador', 'mentor', 'custom'
+
   @Column({ default: true })
   active: boolean;
 

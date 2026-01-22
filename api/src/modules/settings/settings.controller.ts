@@ -31,14 +31,60 @@ export class SettingsController {
 
   /**
    * GET /settings/public - Settings públicos (sin auth)
-   * Solo devuelve settings seguros para exponer
+   * Devuelve todos los settings necesarios para el frontend
    */
   @Get('public')
   async findPublic() {
-    const publicCategories = ['branding', 'social'];
+    const publicCategories = ['branding', 'social', 'owner', 'ai', 'contact'];
     const settings = await this.settingsService.findAll();
-    
-    return settings.filter(s => s.category && publicCategories.includes(s.category));
+
+    return settings.filter((s) => s.category && publicCategories.includes(s.category));
+  }
+
+  /**
+   * GET /settings/banner - Obtiene el ASCII banner (público)
+   * Si el banner actual no coincide con owner_name, lo regenera automáticamente
+   */
+  @Get('banner')
+  async getBanner() {
+    // Obtener el nombre actual y el banner
+    const ownerName = await this.settingsService.getValue('owner_name');
+    const currentBanner = await this.settingsService.getValue('ascii_banner');
+
+    // Si el banner no contiene el nombre actual (ignorando mayúsculas y caracteres especiales)
+    // regenerarlo automáticamente
+    const nameParts = (ownerName || 'Portfolio').toLowerCase().split(' ');
+    const bannerLower = (currentBanner || '').toLowerCase();
+    const needsRegeneration = nameParts.some(
+      (part) => part.length > 2 && !bannerLower.includes(part),
+    );
+
+    if (needsRegeneration || !currentBanner) {
+      const banner = await this.settingsService.regenerateAsciiBanner();
+      return { ascii_banner: banner };
+    }
+
+    return { ascii_banner: currentBanner };
+  }
+
+  /**
+   * POST /settings/banner/regenerate - Regenera el ASCII banner
+   */
+  @Post('banner/regenerate')
+  @UseGuards(JwtAuthGuard)
+  async regenerateBanner() {
+    const banner = await this.settingsService.regenerateAsciiBanner();
+    return { ascii_banner: banner, message: 'Banner regenerado exitosamente' };
+  }
+
+  /**
+   * POST /settings/banner/preview - Preview de un texto como ASCII
+   */
+  @Post('banner/preview')
+  @UseGuards(JwtAuthGuard)
+  async previewBanner(@Body('text') text: string, @Body('font') font?: string) {
+    const banner = await this.settingsService.generateAsciiBanner(text, font);
+    return { ascii_banner: banner };
   }
 
   /**
@@ -55,10 +101,7 @@ export class SettingsController {
    */
   @Patch(':id')
   @UseGuards(JwtAuthGuard)
-  async update(
-    @Param('id', ParseIntPipe) id: number,
-    @Body('value') value: string,
-  ) {
+  async update(@Param('id', ParseIntPipe) id: number, @Body('value') value: string) {
     return this.settingsService.update(id, value);
   }
 

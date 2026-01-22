@@ -6,6 +6,7 @@ const config = {
 	kit: {
 		adapter: adapter(),
 		csrf: {
+			trustedOrigins: ['http://api:4000', 'http://client:3000'],
 			checkOrigin: false // Permitir POST desde Docker containers
 		}
 	}

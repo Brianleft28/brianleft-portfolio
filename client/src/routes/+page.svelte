@@ -4,14 +4,74 @@
 	import markdownIcon from '$lib/assets/markdown.svg';
 	import FileViewer from '$lib/components/FileViewer.svelte';
 	import type { FolderNode, FileSystemNode, FileNode } from '$lib/data/file-system';
-	import { fileSystemData } from '$lib/data/file-system';
+	import { fileSystemData as staticFileSystem } from '$lib/data/file-system';
+	import { dynamicFilesystem, loadConfig, type FileSystemNode as DynamicFSNode } from '$lib/stores/config';
+	import { onMount } from 'svelte';
 
 	let currentPathIds = $state<string[]>([]);
+	let activeFileId = $state<string | null>(null);
+	let dynamicFs = $state<DynamicFSNode[]>([]);
+	let initialLoadDone = $state(false);
 
-	let activeFileId = $state<string | null>('welcome');
+	// Cargar configuración y filesystem al montar
+	onMount(() => {
+		loadConfig();
+		
+		// Suscribirse al store dinámico
+		const unsubscribe = dynamicFilesystem.subscribe((value) => {
+			dynamicFs = value;
+			// Cuando se carga el filesystem por primera vez, auto-seleccionar LEEME.md
+			if (value && value.length > 0 && !initialLoadDone) {
+				initialLoadDone = true;
+				// Esperar al próximo tick para que fileSystemData esté actualizado
+				setTimeout(() => {
+					const root = fileSystemData();
+					if (root && root.children) {
+						autoSelectReadme(root);
+					}
+				}, 0);
+			}
+		});
+		
+		return unsubscribe;
+	});
+
+	// Transform dynamic filesystem to match static types
+	function transformDynamicNode(node: DynamicFSNode): FileSystemNode {
+		if (node.type === 'folder') {
+			return {
+				id: String(node.id),
+				name: node.name,
+				type: 'folder',
+				children: (node.children || []).map(transformDynamicNode)
+			} as FolderNode;
+		}
+		return {
+			id: String(node.id),
+			name: node.name,
+			type: node.fileType === 'markdown' ? 'markdown' : 'markdown',
+			content: node.content || ''
+		} as FileNode;
+	}
+
+	// Use dynamic filesystem if available, fallback to static
+	// El API devuelve [{id:1, name:"C:", children:[...]}] - tomamos el primero como raíz
+	let fileSystemData = $derived(() => {
+		if (dynamicFs && dynamicFs.length > 0) {
+			// El primer elemento ES la carpeta raíz C:
+			const rootFolder = dynamicFs[0];
+			return {
+				id: 'root',
+				name: rootFolder.name || 'C:\\',
+				type: 'folder',
+				children: (rootFolder.children || []).map(transformDynamicNode)
+			} as FolderNode;
+		}
+		return staticFileSystem;
+	});
 
 	let currentDirectory = $derived(() => {
-		let current: FolderNode = fileSystemData;
+		let current: FolderNode = fileSystemData();
 		for (const id of currentPathIds) {
 			const nextNode = current.children?.find((child) => child.id === id);
 			if (nextNode && nextNode.type === 'folder') {
@@ -34,27 +94,61 @@
 				if (found) return found;
 			}
 		}
-		return findFileById(fileSystemData, activeFileId);
+		return findFileById(fileSystemData(), activeFileId);
 	});
 
-	let currentPathString = $derived(
-		() => `C:\\${currentPathIds.join('\\')}\\${activeItem()?.name || ''}`
-	);
+	// Construir el path con nombres de carpetas, no IDs
+	let currentPathString = $derived(() => {
+		let pathNames: string[] = [];
+		let current: FolderNode = fileSystemData();
+		for (const id of currentPathIds) {
+			const nextNode = current.children?.find((child) => child.id === id);
+			if (nextNode && nextNode.type === 'folder') {
+				pathNames.push(nextNode.name);
+				current = nextNode;
+			}
+		}
+		const fileName = activeItem()?.name || '';
+		return `C:\\${pathNames.join('\\')}${pathNames.length > 0 ? '\\' : ''}${fileName}`;
+	});
 
 	function handleItemClick(clickedItem: FileSystemNode) {
 		if (clickedItem.type === 'folder') {
 			currentPathIds = [...currentPathIds, clickedItem.id];
-			activeFileId = null;
+			// Al entrar a una carpeta, buscar y seleccionar LEEME.md o README.md
+			autoSelectReadme(clickedItem as FolderNode);
 		} else {
 			activeFileId = clickedItem.id;
+		}
+	}
+
+	// Auto-seleccionar README/LEEME.md al entrar a una carpeta
+	function autoSelectReadme(folder: FolderNode) {
+		if (!folder.children) {
+			activeFileId = null;
+			return;
+		}
+		
+		const readmeNames = ['leeme.md', 'readme.md', 'leeme', 'readme'];
+		const readmeFile = folder.children.find((child) => 
+			child.type !== 'folder' && 
+			readmeNames.includes(child.name.toLowerCase())
+		);
+		
+		if (readmeFile) {
+			activeFileId = readmeFile.id;
+		} else {
+			activeFileId = null;
 		}
 	}
 
 	function navigateUp() {
 		if (currentPathIds.length > 0) {
 			currentPathIds.pop();
-			activeFileId = null;
 			currentPathIds = [...currentPathIds];
+			// Al subir, buscar README en la carpeta padre
+			const parentDir = currentDirectory();
+			autoSelectReadme(parentDir);
 		}
 	}
 

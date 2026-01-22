@@ -39,7 +39,9 @@ services:
       - ADMIN_USERNAME=${ADMIN_USERNAME}
       - ADMIN_PASSWORD=${ADMIN_PASSWORD}
     volumes:
-      - uploads-data:/app/uploads
+      - ./api/uploads:/app/uploads
+      - ./client/src/lib/data/memory:/app/data/memory:ro  # Memorias (read-only)
+    user: "1001:1001"
     depends_on:
       db:
         condition: service_healthy
@@ -95,5 +97,4 @@ networks:
 volumes:
   mysql_data:
   redis_data:
-  uploads-data:
 

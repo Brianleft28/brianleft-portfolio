@@ -112,7 +112,8 @@ export async function seedSettings(dataSource: DataSource): Promise<void> {
     },
     {
       key: 'contact_cta',
-      value: 'Si buscas a alguien que entienda qué pasa desde que el usuario hace click hasta que el servidor procesa el byte, habla con Brian.',
+      value:
+        'Si buscas a alguien que entienda qué pasa desde que el usuario hace click hasta que el servidor procesa el byte, habla con Brian.',
       type: 'string',
       category: 'contact',
       description: 'Call to action para contacto',
@@ -218,6 +219,32 @@ export async function seedSettings(dataSource: DataSource): Promise<void> {
       type: 'json',
       category: 'tech',
       description: 'Stack tecnológico completo',
+    },
+
+    // ═══════════════════════════════════════════════════════════════
+    // AI Configuration
+    // ═══════════════════════════════════════════════════════════════
+    {
+      key: 'ai_name',
+      value: 'TorvaldsAI',
+      type: 'string',
+      category: 'ai',
+      description: 'Nombre del asistente IA',
+    },
+    {
+      key: 'ai_command',
+      value: 'torvalds',
+      type: 'string',
+      category: 'ai',
+      description: 'Comando para invocar al asistente en la terminal',
+    },
+    {
+      key: 'ai_greeting',
+      value:
+        '¡Hola! Soy el asistente AI de este portfolio. Preguntame sobre proyectos, experiencia o arquitectura.',
+      type: 'string',
+      category: 'ai',
+      description: 'Mensaje de bienvenida del asistente',
     },
   ];
 

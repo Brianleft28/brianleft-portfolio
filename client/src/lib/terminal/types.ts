@@ -1,11 +1,15 @@
 import type { FileSystemNode } from '$lib/data/file-system';
 
 export interface CommandContext {
-    currentPath: string;
-    setPath: (path: string) => void;
-    getNodeAtPath: (path: string) => FileSystemNode | undefined;
-    aiMode: string | null;
-    setAiMode: (mode: string | null) => void;
+	currentPath: string;
+	setPath: (path: string) => void;
+	getNodeAtPath: (path: string) => FileSystemNode | undefined;
+	aiMode: string | null;
+	setAiMode: (mode: string | null) => void;
+	// Configuración dinámica de IA
+	aiCommandName?: string;
+	aiDisplayName?: string;
+	ownerName?: string;
 }
 
 export interface CommandResult {

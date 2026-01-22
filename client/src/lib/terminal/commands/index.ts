@@ -1,5 +1,6 @@
 import type { Command } from '../types';
 import admin from './admin';
+import { apikey } from './apikey';
 import { cat } from './cat';
 import { cd } from './cd';
 import { cls } from './cls';
@@ -10,7 +11,7 @@ import { pwd } from './pwd';
 import { tree } from './tree';
 import { torvalds } from './torvalds';
 
-const allCommands: Command[] = [admin, cat, cd, cls, cv, help, ls, pwd, tree, torvalds];
+const allCommands: Command[] = [admin, apikey, cat, cd, cls, cv, help, ls, pwd, tree, torvalds];
 const commandRegistry: Map<string, Command> = new Map();
 
 // Registrar todos los comandos
@@ -27,9 +28,14 @@ commandRegistry.set('--help', help);
 // Aliases para admin
 commandRegistry.set('settings', admin);
 commandRegistry.set('panel', admin);
-commandRegistry.set('config', admin);
 
-// ll es ls -l (se maneja como alias especial)
+// Aliases para el comando AI - múltiples para compatibilidad
+// El alias dinámico se registra desde el componente Terminal
+commandRegistry.set('ai', torvalds);
+commandRegistry.set('torvalds', torvalds);
+commandRegistry.set('assistant', torvalds);
+
+// ll es ls -l (alias especial)
 const llCommand: Command = {
 	name: 'll',
 	description: 'Lista detallada (alias de ls -l)',
@@ -44,6 +50,20 @@ commandRegistry.set('ll', llCommand);
 commandRegistry.set('curriculum', cv);
 commandRegistry.set('resume', cv);
 
+// Aliases para apikey
+commandRegistry.set('key', apikey);
+commandRegistry.set('gemini', apikey);
+
+/**
+ * Registra un alias dinámico para el comando AI
+ * Se usa para que el nombre del comando coincida con la config
+ */
+export function registerAiCommandAlias(alias: string): void {
+	if (alias && !commandRegistry.has(alias.toLowerCase())) {
+		commandRegistry.set(alias.toLowerCase(), torvalds);
+	}
+}
+
 export function getCommand(name: string): Command | undefined {
 	return commandRegistry.get(name.toLowerCase());
 }
@@ -53,21 +73,19 @@ export function getAllCommands(): Command[] {
 }
 
 export function generateHelp(): string {
-	const lines = [
-		'<span class="system-header">Comandos disponibles:</span>',
-		''
-	];
+	const lines = ['<span class="system-header">Comandos disponibles:</span>', ''];
 
 	for (const cmd of allCommands) {
-		lines.push(`  <span class="command-highlight">${cmd.name.padEnd(12)}</span> ${cmd.description}`);
+		lines.push(
+			`  <span class="command-highlight">${cmd.name.padEnd(12)}</span> ${cmd.description}`
+		);
 	}
 
 	lines.push('');
 	lines.push('<span class="system-hint">Tip: Usa Ctrl+L para limpiar</span>');
-	lines.push('<span class="system-hint">Tip: torvalds para opciones de AI</span>');
 
 	return lines.join('\n');
 }
 
 // Re-exportar comandos individuales
-export { cat, cd, cls, cv, help, ls, pwd, tree, torvalds };
+export { apikey, cat, cd, cls, cv, help, ls, pwd, tree, torvalds };

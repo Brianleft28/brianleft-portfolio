@@ -11,26 +11,57 @@ const MAX_INPUT_CHARS = 4000;
  * - Keywords generados por AI
  * - Sistema de búsqueda semántica
  * - Personalidad configurable desde settings
+ * 
+ * El usuario puede proporcionar su propia API key de Gemini via header
+ * Esta key se pasa al backend para usar en lugar de la key del servidor
+ * 
+ * FREE TIER: Sin key propia, 5 intentos por IP usando la key del servidor
  */
 export const POST: RequestHandler = async ({ request, getClientAddress }) => {
 	try {
-		const { prompt } = await request.json();
+		const { prompt, apiKey } = await request.json();
 		const userPrompt = `${prompt ?? ''}`.slice(0, MAX_INPUT_CHARS);
 
 		if (!userPrompt.trim()) {
 			return new Response('Error: Mensaje vacío.', { status: 400 });
 		}
 
+		// Headers para el backend
+		const headers: Record<string, string> = {
+			'Content-Type': 'application/json',
+		};
+
+		// Si el usuario proporciona su API key, enviarla al backend
+		if (apiKey && typeof apiKey === 'string' && apiKey.length > 20) {
+			headers['X-Gemini-Api-Key'] = apiKey;
+		}
+
+		// Pasar la IP del cliente para el rate limiting
+		try {
+			const clientIp = getClientAddress();
+			headers['X-Forwarded-For'] = clientIp;
+		} catch {
+			// Si no se puede obtener la IP, continuar sin ella
+		}
+
 		// Llamar a la API de NestJS
 		const response = await fetch(`${API_URL}/chat`, {
 			method: 'POST',
-			headers: {
-				'Content-Type': 'application/json',
-			},
+			headers,
 			body: JSON.stringify({ prompt: userPrompt }),
 		});
 
+		// Manejar errores específicos
 		if (!response.ok) {
+			// Si es 403 (free tier agotado), pasar el mensaje directamente
+			if (response.status === 403) {
+				const errorText = await response.text();
+				return new Response(errorText, { 
+					status: 200, // Devolver como 200 para que se muestre en la terminal
+					headers: { 'Content-Type': 'text/plain; charset=utf-8' }
+				});
+			}
+			
 			const errorText = await response.text();
 			console.error('[Chat API Error]', response.status, errorText);
 			

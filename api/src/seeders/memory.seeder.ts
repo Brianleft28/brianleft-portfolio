@@ -20,8 +20,10 @@ export async function seedMemories(dataSource: DataSource): Promise<void> {
   const memoryRepo = dataSource.getRepository(Memory);
   const keywordRepo = dataSource.getRepository(MemoryKeyword);
 
-  // Path a los archivos de memoria (relativo al root del proyecto)
-  const memoryPath = path.join(__dirname, '../../../client/src/lib/data/memory');
+  // Path a los archivos de memoria (montado via Docker o ruta local)
+  // En Docker: /app/data/memory (volumen montado)
+  // En desarrollo local: puede variar
+  const memoryPath = process.env.MEMORY_PATH || '/app/data/memory';
 
   console.log('📁 Leyendo memorias desde:', memoryPath);
 
@@ -119,24 +121,37 @@ export async function seedFilesystem(dataSource: DataSource): Promise<void> {
   const memoryRepo = dataSource.getRepository(Memory);
 
   // Verificar si ya existe estructura
-  const existingRoot = await folderRepo.findOne({ where: { name: 'C:' } });
-  if (existingRoot) {
-    console.log('⏭️ Filesystem ya tiene estructura, saltando...');
+  let root = await folderRepo.findOne({ where: { name: 'C:' } });
+  let proyectos: Folder | null;
+  let apps: Folder | null;
+
+  if (root) {
+    console.log('📂 Estructura de carpetas existente encontrada');
+    proyectos = await folderRepo.findOne({ where: { name: 'proyectos' } });
+    apps = await folderRepo.findOne({ where: { name: 'apps' } });
+  } else {
+    console.log('📂 Creando estructura del filesystem...');
+
+    // 1. Crear raíz
+    root = folderRepo.create({ name: 'C:', parentId: null, order: 0 });
+    await folderRepo.save(root);
+
+    // 2. Crear carpetas principales
+    proyectos = folderRepo.create({ name: 'proyectos', parentId: root.id, order: 1 });
+    await folderRepo.save(proyectos);
+
+    apps = folderRepo.create({ name: 'apps', parentId: root.id, order: 2 });
+    await folderRepo.save(apps);
+  }
+
+  // Verificar si ya hay archivos
+  const existingFilesCount = await fileRepo.count();
+  if (existingFilesCount > 0) {
+    console.log(`⏭️ Ya existen ${existingFilesCount} archivos, saltando creación...`);
     return;
   }
 
-  console.log('📂 Creando estructura del filesystem...');
-
-  // 1. Crear raíz
-  const root = folderRepo.create({ name: 'C:', parentId: null, order: 0 });
-  await folderRepo.save(root);
-
-  // 2. Crear carpetas principales
-  const proyectos = folderRepo.create({ name: 'proyectos', parentId: root.id, order: 1 });
-  await folderRepo.save(proyectos);
-
-  const apps = folderRepo.create({ name: 'apps', parentId: root.id, order: 2 });
-  await folderRepo.save(apps);
+  console.log('📄 Creando archivos del filesystem...');
 
   // 3. Crear LEEME.md en raíz
   const leeme = fileRepo.create({
@@ -178,28 +193,50 @@ Escribí \`torvalds start\` en la terminal y preguntale lo que quieras.
   });
   await fileRepo.save(leeme);
 
-  // 4. Crear archivos para cada proyecto
-  const projects = await memoryRepo.find({ where: { type: MemoryType.PROJECT } });
+  // 4. Crear archivos para cada proyecto (si hay memorias de proyectos)
+  if (proyectos) {
+    const projects = await memoryRepo.find({ where: { type: MemoryType.PROJECT } });
 
-  for (const project of projects) {
-    // Crear carpeta del proyecto
-    const projectFolder = folderRepo.create({
-      name: project.slug,
-      parentId: proyectos.id,
-      order: 0,
-    });
-    await folderRepo.save(projectFolder);
+    for (const project of projects) {
+      // Crear carpeta del proyecto
+      const projectFolder = folderRepo.create({
+        name: project.slug,
+        parentId: proyectos.id,
+        order: 0,
+      });
+      await folderRepo.save(projectFolder);
 
-    // Crear README.md con el contenido
-    const readme = fileRepo.create({
-      name: 'README.md',
+      // Crear README.md con el contenido
+      const readme = fileRepo.create({
+        name: 'README.md',
+        type: FileType.MARKDOWN,
+        folderId: projectFolder.id,
+        content: project.content,
+      });
+      await fileRepo.save(readme);
+
+      console.log(`📄 Creada carpeta y README para: ${project.slug}`);
+    }
+  }
+
+  // 5. Crear archivos para la carpeta apps (si existe)
+  if (apps) {
+    const appsReadme = fileRepo.create({
+      name: 'LEEME.md',
       type: FileType.MARKDOWN,
-      folderId: projectFolder.id,
-      content: project.content,
-    });
-    await fileRepo.save(readme);
+      folderId: apps.id,
+      content: `# Aplicaciones
 
-    console.log(`📄 Creada carpeta y README para: ${project.slug}`);
+Esta carpeta contiene documentación sobre aplicaciones y herramientas desarrolladas.
+
+## TorvaldsAI
+Asistente de IA integrado en la terminal. Escribí \`torvalds start\` para comenzar.
+
+## Herramientas
+Explora las diferentes herramientas disponibles en este portfolio.
+`,
+    });
+    await fileRepo.save(appsReadme);
   }
 
   console.log('🎉 Seeding de filesystem completado');
@@ -216,13 +253,53 @@ function extractTitle(content: string): string | null {
 }
 
 function extractSummary(content: string): string | null {
-  // Buscar sección "El Desafío" o primer párrafo después del título
-  const challengeMatch = content.match(/##\s+El Desafío\s*\n\n([^\n]+)/);
-  if (challengeMatch) {
-    return challengeMatch[1].trim();
+  // Buscar sección "El Desafío" o "Descripción"
+  const sections = ['El Desafío', 'Desafío', 'Descripción', 'Resumen', 'Objetivo'];
+
+  for (const section of sections) {
+    // Buscar el heading y capturar el contenido hasta el siguiente heading
+    const regex = new RegExp(`##\\s+${section}\\s*\\n+([^#]+)`, 'i');
+    const match = content.match(regex);
+    if (match && match[1]) {
+      // Limpiar el contenido: quitar listas, tomar primer párrafo
+      const text = match[1]
+        .trim()
+        .split('\n')
+        .filter((line) => !line.startsWith('-') && !line.startsWith('*') && line.trim())
+        .join(' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+
+      if (text.length > 20) {
+        return text.slice(0, 250) + (text.length > 250 ? '...' : '');
+      }
+    }
   }
 
-  // Fallback: primer párrafo
-  const paragraphMatch = content.match(/^#.+\n\n([^\n#]+)/);
-  return paragraphMatch ? paragraphMatch[1].trim().slice(0, 200) : null;
+  // Fallback: buscar después de "Clasificación" el primer contenido útil
+  const afterClassification = content.match(/##\s+Clasificación[\s\S]*?##\s+\w+\s*\n+([^#]+)/i);
+  if (afterClassification && afterClassification[1]) {
+    const text = afterClassification[1]
+      .trim()
+      .split('\n')
+      .filter((line) => !line.startsWith('-') && !line.startsWith('*') && line.trim())
+      .join(' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+
+    if (text.length > 20) {
+      return text.slice(0, 250) + (text.length > 250 ? '...' : '');
+    }
+  }
+
+  // Último fallback: primer párrafo después del título
+  const paragraphMatch = content.match(/^#[^\n]+\n+(?:##[^\n]+\n+)*([^\n#][^\n]+)/m);
+  if (paragraphMatch && paragraphMatch[1]) {
+    const text = paragraphMatch[1].trim();
+    if (text.length > 20 && !text.startsWith('-') && !text.startsWith('*')) {
+      return text.slice(0, 250) + (text.length > 250 ? '...' : '');
+    }
+  }
+
+  return null;
 }

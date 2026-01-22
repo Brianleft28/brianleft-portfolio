@@ -342,14 +342,73 @@
 		background: transparent;
 		color: #adb5bd;
 		transition: background 0.15s;
+		font-family: 'Courier New', monospace;
 	}
 
 	.folder-item:hover {
-		background: rgba(255,255,255,0.05);
+		background: rgba(0, 255, 0, 0.05);
+		color: #00ff00;
 	}
 
 	.folder-item.selected {
-		background: rgba(13, 110, 253, 0.25);
-		outline: 1px solid var(--bs-primary);
+		background: rgba(0, 255, 0, 0.15);
+		outline: 1px solid #00ff00;
+		color: #00ff00;
     }
+
+	:global(.projects-page .card) {
+		background: #0d0d1a !important;
+		border-color: #333 !important;
+	}
+
+	:global(.projects-page .card-header) {
+		background: #161622 !important;
+		border-color: #333 !important;
+		color: #00ff00 !important;
+		font-family: 'Courier New', monospace !important;
+	}
+
+	:global(.projects-page .btn-primary) {
+		background: #00ff00 !important;
+		border-color: #00ff00 !important;
+		color: #0d0d1a !important;
+		font-family: 'Courier New', monospace !important;
+	}
+
+	:global(.projects-page .btn-primary:hover) {
+		background: #00cc00 !important;
+		border-color: #00cc00 !important;
+	}
+
+	:global(.projects-page .btn-outline-secondary) {
+		border-color: #00ff00 !important;
+		color: #00ff00 !important;
+		font-family: 'Courier New', monospace !important;
+	}
+
+	:global(.projects-page .btn-outline-secondary:hover) {
+		background: rgba(0, 255, 0, 0.1) !important;
+		color: #00ff00 !important;
+	}
+
+	:global(.projects-page .form-control) {
+		background: #161622 !important;
+		border-color: #333 !important;
+		font-family: 'Courier New', monospace !important;
+	}
+
+	:global(.projects-page .form-control:focus) {
+		border-color: #00ff00 !important;
+		box-shadow: 0 0 10px rgba(0, 255, 0, 0.15) !important;
+	}
+
+	:global(.projects-page .alert-info) {
+		background: rgba(0, 255, 0, 0.05) !important;
+		border-color: #00ff00 !important;
+		color: #00ff00 !important;
+	}
+
+	:global(.projects-page .text-info) {
+		color: #00ff00 !important;
+	}
 </style>

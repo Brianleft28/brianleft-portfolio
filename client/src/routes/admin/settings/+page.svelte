@@ -1,5 +1,6 @@
 <script lang="ts">
   import { enhance } from '$app/forms';
+  import { onMount } from 'svelte';
 
   interface Setting {
     id: number;
@@ -20,18 +21,80 @@
       value: editedSettings.has(s.key) ? editedSettings.get(s.key)! : s.value
     }))
   );
-  let activeCategory = $state('all');
   let saving = $state(false);
+  let asciiBanner = $state('');
+  let loadingBanner = $state(false);
 
-  const categories = [
-    { id: 'all', label: 'Todos', icon: '📋' },
-    { id: 'owner', label: 'Propietario', icon: '👤' },
-    { id: 'contact', label: 'Contacto', icon: '📧' },
-    { id: 'social', label: 'Redes Sociales', icon: '🔗' },
-    { id: 'branding', label: 'Branding', icon: '🎨' },
-    { id: 'files', label: 'Archivos', icon: '📁' },
-    { id: 'tech', label: 'Tecnología', icon: '⚙️' },
-  ];
+  // Agrupar settings por categoría
+  let groupedSettings = $derived.by(() => {
+    const groups: Record<string, Setting[]> = {};
+    for (const s of settings) {
+      if (!groups[s.category]) groups[s.category] = [];
+      groups[s.category].push(s);
+    }
+    // Ordenar categorías
+    const order = ['owner', 'contact', 'social', 'branding'];
+    const sorted: [string, Setting[]][] = [];
+    for (const cat of order) {
+      if (groups[cat]) sorted.push([cat, groups[cat]]);
+    }
+    // Agregar cualquier otra categoría no listada
+    for (const [cat, items] of Object.entries(groups)) {
+      if (!order.includes(cat)) sorted.push([cat, items]);
+    }
+    return sorted;
+  });
+
+  const categoryLabels: Record<string, { label: string; icon: string }> = {
+    owner: { label: 'Información Personal', icon: '👤' },
+    contact: { label: 'Contacto', icon: '📧' },
+    social: { label: 'Redes Sociales', icon: '🔗' },
+    branding: { label: 'Branding & Apariencia', icon: '🎨' },
+  };
+
+  // Helper para detectar si un valor es JSON parseable
+  function isJsonValue(value: string): boolean {
+    try {
+      const parsed = JSON.parse(value);
+      return typeof parsed === 'object' && parsed !== null;
+    } catch {
+      return false;
+    }
+  }
+
+  // Helper para parsear JSON de forma segura
+  function parseJsonSafe(value: string): Record<string, string> {
+    try {
+      return JSON.parse(value);
+    } catch {
+      return {};
+    }
+  }
+
+  // Maneja cambios en campos JSON individuales
+  function handleJsonFieldChange(settingKey: string, fieldKey: string, fieldValue: string) {
+    const setting = baseSettings.find(s => s.key === settingKey);
+    if (!setting) return;
+    
+    const currentValue = editedSettings.has(settingKey) 
+      ? editedSettings.get(settingKey)! 
+      : setting.value;
+    
+    const parsed = parseJsonSafe(currentValue);
+    parsed[fieldKey] = fieldValue;
+    
+    editedSettings.set(settingKey, JSON.stringify(parsed));
+    editedSettings = new Map(editedSettings);
+  }
+
+  // Obtiene valor de un campo JSON específico
+  function getJsonFieldValue(setting: Setting, fieldKey: string): string {
+    const currentValue = editedSettings.has(setting.key) 
+      ? editedSettings.get(setting.key)! 
+      : setting.value;
+    const parsed = parseJsonSafe(currentValue);
+    return parsed[fieldKey] || '';
+  }
 
   function handleInputChange(key: string, value: string) {
     editedSettings.set(key, value);
@@ -39,9 +102,7 @@
   }
 
   function getDisplayValue(setting: Setting): string {
-    return editedSettings.has(setting.key) 
-      ? editedSettings.get(setting.key)! 
-      : setting.value;
+    return editedSettings.has(setting.key) ? editedSettings.get(setting.key)! : setting.value;
   }
 
   function hasChanges(): boolean {
@@ -52,23 +113,6 @@
     editedSettings = new Map();
   }
 
-  function filteredSettings(): Setting[] {
-    if (activeCategory === 'all') return settings;
-    return settings.filter(s => s.category === activeCategory);
-  }
-
-  function isJsonSetting(setting: Setting): boolean {
-    return setting.type === 'json';
-  }
-
-  function formatJsonForDisplay(value: string): string {
-    try {
-      return JSON.stringify(JSON.parse(value), null, 2);
-    } catch {
-      return value;
-    }
-  }
-
   function getUpdatesJson(): string {
     const updates = Array.from(editedSettings.entries()).map(([key, value]) => {
       const setting = baseSettings.find(s => s.key === key);
@@ -77,25 +121,102 @@
     return JSON.stringify(updates);
   }
 
-  // Limpiar cambios después de guardar exitoso
+  function formatKeyForDisplay(key: string): string {
+    return key
+      .replace(/^(owner_|contact_|social_|branding_)/, '')
+      .replace(/_/g, ' ')
+      .replace(/\b\w/g, l => l.toUpperCase());
+  }
+
+  // Debounce timer para preview del banner
+  let bannerPreviewTimeout: ReturnType<typeof setTimeout> | null = null;
+
+  // Actualizar preview del banner cuando cambian campos de nombre
+  function handleNameFieldChange(key: string, value: string) {
+    handleInputChange(key, value);
+    
+    // Si es un campo de nombre, hacer preview del banner con debounce
+    if (key === 'owner_name' || key === 'owner_first_name' || key === 'owner_last_name') {
+      if (bannerPreviewTimeout) clearTimeout(bannerPreviewTimeout);
+      
+      bannerPreviewTimeout = setTimeout(() => {
+        // Calcular nombre completo
+        let fullName = '';
+        if (key === 'owner_name') {
+          fullName = value;
+        } else {
+          const firstName = key === 'owner_first_name' 
+            ? value 
+            : (editedSettings.get('owner_first_name') || settings.find(s => s.key === 'owner_first_name')?.value || '');
+          const lastName = key === 'owner_last_name'
+            ? value
+            : (editedSettings.get('owner_last_name') || settings.find(s => s.key === 'owner_last_name')?.value || '');
+          fullName = `${firstName} ${lastName}`.trim();
+        }
+        
+        if (fullName) {
+          previewAsciiBanner(fullName);
+        }
+      }, 500); // 500ms de debounce
+    }
+  }
+
   $effect(() => {
     if (form?.success) {
       editedSettings = new Map();
+      loadAsciiBanner();
     }
+  });
+
+  async function loadAsciiBanner() {
+    loadingBanner = true;
+    try {
+      const response = await fetch('/api/settings/banner');
+      if (response.ok) {
+        const res = await response.json();
+        asciiBanner = res.ascii_banner || '';
+      }
+    } catch (e) {
+      console.error('Error loading banner:', e);
+    } finally {
+      loadingBanner = false;
+    }
+  }
+
+  async function previewAsciiBanner(text: string) {
+    if (!text.trim()) return;
+    loadingBanner = true;
+    try {
+      const response = await fetch('/api/settings/banner/preview', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ text })
+      });
+      if (response.ok) {
+        const res = await response.json();
+        asciiBanner = res.ascii_banner || '';
+      }
+    } catch (e) {
+      console.error('Error previewing banner:', e);
+    } finally {
+      loadingBanner = false;
+    }
+  }
+
+  onMount(() => {
+    loadAsciiBanner();
   });
 </script>
 
 <svelte:head>
-  <title>Settings | Admin</title>
+  <title>Configuración | Admin</title>
 </svelte:head>
 
 <div class="settings-page">
   <header class="page-header">
-    <div class="header-content">
-      <h1>⚙️ Configuración del Portfolio</h1>
-      <p class="subtitle">Personaliza la información que se muestra en el portfolio</p>
-    </div>
-    <a href="/admin/projects" class="nav-link">📁 Proyectos</a>
+    <h1>⚙️ Configuración del Portfolio</h1>
+    <p class="subtitle">Personaliza toda la información de tu portfolio white-label</p>
   </header>
 
   {#if data.error}
@@ -110,57 +231,118 @@
     <div class="alert alert-success">✅ Cambios guardados correctamente</div>
   {/if}
 
-  <!-- Categorías -->
-  <nav class="categories">
-    {#each categories as cat}
-      <button 
-        class="category-btn" 
-        class:active={activeCategory === cat.id}
-        onclick={() => activeCategory = cat.id}
-      >
-        <span class="icon">{cat.icon}</span>
-        <span class="label">{cat.label}</span>
-      </button>
-    {/each}
-  </nav>
+  <!-- ASCII Banner Preview -->
+  <section class="ascii-section">
+    <h2>🎨 Banner ASCII</h2>
+    <p class="hint">Se genera automáticamente con tu nombre al guardar</p>
+    <div class="ascii-preview">
+      {#if loadingBanner}
+        <span class="loading-text">Generando...</span>
+      {:else if asciiBanner}
+        <pre>{asciiBanner}</pre>
+      {:else}
+        <span class="no-banner">Sin banner - Guarda tu nombre para generarlo</span>
+      {/if}
+    </div>
+    <button 
+      type="button" 
+      class="btn-regenerate"
+      onclick={() => {
+        const ownerName = settings.find(s => s.key === 'owner_name')?.value || '';
+        if (ownerName) previewAsciiBanner(ownerName);
+      }}
+      disabled={loadingBanner}
+    >
+      🔄 Regenerar
+    </button>
+  </section>
 
-  <!-- Settings Grid -->
-  <div class="settings-grid">
-    {#each filteredSettings() as setting (setting.id)}
-      <div class="setting-card" class:modified={editedSettings.has(setting.key)}>
-        <div class="setting-header">
-          <code class="setting-key">{setting.key}</code>
-          <span class="setting-category">{setting.category}</span>
-        </div>
-        
-        <p class="setting-description">{setting.description || 'Sin descripción'}</p>
-        
-        {#if isJsonSetting(setting)}
-          <textarea
-            class="setting-input json"
-            rows="4"
-            value={formatJsonForDisplay(getDisplayValue(setting))}
-            oninput={(e) => handleInputChange(setting.key, e.currentTarget.value)}
-            placeholder="JSON..."
-          ></textarea>
-        {:else}
-          <input
-            type="text"
-            class="setting-input"
-            value={getDisplayValue(setting)}
-            oninput={(e) => handleInputChange(setting.key, e.currentTarget.value)}
-            placeholder={setting.key}
-          />
-        {/if}
+  <!-- Settings por categoría -->
+  {#each groupedSettings as [category, categorySettings]}
+    {@const catInfo = categoryLabels[category] || { label: category, icon: '📋' }}
+    <section class="settings-section">
+      <h2>{catInfo.icon} {catInfo.label}</h2>
+      
+      <div class="settings-list">
+        {#each categorySettings as setting (setting.id)}
+          <div class="setting-row" class:modified={editedSettings.has(setting.key)}>
+            <div class="setting-info">
+              <label for={setting.key}>{formatKeyForDisplay(setting.key)}</label>
+              {#if setting.description}
+                <span class="setting-hint">{setting.description}</span>
+              {/if}
+            </div>
+            
+            {#if setting.type === 'json' && isJsonValue(setting.value)}
+              <!-- Renderizar campos JSON como inputs separados -->
+              {@const jsonFields = Object.entries(parseJsonSafe(setting.value))}
+              <div class="json-fields">
+                {#each jsonFields as [fieldKey, _]}
+                  {@const fieldId = `${setting.key}_${fieldKey}`}
+                  <div class="json-field">
+                    <label class="json-field-label" for={fieldId}>{fieldKey}</label>
+                    {#if fieldKey === 'long' || getJsonFieldValue(setting, fieldKey).length > 80}
+                      <textarea
+                        id={fieldId}
+                        class="setting-input"
+                        rows="2"
+                        value={getJsonFieldValue(setting, fieldKey)}
+                        oninput={(e) => handleJsonFieldChange(setting.key, fieldKey, e.currentTarget.value)}
+                        placeholder={fieldKey}
+                      ></textarea>
+                    {:else}
+                      <input
+                        id={fieldId}
+                        type="text"
+                        class="setting-input"
+                        value={getJsonFieldValue(setting, fieldKey)}
+                        oninput={(e) => handleJsonFieldChange(setting.key, fieldKey, e.currentTarget.value)}
+                        placeholder={fieldKey}
+                      />
+                    {/if}
+                  </div>
+                {/each}
+              </div>
+            {:else if setting.type === 'text' || setting.value.length > 100}
+              <textarea
+                id={setting.key}
+                class="setting-input"
+                rows="3"
+                value={getDisplayValue(setting)}
+                oninput={(e) => ['owner_name', 'owner_first_name', 'owner_last_name'].includes(setting.key) 
+                  ? handleNameFieldChange(setting.key, e.currentTarget.value)
+                  : handleInputChange(setting.key, e.currentTarget.value)}
+                placeholder={formatKeyForDisplay(setting.key)}
+              ></textarea>
+            {:else}
+              <input
+                id={setting.key}
+                type="text"
+                class="setting-input"
+                value={getDisplayValue(setting)}
+                oninput={(e) => ['owner_name', 'owner_first_name', 'owner_last_name'].includes(setting.key)
+                  ? handleNameFieldChange(setting.key, e.currentTarget.value)
+                  : handleInputChange(setting.key, e.currentTarget.value)}
+                placeholder={formatKeyForDisplay(setting.key)}
+              />
+            {/if}
+          </div>
+        {/each}
       </div>
-    {/each}
-  </div>
+    </section>
+  {/each}
 
-  <!-- Acciones -->
+  {#if settings.length === 0}
+    <div class="empty-state">
+      <p>No hay configuraciones disponibles.</p>
+      <p class="hint">Ejecuta los seeders para cargar la configuración inicial.</p>
+    </div>
+  {/if}
+
   {#if hasChanges()}
     <div class="actions-bar">
       <span class="changes-count">
-        {editedSettings.size} cambio{editedSettings.size > 1 ? 's' : ''} pendiente{editedSettings.size > 1 ? 's' : ''}
+        {editedSettings.size} cambio{editedSettings.size > 1 ? 's' : ''} sin guardar
       </span>
       <form 
         method="POST" 
@@ -175,15 +357,11 @@
       >
         <input type="hidden" name="updates" value={getUpdatesJson()} />
         <div class="actions">
-          <button type="button" class="btn btn-secondary" onclick={discardChanges} disabled={saving}>
+          <button type="button" class="btn btn-cancel" onclick={discardChanges} disabled={saving}>
             Descartar
           </button>
-          <button type="submit" class="btn btn-primary" disabled={saving}>
-            {#if saving}
-              <span class="spinner-small"></span> Guardando...
-            {:else}
-              💾 Guardar Cambios
-            {/if}
+          <button type="submit" class="btn btn-save" disabled={saving}>
+            {#if saving}Guardando...{:else}💾 Guardar{/if}
           </button>
         </div>
       </form>
@@ -193,161 +371,213 @@
 
 <style>
   .settings-page {
-    padding: 2rem;
-    max-width: 1200px;
+    max-width: 900px;
     margin: 0 auto;
   }
 
   .page-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    margin-bottom: 2rem;
+    margin-bottom: 1.5rem;
   }
 
   .page-header h1 {
-    font-size: 2rem;
-    margin-bottom: 0.5rem;
-    color: #e0e0e0;
+    font-size: 1.4rem;
+    color: #00ff00;
+    margin-bottom: 0.25rem;
   }
 
   .subtitle {
-    color: #888;
-    font-size: 1rem;
-  }
-
-  .nav-link {
-    padding: 0.5rem 1rem;
-    background: #2a2a2a;
-    border-radius: 6px;
-    color: #ccc;
-    text-decoration: none;
-    transition: all 0.2s;
-  }
-
-  .nav-link:hover {
-    background: #3a3a3a;
-    color: #fff;
+    color: #999;
+    font-size: 0.85rem;
   }
 
   .alert {
-    padding: 1rem;
-    border-radius: 8px;
+    padding: 0.75rem 1rem;
+    border-radius: 6px;
     margin-bottom: 1rem;
+    font-size: 0.85rem;
   }
 
   .alert-danger {
-    background: rgba(220, 53, 69, 0.2);
-    border: 1px solid #dc3545;
-    color: #ff6b6b;
+    background: rgba(255, 85, 85, 0.1);
+    border: 1px solid #ff5555;
+    color: #ff5555;
   }
 
   .alert-success {
-    background: rgba(40, 167, 69, 0.2);
-    border: 1px solid #28a745;
-    color: #5cb85c;
+    background: rgba(0, 255, 0, 0.1);
+    border: 1px solid #00ff00;
+    color: #00ff00;
   }
 
-  .categories {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem;
-    margin-bottom: 2rem;
-    padding: 1rem;
-    background: #1a1a1a;
-    border-radius: 12px;
-  }
-
-  .category-btn {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.5rem 1rem;
-    background: #2a2a2a;
+  .ascii-section {
+    background: #0d0d1a;
     border: 1px solid #333;
     border-radius: 8px;
-    color: #aaa;
-    cursor: pointer;
-    transition: all 0.2s;
-  }
-
-  .category-btn:hover {
-    background: #333;
-    color: #fff;
-  }
-
-  .category-btn.active {
-    background: #0d6efd;
-    border-color: #0d6efd;
-    color: #fff;
-  }
-
-  .settings-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-    gap: 1rem;
-  }
-
-  .setting-card {
-    background: #1e1e1e;
-    border: 1px solid #333;
-    border-radius: 10px;
     padding: 1rem;
-    transition: all 0.2s;
+    margin-bottom: 1.5rem;
   }
 
-  .setting-card.modified {
-    border-color: #ffc107;
-    box-shadow: 0 0 10px rgba(255, 193, 7, 0.2);
+  .ascii-section h2 {
+    font-size: 1rem;
+    color: #00ff00;
+    margin-bottom: 0.25rem;
   }
 
-  .setting-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 0.5rem;
-  }
-
-  .setting-key {
-    font-size: 0.85rem;
-    color: #4ec9b0;
-    background: #0d2818;
-    padding: 0.2rem 0.5rem;
-    border-radius: 4px;
-  }
-
-  .setting-category {
-    font-size: 0.75rem;
-    color: #888;
-    text-transform: uppercase;
-  }
-
-  .setting-description {
-    font-size: 0.85rem;
+  .hint {
+    font-size: 0.8rem;
     color: #888;
     margin-bottom: 0.75rem;
   }
 
+  .ascii-preview {
+    background: #000;
+    border: 1px solid #00ff00;
+    border-radius: 4px;
+    padding: 1rem;
+    min-height: 80px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow-x: auto;
+  }
+
+  .ascii-preview pre {
+    color: #00ff00;
+    font-family: 'Consolas', monospace;
+    font-size: 0.5rem;
+    line-height: 1.1;
+    margin: 0;
+  }
+
+  .loading-text, .no-banner {
+    color: #888;
+    font-style: italic;
+    font-size: 0.85rem;
+  }
+
+  .btn-regenerate {
+    margin-top: 0.75rem;
+    padding: 0.35rem 0.7rem;
+    background: transparent;
+    border: 1px solid #444;
+    color: #888;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.75rem;
+    transition: all 0.2s;
+  }
+
+  .btn-regenerate:hover:not(:disabled) {
+    border-color: #00ff00;
+    color: #00ff00;
+  }
+
+  .settings-section {
+    background: #0d0d1a;
+    border: 1px solid #333;
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+  }
+
+  .settings-section h2 {
+    font-size: 0.95rem;
+    color: #00ff00;
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid #222;
+  }
+
+  .settings-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .setting-row {
+    display: grid;
+    grid-template-columns: 180px 1fr;
+    gap: 1rem;
+    align-items: start;
+    padding: 0.5rem;
+    border-radius: 4px;
+    transition: background 0.2s;
+  }
+
+  .setting-row:hover {
+    background: rgba(0, 255, 0, 0.02);
+  }
+
+  .setting-row.modified {
+    background: rgba(0, 255, 0, 0.05);
+    border-left: 2px solid #00ff00;
+  }
+
+  .setting-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+  }
+
+  .setting-info label {
+    color: #e0e0e0;
+    font-size: 0.85rem;
+    font-weight: 600;
+  }
+
+  .setting-hint {
+    font-size: 0.75rem;
+    color: #888;
+  }
+
   .setting-input {
     width: 100%;
-    padding: 0.75rem;
-    background: #0d0d0d;
+    padding: 0.5rem 0.65rem;
+    background: #161622;
     border: 1px solid #333;
-    border-radius: 6px;
+    border-radius: 4px;
     color: #e0e0e0;
     font-family: inherit;
-    transition: border-color 0.2s;
+    font-size: 0.85rem;
+    transition: all 0.2s;
   }
 
   .setting-input:focus {
     outline: none;
-    border-color: #0d6efd;
+    border-color: #00ff00;
+    box-shadow: 0 0 8px rgba(0, 255, 0, 0.15);
   }
 
-  .setting-input.json {
-    font-family: 'Fira Code', 'Consolas', monospace;
-    font-size: 0.8rem;
+  textarea.setting-input {
     resize: vertical;
+    min-height: 50px;
+  }
+
+  /* Estilos para campos JSON */
+  .json-fields {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    width: 100%;
+  }
+
+  .json-field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  .json-field-label {
+    font-size: 0.75rem;
+    color: #4ec9b0;
+    text-transform: capitalize;
+    font-weight: 500;
+  }
+
+  .empty-state {
+    text-align: center;
+    padding: 2rem;
+    color: #888;
   }
 
   .actions-bar {
@@ -358,70 +588,64 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 1rem 2rem;
-    background: rgba(30, 30, 30, 0.95);
-    border-top: 1px solid #333;
+    padding: 0.65rem 2rem;
+    background: rgba(13, 13, 26, 0.98);
+    border-top: 1px solid #00ff00;
     backdrop-filter: blur(10px);
     z-index: 100;
   }
 
   .changes-count {
-    color: #ffc107;
-    font-weight: 500;
+    color: #00ff00;
+    font-size: 0.85rem;
   }
 
   .actions {
     display: flex;
-    gap: 1rem;
+    gap: 0.75rem;
   }
 
   .btn {
-    padding: 0.75rem 1.5rem;
-    border-radius: 8px;
+    padding: 0.45rem 1rem;
+    border-radius: 4px;
     border: none;
     cursor: pointer;
-    font-weight: 500;
+    font-size: 0.85rem;
     transition: all 0.2s;
   }
 
   .btn:disabled {
-    opacity: 0.6;
+    opacity: 0.5;
     cursor: not-allowed;
   }
 
-  .btn-primary {
-    background: #0d6efd;
-    color: white;
+  .btn-save {
+    background: #00ff00;
+    color: #0d0d1a;
+    font-weight: 600;
   }
 
-  .btn-primary:hover:not(:disabled) {
-    background: #0b5ed7;
+  .btn-save:hover:not(:disabled) {
+    box-shadow: 0 0 15px rgba(0, 255, 0, 0.4);
   }
 
-  .btn-secondary {
-    background: #444;
-    color: #ccc;
+  .btn-cancel {
+    background: transparent;
+    border: 1px solid #ff5555;
+    color: #ff5555;
   }
 
-  .btn-secondary:hover:not(:disabled) {
-    background: #555;
-  }
-
-  .spinner-small {
-    display: inline-block;
-    width: 14px;
-    height: 14px;
-    border: 2px solid rgba(255, 255, 255, 0.3);
-    border-top-color: white;
-    border-radius: 50%;
-    animation: spin 0.8s linear infinite;
-  }
-
-  @keyframes spin {
-    to { transform: rotate(360deg); }
+  .btn-cancel:hover:not(:disabled) {
+    background: rgba(255, 85, 85, 0.1);
   }
 
   form {
     display: contents;
+  }
+
+  @media (max-width: 700px) {
+    .setting-row {
+      grid-template-columns: 1fr;
+    }
   }
 </style>

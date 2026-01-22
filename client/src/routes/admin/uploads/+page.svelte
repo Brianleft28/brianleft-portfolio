@@ -7,29 +7,12 @@
     downloadUrl?: string;
   }
 
-  interface ImageInfo {
-    type: string;
-    filename: string;
-    url: string;
-  }
-
   let { data, form } = $props();
   
-  let cvInfo: CvInfo | null = $state(data.cvInfo);
-  let images: ImageInfo[] = $state(data.images || []);
+  let cvInfo: CvInfo | null = $derived(data.cvInfo);
   let selectedCvFile: File | null = $state(null);
-  let selectedImageFile: File | null = $state(null);
-  let selectedImageType = $state('avatar');
-  let dragOverCv = $state(false);
-  let dragOverImage = $state(false);
+  let dragOver = $state(false);
   let uploading = $state(false);
-
-  const imageTypes = [
-    { id: 'avatar', label: 'Avatar', icon: '👤', desc: 'Foto de perfil' },
-    { id: 'logo', label: 'Logo', icon: '🏷️', desc: 'Logo del portfolio' },
-    { id: 'background', label: 'Fondo', icon: '🖼️', desc: 'Imagen de fondo' },
-    { id: 'project', label: 'Proyecto', icon: '📁', desc: 'Imagen de proyecto' },
-  ];
 
   const API_URL = 'http://localhost:4000';
 
@@ -42,29 +25,11 @@
 
   function handleCvDrop(event: DragEvent) {
     event.preventDefault();
-    dragOverCv = false;
+    dragOver = false;
     if (event.dataTransfer?.files?.[0]) {
       const file = event.dataTransfer.files[0];
       if (file.type === 'application/pdf') {
         selectedCvFile = file;
-      }
-    }
-  }
-
-  function handleImageSelect(event: Event) {
-    const input = event.target as HTMLInputElement;
-    if (input.files?.[0]) {
-      selectedImageFile = input.files[0];
-    }
-  }
-
-  function handleImageDrop(event: DragEvent) {
-    event.preventDefault();
-    dragOverImage = false;
-    if (event.dataTransfer?.files?.[0]) {
-      const file = event.dataTransfer.files[0];
-      if (file.type.startsWith('image/')) {
-        selectedImageFile = file;
       }
     }
   }
@@ -75,32 +40,22 @@
     return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
   }
 
-  function getImageByType(type: string): ImageInfo | undefined {
-    return images.find(img => img.type === type);
-  }
-
-  // Actualizar datos después de submit exitoso
   $effect(() => {
     if (form?.success) {
       selectedCvFile = null;
-      selectedImageFile = null;
-      // Recargar página para obtener datos actualizados
       setTimeout(() => window.location.reload(), 500);
     }
   });
 </script>
 
 <svelte:head>
-  <title>Uploads | Admin</title>
+  <title>Archivos | Admin</title>
 </svelte:head>
 
 <div class="uploads-page">
   <header class="page-header">
-    <div class="header-content">
-      <h1>📁 Gestión de Archivos</h1>
-      <p class="subtitle">Sube y gestiona archivos del portfolio</p>
-    </div>
-    <a href="/admin/settings" class="nav-link">⚙️ Settings</a>
+    <h1>📄 Gestión de Archivos</h1>
+    <p class="subtitle">Administra el CV descargable del portfolio</p>
   </header>
 
   {#if data.error}
@@ -116,30 +71,30 @@
   {/if}
 
   <!-- Sección CV -->
-  <section class="upload-section">
+  <section class="cv-section">
     <div class="section-header">
-      <h2>📄 Curriculum Vitae (CV)</h2>
-      <p>El CV que los usuarios pueden descargar usando el comando <code>cv</code> en la terminal</p>
+      <h2>📄 Curriculum Vitae</h2>
+      <p class="hint">El CV que los usuarios descargan con el comando <code>cv</code> en la terminal</p>
     </div>
 
-    <div class="current-status">
-      <h3>Estado Actual</h3>
+    <div class="cv-status">
       {#if cvInfo?.available}
-        <div class="file-info success">
-          <span class="icon">📄</span>
-          <div class="details">
-            <strong>{cvInfo.displayName}</strong>
-            <a href="{API_URL}{cvInfo.downloadUrl}" target="_blank" class="download-link">
-              ⬇️ Descargar
-            </a>
+        <div class="cv-card available">
+          <div class="cv-icon">📄</div>
+          <div class="cv-info">
+            <strong>{cvInfo.displayName || 'CV cargado'}</strong>
+            <span class="status">✅ Disponible</span>
           </div>
+          <a href="{API_URL}{cvInfo.downloadUrl}" target="_blank" class="btn-download">
+            ⬇️ Descargar
+          </a>
         </div>
       {:else}
-        <div class="file-info warning">
-          <span class="icon">📄</span>
-          <div class="details">
+        <div class="cv-card not-available">
+          <div class="cv-icon">📄</div>
+          <div class="cv-info">
             <strong>Sin CV cargado</strong>
-            <span class="status-text">No disponible</span>
+            <span class="status">⚠️ No disponible para usuarios</span>
           </div>
         </div>
       {/if}
@@ -154,18 +109,20 @@
     }}>
       <div 
         class="drop-zone" 
-        class:drag-over={dragOverCv}
+        class:drag-over={dragOver}
         class:has-file={selectedCvFile}
         ondrop={handleCvDrop}
-        ondragover={(e) => { e.preventDefault(); dragOverCv = true; }}
-        ondragleave={() => dragOverCv = false}
+        ondragover={(e) => { e.preventDefault(); dragOver = true; }}
+        ondragleave={() => dragOver = false}
+        role="button"
+        tabindex="0"
       >
         {#if selectedCvFile}
           <div class="selected-file">
-            <span class="icon">📄</span>
+            <span class="file-icon">📄</span>
             <div class="file-details">
               <strong>{selectedCvFile.name}</strong>
-              <span>{formatFileSize(selectedCvFile.size)}</span>
+              <span class="file-size">{formatFileSize(selectedCvFile.size)}</span>
             </div>
             <button type="button" class="btn-clear" onclick={() => selectedCvFile = null}>✕</button>
           </div>
@@ -187,288 +144,179 @@
       </div>
 
       {#if selectedCvFile}
-        <button type="submit" class="btn btn-primary" disabled={uploading}>
+        <button type="submit" class="btn btn-upload" disabled={uploading}>
           {#if uploading}
-            <span class="spinner"></span> Subiendo...
+            Subiendo...
           {:else}
-            📤 Subir CV
+            📤 {cvInfo?.available ? 'Reemplazar CV' : 'Subir CV'}
           {/if}
         </button>
       {/if}
     </form>
   </section>
 
-  <!-- Sección Imágenes -->
-  <section class="upload-section">
-    <div class="section-header">
-      <h2>🖼️ Imágenes del Portfolio</h2>
-      <p>Sube imágenes para avatar, logo, fondo, etc.</p>
-    </div>
-
-    <!-- Imágenes actuales -->
-    <div class="images-grid">
-      {#each imageTypes as imgType}
-        {@const existing = getImageByType(imgType.id)}
-        <div class="image-card" class:has-image={existing}>
-          <div class="image-header">
-            <span class="icon">{imgType.icon}</span>
-            <strong>{imgType.label}</strong>
-          </div>
-          
-          {#if existing}
-            <div class="image-preview">
-              <img src="{API_URL}{existing.url}" alt={imgType.label} />
-            </div>
-            <form method="POST" action="?/deleteImage" use:enhance>
-              <input type="hidden" name="type" value={imgType.id} />
-              <button type="submit" class="btn btn-danger btn-sm">🗑️ Eliminar</button>
-            </form>
-          {:else}
-            <div class="no-image">
-              <span class="placeholder">{imgType.icon}</span>
-              <p>Sin imagen</p>
-            </div>
-          {/if}
-        </div>
-      {/each}
-    </div>
-
-    <!-- Subir nueva imagen -->
-    <div class="upload-image-form">
-      <h3>Subir Nueva Imagen</h3>
-      
-      <div class="image-type-selector">
-        {#each imageTypes as imgType}
-          <label class="type-option" class:selected={selectedImageType === imgType.id}>
-            <input 
-              type="radio" 
-              name="imageTypeSelector" 
-              value={imgType.id}
-              checked={selectedImageType === imgType.id}
-              onchange={() => selectedImageType = imgType.id}
-            />
-            <span class="icon">{imgType.icon}</span>
-            <span class="label">{imgType.label}</span>
-          </label>
-        {/each}
-      </div>
-
-      <form method="POST" action="?/uploadImage" enctype="multipart/form-data" use:enhance={() => {
-        uploading = true;
-        return async ({ update }) => {
-          await update();
-          uploading = false;
-        };
-      }}>
-        <input type="hidden" name="type" value={selectedImageType} />
-        
-        <div 
-          class="drop-zone image-drop"
-          class:drag-over={dragOverImage}
-          class:has-file={selectedImageFile}
-          ondrop={handleImageDrop}
-          ondragover={(e) => { e.preventDefault(); dragOverImage = true; }}
-          ondragleave={() => dragOverImage = false}
-        >
-          {#if selectedImageFile}
-            <div class="selected-file">
-              <img 
-                src={URL.createObjectURL(selectedImageFile)} 
-                alt="Preview" 
-                class="image-thumb"
-              />
-              <div class="file-details">
-                <strong>{selectedImageFile.name}</strong>
-                <span>{formatFileSize(selectedImageFile.size)}</span>
-              </div>
-              <button type="button" class="btn-clear" onclick={() => selectedImageFile = null}>✕</button>
-            </div>
-          {:else}
-            <div class="drop-content">
-              <span class="upload-icon">🖼️</span>
-              <p><strong>Arrastra una imagen aquí</strong></p>
-              <p class="hint">o haz click para seleccionar</p>
-              <p class="format-hint">JPG, PNG, GIF, WebP - máximo 2MB</p>
-            </div>
-          {/if}
-          <input 
-            type="file" 
-            name="file" 
-            accept="image/jpeg,image/jpg,image/png,image/gif,image/webp" 
-            class="file-input"
-            onchange={handleImageSelect}
-          />
-        </div>
-
-        {#if selectedImageFile}
-          <button type="submit" class="btn btn-primary" disabled={uploading}>
-            {#if uploading}
-              <span class="spinner"></span> Subiendo...
-            {:else}
-              📤 Subir {imageTypes.find(t => t.id === selectedImageType)?.label}
-            {/if}
-          </button>
-        {/if}
-      </form>
-    </div>
+  <section class="info-section">
+    <h3>💡 Información</h3>
+    <ul>
+      <li>El CV se descarga cuando el usuario escribe <code>cv</code> en la terminal</li>
+      <li>Nombre del archivo al descargar se configura en <a href="/admin/settings">Settings</a></li>
+      <li>Solo se permite un archivo PDF</li>
+    </ul>
   </section>
 </div>
 
 <style>
   .uploads-page {
-    padding: 2rem;
-    max-width: 1000px;
+    max-width: 700px;
     margin: 0 auto;
   }
 
   .page-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    margin-bottom: 2rem;
-  }
-
-  .page-header h1 {
-    font-size: 2rem;
-    margin-bottom: 0.5rem;
-    color: #e0e0e0;
-  }
-
-  .subtitle {
-    color: #888;
-  }
-
-  .nav-link {
-    padding: 0.5rem 1rem;
-    background: #2a2a2a;
-    border-radius: 6px;
-    color: #ccc;
-    text-decoration: none;
-  }
-
-  .nav-link:hover {
-    background: #3a3a3a;
-    color: #fff;
-  }
-
-  .alert {
-    padding: 1rem;
-    border-radius: 8px;
-    margin-bottom: 1rem;
-  }
-
-  .alert-danger {
-    background: rgba(220, 53, 69, 0.2);
-    border: 1px solid #dc3545;
-    color: #ff6b6b;
-  }
-
-  .alert-success {
-    background: rgba(40, 167, 69, 0.2);
-    border: 1px solid #28a745;
-    color: #5cb85c;
-  }
-
-  .upload-section {
-    background: #1a1a1a;
-    border: 1px solid #333;
-    border-radius: 12px;
-    padding: 1.5rem;
-    margin-bottom: 2rem;
-  }
-
-  .section-header {
     margin-bottom: 1.5rem;
   }
 
-  .section-header h2 {
-    font-size: 1.25rem;
-    color: #e0e0e0;
-    margin-bottom: 0.5rem;
+  .page-header h1 {
+    font-size: 1.4rem;
+    color: #00ff00;
+    margin-bottom: 0.25rem;
   }
 
-  .section-header p {
-    color: #888;
-    font-size: 0.9rem;
-  }
-
-  .section-header code {
-    background: #0d2818;
-    color: #4ec9b0;
-    padding: 0.2rem 0.5rem;
-    border-radius: 4px;
-  }
-
-  .current-status h3 {
+  .subtitle {
+    color: #666;
     font-size: 0.85rem;
-    color: #888;
-    text-transform: uppercase;
-    margin-bottom: 0.75rem;
   }
 
-  .file-info {
+  .alert {
+    padding: 0.75rem 1rem;
+    border-radius: 6px;
+    margin-bottom: 1rem;
+    font-size: 0.85rem;
+  }
+
+  .alert-danger {
+    background: rgba(255, 85, 85, 0.1);
+    border: 1px solid #ff5555;
+    color: #ff5555;
+  }
+
+  .alert-success {
+    background: rgba(0, 255, 0, 0.1);
+    border: 1px solid #00ff00;
+    color: #00ff00;
+  }
+
+  .cv-section {
+    background: #0d0d1a;
+    border: 1px solid #333;
+    border-radius: 8px;
+    padding: 1.25rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .section-header {
+    margin-bottom: 1rem;
+  }
+
+  .section-header h2 {
+    font-size: 1.1rem;
+    color: #00ff00;
+    margin-bottom: 0.25rem;
+  }
+
+  .hint {
+    font-size: 0.8rem;
+    color: #666;
+  }
+
+  .hint code {
+    background: rgba(0, 255, 0, 0.1);
+    color: #00ff00;
+    padding: 0.1rem 0.3rem;
+    border-radius: 3px;
+    font-size: 0.75rem;
+  }
+
+  .cv-status {
+    margin-bottom: 1.25rem;
+  }
+
+  .cv-card {
     display: flex;
     align-items: center;
     gap: 1rem;
     padding: 1rem;
-    background: #0d0d0d;
-    border-radius: 8px;
-    margin-bottom: 1rem;
+    background: #161622;
+    border-radius: 6px;
+    border: 1px solid #333;
   }
 
-  .file-info.success {
-    border-left: 3px solid #28a745;
+  .cv-card.available {
+    border-color: #00ff00;
   }
 
-  .file-info.warning {
-    border-left: 3px solid #ffc107;
+  .cv-card.not-available {
+    border-color: #ff8800;
   }
 
-  .file-info .icon {
+  .cv-icon {
     font-size: 2rem;
   }
 
-  .file-info .details {
+  .cv-info {
+    flex: 1;
     display: flex;
     flex-direction: column;
     gap: 0.25rem;
   }
 
-  .download-link {
-    color: #0d6efd;
+  .cv-info strong {
+    color: #e0e0e0;
+    font-size: 0.95rem;
+  }
+
+  .cv-info .status {
+    font-size: 0.75rem;
+    color: #888;
+  }
+
+  .btn-download {
+    padding: 0.5rem 1rem;
+    background: transparent;
+    border: 1px solid #00ff00;
+    color: #00ff00;
+    border-radius: 4px;
     text-decoration: none;
     font-size: 0.85rem;
+    transition: all 0.2s;
   }
 
-  .download-link:hover {
-    text-decoration: underline;
-  }
-
-  .status-text {
-    color: #888;
-    font-size: 0.85rem;
+  .btn-download:hover {
+    background: rgba(0, 255, 0, 0.1);
   }
 
   .drop-zone {
     position: relative;
     border: 2px dashed #444;
-    border-radius: 10px;
+    border-radius: 8px;
     padding: 2rem;
     text-align: center;
     cursor: pointer;
     transition: all 0.2s;
-    margin-bottom: 1rem;
+    background: #161622;
   }
 
-  .drop-zone:hover,
+  .drop-zone:hover {
+    border-color: #00ff00;
+  }
+
   .drop-zone.drag-over {
-    border-color: #0d6efd;
-    background: rgba(13, 110, 253, 0.1);
+    border-color: #00ff00;
+    background: rgba(0, 255, 0, 0.05);
   }
 
   .drop-zone.has-file {
-    border-color: #28a745;
-    background: rgba(40, 167, 69, 0.1);
+    border-style: solid;
+    border-color: #00ff00;
   }
 
   .file-input {
@@ -483,20 +331,25 @@
   }
 
   .upload-icon {
-    font-size: 3rem;
+    font-size: 2.5rem;
     display: block;
     margin-bottom: 0.5rem;
   }
 
-  .hint {
+  .drop-content p {
+    margin: 0.25rem 0;
     color: #888;
     font-size: 0.9rem;
   }
 
+  .drop-content strong {
+    color: #ccc;
+  }
+
   .format-hint {
-    color: #666;
-    font-size: 0.8rem;
-    margin-top: 0.5rem;
+    font-size: 0.75rem !important;
+    color: #555 !important;
+    margin-top: 0.5rem !important;
   }
 
   .selected-file {
@@ -506,179 +359,105 @@
     pointer-events: none;
   }
 
-  .selected-file .icon {
+  .file-icon {
     font-size: 2rem;
   }
 
-  .selected-file .file-details {
+  .file-details {
     flex: 1;
     text-align: left;
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
   }
 
-  .selected-file .file-details strong {
-    display: block;
+  .file-details strong {
+    color: #00ff00;
+    font-size: 0.9rem;
   }
 
-  .selected-file .file-details span {
-    color: #888;
-    font-size: 0.85rem;
+  .file-size {
+    font-size: 0.75rem;
+    color: #666;
   }
 
   .btn-clear {
     pointer-events: auto;
-    background: #dc3545;
-    color: white;
-    border: none;
-    border-radius: 50%;
-    width: 30px;
-    height: 30px;
+    background: transparent;
+    border: 1px solid #ff5555;
+    color: #ff5555;
+    width: 28px;
+    height: 28px;
+    border-radius: 4px;
     cursor: pointer;
+    font-size: 0.9rem;
+    transition: all 0.2s;
   }
 
-  .image-thumb {
-    width: 60px;
-    height: 60px;
-    object-fit: cover;
-    border-radius: 8px;
+  .btn-clear:hover {
+    background: rgba(255, 85, 85, 0.1);
   }
 
-  .btn {
-    padding: 0.75rem 1.5rem;
-    border-radius: 8px;
+  .btn-upload {
+    width: 100%;
+    margin-top: 1rem;
+    padding: 0.75rem;
+    background: #00ff00;
+    color: #0d0d1a;
     border: none;
-    cursor: pointer;
-    font-weight: 500;
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-  }
-
-  .btn:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-  }
-
-  .btn-primary {
-    background: #0d6efd;
-    color: white;
-  }
-
-  .btn-primary:hover:not(:disabled) {
-    background: #0b5ed7;
-  }
-
-  .btn-danger {
-    background: #dc3545;
-    color: white;
-  }
-
-  .btn-sm {
-    padding: 0.4rem 0.8rem;
-    font-size: 0.85rem;
-  }
-
-  .spinner {
-    display: inline-block;
-    width: 16px;
-    height: 16px;
-    border: 2px solid rgba(255,255,255,0.3);
-    border-top-color: white;
-    border-radius: 50%;
-    animation: spin 0.8s linear infinite;
-  }
-
-  @keyframes spin {
-    to { transform: rotate(360deg); }
-  }
-
-  /* Imágenes Grid */
-  .images-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-    gap: 1rem;
-    margin-bottom: 2rem;
-  }
-
-  .image-card {
-    background: #0d0d0d;
-    border: 1px solid #333;
-    border-radius: 10px;
-    padding: 1rem;
-    text-align: center;
-  }
-
-  .image-card.has-image {
-    border-color: #28a745;
-  }
-
-  .image-header {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.5rem;
-    margin-bottom: 1rem;
-  }
-
-  .image-preview {
-    margin-bottom: 1rem;
-  }
-
-  .image-preview img {
-    max-width: 100%;
-    max-height: 150px;
-    border-radius: 8px;
-  }
-
-  .no-image {
-    padding: 2rem 1rem;
-    color: #666;
-  }
-
-  .no-image .placeholder {
-    font-size: 3rem;
-    opacity: 0.3;
-  }
-
-  /* Selector de tipo */
-  .upload-image-form h3 {
-    font-size: 1rem;
-    color: #aaa;
-    margin-bottom: 1rem;
-  }
-
-  .image-type-selector {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem;
-    margin-bottom: 1rem;
-  }
-
-  .type-option {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.5rem 1rem;
-    background: #2a2a2a;
-    border: 1px solid #333;
-    border-radius: 8px;
+    border-radius: 6px;
+    font-size: 0.95rem;
+    font-weight: 600;
     cursor: pointer;
     transition: all 0.2s;
   }
 
-  .type-option:hover {
-    background: #333;
+  .btn-upload:hover:not(:disabled) {
+    box-shadow: 0 0 15px rgba(0, 255, 0, 0.4);
   }
 
-  .type-option.selected {
-    background: #0d6efd;
-    border-color: #0d6efd;
+  .btn-upload:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
   }
 
-  .type-option input {
-    display: none;
+  .info-section {
+    background: #0d0d1a;
+    border: 1px solid #333;
+    border-radius: 8px;
+    padding: 1rem;
   }
 
-  .image-drop {
-    min-height: 150px;
+  .info-section h3 {
+    font-size: 0.95rem;
+    color: #888;
+    margin-bottom: 0.75rem;
+  }
+
+  .info-section ul {
+    margin: 0;
+    padding-left: 1.25rem;
+  }
+
+  .info-section li {
+    color: #666;
+    font-size: 0.8rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .info-section code {
+    background: rgba(0, 255, 0, 0.1);
+    color: #00ff00;
+    padding: 0.1rem 0.3rem;
+    border-radius: 3px;
+    font-size: 0.75rem;
+  }
+
+  .info-section a {
+    color: #00ff00;
+  }
+
+  form {
+    display: contents;
   }
 </style>

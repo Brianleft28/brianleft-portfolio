@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Setting } from '../../entities/setting.entity';
+import * as figlet from 'figlet';
 
 @Injectable()
 export class SettingsService {
@@ -49,13 +50,34 @@ export class SettingsService {
    */
   async update(id: number, value: string): Promise<Setting> {
     const setting = await this.settingsRepository.findOne({ where: { id } });
-    
+
     if (!setting) {
       throw new NotFoundException(`Setting con ID ${id} no encontrado`);
     }
 
     setting.value = value;
-    return this.settingsRepository.save(setting);
+    const savedSetting = await this.settingsRepository.save(setting);
+
+    // Si es un campo relacionado con nombre o rol, regenerar ASCII banner
+    const bannerTriggerKeys = ['owner_name', 'owner_first_name', 'owner_last_name', 'owner_role'];
+    if (bannerTriggerKeys.includes(setting.key)) {
+      // Si se actualizó first_name o last_name, actualizar también owner_name
+      if (setting.key === 'owner_first_name' || setting.key === 'owner_last_name') {
+        const firstName =
+          setting.key === 'owner_first_name'
+            ? value
+            : (await this.getValue('owner_first_name')) || '';
+        const lastName =
+          setting.key === 'owner_last_name'
+            ? value
+            : (await this.getValue('owner_last_name')) || '';
+        const fullName = `${firstName} ${lastName}`.trim();
+        await this.updateByKey('owner_name', fullName);
+      }
+      await this.regenerateAsciiBanner();
+    }
+
+    return savedSetting;
   }
 
   /**
@@ -63,13 +85,77 @@ export class SettingsService {
    */
   async updateByKey(key: string, value: string): Promise<Setting> {
     const setting = await this.findByKey(key);
-    
+
     if (!setting) {
       throw new NotFoundException(`Setting "${key}" no encontrado`);
     }
 
     setting.value = value;
-    return this.settingsRepository.save(setting);
+    const savedSetting = await this.settingsRepository.save(setting);
+
+    // Si es un campo relacionado con nombre o rol, regenerar ASCII banner
+    const bannerTriggerKeys = ['owner_name', 'owner_first_name', 'owner_last_name', 'owner_role'];
+    if (bannerTriggerKeys.includes(key)) {
+      await this.regenerateAsciiBanner();
+    }
+
+    return savedSetting;
+  }
+
+  /**
+   * Genera ASCII art banner con figlet
+   */
+  async generateAsciiBanner(text: string, font: string = 'Standard'): Promise<string> {
+    return new Promise((resolve) => {
+      figlet.text(text, { font: font as any, width: 80 }, (err, result) => {
+        if (err || !result) {
+          // Fallback simple
+          const border = '═'.repeat(text.length + 4);
+          resolve(`╔${border}╗\n║  ${text.toUpperCase()}  ║\n╚${border}╝`);
+          return;
+        }
+        resolve(result);
+      });
+    });
+  }
+
+  /**
+   * Regenera el ASCII banner basado en owner_name y owner_role
+   */
+  async regenerateAsciiBanner(): Promise<string> {
+    const ownerName = (await this.getValue('owner_name')) || 'Portfolio';
+    const ownerRole = (await this.getValue('owner_role')) || 'Developer';
+
+    const nameBanner = await this.generateAsciiBanner(ownerName);
+    const fullBanner = `${nameBanner}\n                  ${ownerRole}`;
+
+    // Guardar o actualizar el banner
+    let bannerSetting = await this.findByKey('ascii_banner');
+    if (bannerSetting) {
+      bannerSetting.value = fullBanner;
+      await this.settingsRepository.save(bannerSetting);
+    } else {
+      await this.create({
+        key: 'ascii_banner',
+        value: fullBanner,
+        type: 'string',
+        category: 'branding',
+        description: 'Banner ASCII generado automáticamente',
+      });
+    }
+
+    return fullBanner;
+  }
+
+  /**
+   * Obtiene el ASCII banner actual
+   */
+  async getAsciiBanner(): Promise<string> {
+    const banner = await this.getValue('ascii_banner');
+    if (banner) return banner;
+
+    // Generar uno por defecto si no existe
+    return this.regenerateAsciiBanner();
   }
 
   /**
@@ -108,11 +194,11 @@ export class SettingsService {
   async getAsMap(): Promise<Map<string, string>> {
     const settings = await this.findAll();
     const map = new Map<string, string>();
-    
+
     for (const setting of settings) {
       map.set(setting.key, setting.value);
     }
-    
+
     return map;
   }
 }

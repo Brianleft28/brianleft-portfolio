@@ -28,6 +28,12 @@ WORKDIR /app
 RUN addgroup -g 1001 -S nodejs && \
     adduser -S nestjs -u 1001
 
+# Crear directorio de uploads con permisos correctos ANTES de montar el volumen
+RUN mkdir -p /app/uploads && chown -R nestjs:nodejs /app/uploads && chmod 755 /app/uploads
+
+# Crear directorio para memorias
+RUN mkdir -p /app/data/memory && chown -R nestjs:nodejs /app/data
+
 # Copiar archivos de dependencias
 COPY package*.json ./
 
@@ -37,7 +43,7 @@ RUN npm ci --only=production && npm cache clean --force
 # Copiar build desde builder
 COPY --from=builder /app/dist ./dist
 
-# Cambiar ownership
+# Cambiar ownership de todo
 RUN chown -R nestjs:nodejs /app
 
 # Usar usuario no-root
