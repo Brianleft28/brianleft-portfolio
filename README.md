@@ -23,6 +23,7 @@
 
 - [Descripción](#-descripción)
 - [Características](#-características)
+- [Arquitectura Multi-Tenant](#-arquitectura-multi-tenant)
 - [Arquitectura](#-arquitectura)
 - [Stack Tecnológico](#-stack-tecnológico)
 - [Estructura del Proyecto](#-estructura-del-proyecto)
@@ -31,7 +32,7 @@
 - [Comandos de Terminal](#-comandos-de-terminal)
 - [API Endpoints](#-api-endpoints)
 - [Variables de Entorno](#-variables-de-entorno)
-- [Deployment](#-deployment)
+- [Deployment Multi-Tenant](#-deployment-multi-tenant)
 - [Documentación Técnica](#-documentación-técnica)
 - [Licencia](#-licencia)
 
@@ -61,7 +62,69 @@ La pieza central es **TorvaldsAi**, un asistente de inteligencia artificial con 
 | **🧠 Sistema de Memoria Modular** | RAG inteligente que carga solo el contexto relevante para cada pregunta |
 | **🔐 Autenticación JWT** | Panel admin protegido con access + refresh tokens |
 | **⚡ Caché con Redis** | Sesiones, rate limiting y caché de respuestas |
+| **🏢 Multi-Tenant White-Label** | Cada usuario tiene su subdominio personalizado |
 | **🐳 Contenerizado** | Docker multi-stage optimizado con orquestación compose |
+
+---
+
+## 🏢 Arquitectura Multi-Tenant
+
+Este portfolio funciona como plataforma **SaaS white-label**: cada usuario registrado obtiene su propio portfolio completamente personalizable en un subdominio único.
+
+### Modelo de Datos
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                           User (userId)                             │
+│  ├── subdomain: "brian" → https://brian.brianleft.com              │
+│  ├── email: "brian@example.com"                                     │
+│  └── displayName: "Brian Benegas"                                  │
+├─────────────────────────────────────────────────────────────────────┤
+│  Datos aislados por usuario:                                        │
+│  ├── Settings (configuración, branding, info personal)              │
+│  ├── Memories (contexto IA personalizado)                           │
+│  ├── AI Personalities (personalidades de asistente)                 │
+│  ├── Folders/Files (filesystem virtual)                             │
+│  └── Projects (proyectos y experiencia)                             │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+### Flujo de Resolución de Subdominios
+
+```
+brian.brianleft.com
+        │
+        ▼
+┌───────────────────┐
+│     Nginx         │
+│ (wildcard cert)   │
+│ *.brianleft.com   │
+└────────┬──────────┘
+         │ X-Subdomain: brian
+         ▼
+┌───────────────────┐     ┌────────────────┐
+│   SvelteKit       │────▶│   NestJS API   │
+│  (hooks.server)   │     │ getUserBySubd  │
+└───────────────────┘     └────────────────┘
+         │                         │
+         │ userId: 5               ▼
+         │               ┌────────────────┐
+         └──────────────▶│    MySQL       │
+                         │ WHERE userId=5 │
+                         └────────────────┘
+```
+
+### Características Multi-Tenant
+
+| Característica | Descripción |
+|:---------------|:------------|
+| **Subdominios Únicos** | `usuario.brianleft.com` auto-asignado al registrarse |
+| **Datos Aislados** | Cada entidad tiene `userId` para separación total |
+| **Settings Personalizables** | Nombre, bio, redes sociales, colores, personalidad IA |
+| **Rate Limiting por IP** | 15 peticiones/día gratis con Redis |
+| **Free Tier** | Versión gratuita con límites, premium sin límites |
+
+> 📚 **Documentación completa:** Ver [`docs/MULTI-TENANT.md`](docs/MULTI-TENANT.md) para configuración de VPS y Nginx
 
 ---
 
@@ -316,7 +379,7 @@ C:\proyectos> torvalds ¿Cuál es la arquitectura de este sistema?
 
 ---
 
-## 🐳 Deployment
+## 🐳 Deployment Multi-Tenant
 
 ### Producción con Docker Compose
 
@@ -331,12 +394,111 @@ docker-compose ps
 docker-compose logs -f api
 ```
 
+### Configuración de Subdominios (VPS)
+
+Para habilitar subdominios personalizados, necesitas configurar Nginx con certificado wildcard:
+
+#### 1. Certificado SSL Wildcard con Let's Encrypt
+
+```bash
+# Instalar certbot con plugin DNS (ejemplo Cloudflare)
+sudo apt install python3-certbot-dns-cloudflare
+
+# Crear archivo de credenciales
+mkdir -p ~/.secrets/certbot
+cat > ~/.secrets/certbot/cloudflare.ini << EOF
+dns_cloudflare_api_token = TU_API_TOKEN_CLOUDFLARE
+EOF
+chmod 600 ~/.secrets/certbot/cloudflare.ini
+
+# Obtener certificado wildcard
+sudo certbot certonly \
+  --dns-cloudflare \
+  --dns-cloudflare-credentials ~/.secrets/certbot/cloudflare.ini \
+  -d "brianleft.com" \
+  -d "*.brianleft.com"
+```
+
+#### 2. Configuración Nginx
+
+```nginx
+# /etc/nginx/sites-available/portfolio
+server {
+    listen 443 ssl http2;
+    server_name brianleft.com *.brianleft.com;
+
+    ssl_certificate /etc/letsencrypt/live/brianleft.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/brianleft.com/privkey.pem;
+
+    # Extraer subdomain del host
+    set $subdomain "";
+    if ($host ~* ^([^.]+)\.brianleft\.com$) {
+        set $subdomain $1;
+    }
+
+    location / {
+        proxy_pass http://localhost:3000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Subdomain $subdomain;
+        proxy_cache_bypass $http_upgrade;
+    }
+
+    location /api {
+        proxy_pass http://localhost:4000;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Subdomain $subdomain;
+    }
+}
+
+# Redirect HTTP to HTTPS
+server {
+    listen 80;
+    server_name brianleft.com *.brianleft.com;
+    return 301 https://$host$request_uri;
+}
+```
+
+#### 3. DNS en Cloudflare
+
+```
+Tipo     Nombre              Contenido           Proxy
+A        brianleft.com       TU_IP_VPS           ✓
+CNAME    *                   brianleft.com       ✓
+```
+
+### Registro de Nuevos Usuarios
+
+```bash
+# Crear nuevo usuario con su subdominio
+curl -X POST http://localhost:4000/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{
+    "username": "nuevouser",
+    "password": "password123",
+    "email": "nuevo@email.com"
+  }'
+
+# El usuario obtiene automáticamente:
+# - Subdominio: nuevouser.brianleft.com
+# - Settings predeterminados (copiados del user 1)
+# - Personalidad de IA por defecto
+```
+
 ### Health Checks
 
 ```bash
 # Verificar todos los servicios
 curl http://localhost:4000/health
 curl http://localhost:3000
+
+# Verificar resolución de subdominios
+curl -H "Host: brian.brianleft.com" http://localhost:3000
 ```
 
 ---
@@ -355,12 +517,14 @@ Para información detallada sobre:
 |------------|--------|-------|
 | 🐳 Docker Infrastructure | ✅ Completo | 4 servicios orquestados |
 | ⚙️ API NestJS | ✅ Completo | Auth, Memory, Chat, Uploads |
-| 🗄️ Base de Datos | ✅ Completo | 7 entidades, seeders funcionando |
-| 🎯 Parametrización | ✅ Completo | Placeholders + Settings |
+| 🗄️ Base de Datos | ✅ Completo | 7 entidades con userId, seeders funcionando |
+| 🏢 Multi-Tenant | ✅ Completo | Subdominios, aislamiento por userId |
+| ⏱️ Rate Limiting | ✅ Completo | Redis + fallback memoria, 15 req/día |
+| 🎯 Parametrización | ✅ Completo | Placeholders + Settings por usuario |
 | 🤖 Keywords IA | ✅ Completo | 15 keywords/memoria con Gemini |
 | 📄 Upload CV | ✅ Completo | Endpoint + comando terminal |
-| 🖥️ Admin Panel | 🚧 En progreso | Necesita UI |
-| 🌐 Client Build | 📋 Pendiente | Dockerfile no probado |
+| 🖥️ Admin Panel | ✅ Completo | Config de cuenta + settings |
+| 🌐 Client Build | ✅ Completo | Dockerfile multi-stage |
 
 ---
 

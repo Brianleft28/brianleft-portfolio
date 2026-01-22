@@ -24,10 +24,10 @@ export class User {
   @Column({ unique: true, length: 50 })
   username: string;
 
-  @Column({ unique: true, length: 255, nullable: true })
+  @Column({ type: 'varchar', unique: true, length: 255, nullable: true })
   email: string | null;
 
-  @Column({ length: 255 })
+  @Column({ type: 'varchar', length: 255 })
   password: string;
 
   @Column({
@@ -37,13 +37,13 @@ export class User {
   })
   role: UserRole;
 
-  @Column({ name: 'display_name', length: 100, nullable: true })
+  @Column({ type: 'varchar', name: 'display_name', length: 100, nullable: true })
   displayName: string | null;
 
-  @Column({ name: 'subdomain', unique: true, length: 50, nullable: true })
+  @Column({ type: 'varchar', name: 'subdomain', unique: true, length: 50, nullable: true })
   subdomain: string | null; // Para white-label: username.portfolio.dev
 
-  @Column({ name: 'refresh_token', type: 'varchar', nullable: true, length: 500 })
+  @Column({ type: 'varchar', name: 'refresh_token', nullable: true, length: 500 })
   refreshToken: string | null;
 
   @OneToMany(() => Folder, (folder) => folder.user)

@@ -11,9 +11,20 @@
     description: string;
   }
 
+  interface UserInfo {
+    id: number;
+    username: string;
+    email: string | null;
+    displayName: string | null;
+    subdomain: string | null;
+    role: string;
+    createdAt: string;
+  }
+
   let { data, form } = $props();
   
   let baseSettings: Setting[] = $derived(data.settings || []);
+  let user: UserInfo | null = $derived(data.user || null);
   let editedSettings: Map<string, string> = $state(new Map());
   let settings: Setting[] = $derived(
     baseSettings.map(s => ({
@@ -24,6 +35,18 @@
   let saving = $state(false);
   let asciiBanner = $state('');
   let loadingBanner = $state(false);
+  
+  // Estado para copiar subdominio
+  let copiedSubdomain = $state(false);
+  
+  function copySubdomain() {
+    if (user?.subdomain) {
+      const fullUrl = `https://${user.subdomain}.brianleft.com`;
+      navigator.clipboard.writeText(fullUrl);
+      copiedSubdomain = true;
+      setTimeout(() => copiedSubdomain = false, 2000);
+    }
+  }
 
   // Agrupar settings por categoría
   let groupedSettings = $derived.by(() => {
@@ -230,6 +253,74 @@
 
   {#if form?.success}
     <div class="alert alert-success">✅ Cambios guardados correctamente</div>
+  {/if}
+
+  <!-- Account Info Section -->
+  {#if user}
+    <section class="account-section">
+      <h2>🔐 Tu Cuenta</h2>
+      <div class="account-grid">
+        <div class="account-field">
+          <label>Usuario</label>
+          <div class="readonly-value">
+            <span>{user.username}</span>
+          </div>
+        </div>
+        
+        <div class="account-field">
+          <label>Subdominio</label>
+          <div class="subdomain-display">
+            <span class="subdomain-url">
+              <span class="protocol">https://</span>
+              <span class="subdomain-name">{user.subdomain || user.username}</span>
+              <span class="domain">.brianleft.com</span>
+            </span>
+            <button 
+              type="button" 
+              class="btn-copy" 
+              onclick={copySubdomain}
+              title="Copiar URL"
+            >
+              {copiedSubdomain ? '✅' : '📋'}
+            </button>
+          </div>
+          <span class="field-hint">Este es tu subdominio personalizado (solo lectura)</span>
+        </div>
+        
+        <div class="account-field">
+          <label for="user_email">Email</label>
+          <input 
+            id="user_email"
+            type="email" 
+            class="setting-input"
+            value={user.email || ''}
+            placeholder="tu@email.com"
+            disabled
+          />
+          <span class="field-hint">Contacta soporte para cambiar el email</span>
+        </div>
+        
+        <div class="account-field">
+          <label>Rol</label>
+          <div class="readonly-value">
+            <span class="role-badge" class:admin={user.role === 'admin'}>
+              {user.role === 'admin' ? '👑 Administrador' : '👤 Usuario'}
+            </span>
+          </div>
+        </div>
+        
+        <div class="account-field">
+          <label>Miembro desde</label>
+          <div class="readonly-value">
+            <span>{new Date(user.createdAt).toLocaleDateString('es-ES', { 
+              year: 'numeric', 
+              month: 'long', 
+              day: 'numeric' 
+            })}</span>
+          </div>
+        </div>
+      </div>
+    </section>
   {/if}
 
   <!-- ASCII Banner Preview -->
@@ -661,8 +752,125 @@
     font-size: 0.9rem;
   }
 
+  /* Account Section Styles */
+  .account-section {
+    background: linear-gradient(135deg, #0d0d1a 0%, #1a1a2e 100%);
+    border: 1px solid #00ff00;
+    border-radius: 8px;
+    padding: 1.25rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 0 20px rgba(0, 255, 0, 0.1);
+  }
+
+  .account-section h2 {
+    font-size: 1.1rem;
+    color: #00ff00;
+    margin-bottom: 1rem;
+    font-weight: 600;
+    border-bottom: 1px solid rgba(0, 255, 0, 0.3);
+    padding-bottom: 0.5rem;
+  }
+
+  .account-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1rem;
+  }
+
+  .account-field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+  }
+
+  .account-field > label {
+    font-size: 0.8rem;
+    color: #888;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: 500;
+  }
+
+  .readonly-value {
+    padding: 0.6rem 0.8rem;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid #333;
+    border-radius: 4px;
+    color: #eee;
+    font-size: 0.95rem;
+  }
+
+  .subdomain-display {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.6rem 0.8rem;
+    background: rgba(0, 255, 0, 0.05);
+    border: 1px solid rgba(0, 255, 0, 0.3);
+    border-radius: 4px;
+  }
+
+  .subdomain-url {
+    font-family: 'JetBrains Mono', 'Consolas', monospace;
+    font-size: 0.9rem;
+    flex: 1;
+  }
+
+  .subdomain-url .protocol {
+    color: #666;
+  }
+
+  .subdomain-url .subdomain-name {
+    color: #00ff00;
+    font-weight: 600;
+  }
+
+  .subdomain-url .domain {
+    color: #888;
+  }
+
+  .btn-copy {
+    padding: 0.3rem 0.5rem;
+    background: transparent;
+    border: 1px solid #444;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-size: 0.85rem;
+  }
+
+  .btn-copy:hover {
+    background: rgba(0, 255, 0, 0.1);
+    border-color: #00ff00;
+  }
+
+  .field-hint {
+    font-size: 0.75rem;
+    color: #666;
+    font-style: italic;
+  }
+
+  .role-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.2rem 0.5rem;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+    font-size: 0.85rem;
+  }
+
+  .role-badge.admin {
+    background: rgba(255, 215, 0, 0.15);
+    color: #ffd700;
+  }
+
   @media (max-width: 700px) {
     .setting-row {
+      grid-template-columns: 1fr;
+    }
+    
+    .account-grid {
       grid-template-columns: 1fr;
     }
   }

@@ -23,6 +23,9 @@ export class UsersController {
     return {
       id: user.id,
       username: user.username,
+      email: user.email,
+      displayName: user.displayName,
+      subdomain: user.subdomain,
       role: user.role,
       createdAt: user.createdAt,
     };

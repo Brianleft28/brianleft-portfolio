@@ -40,23 +40,32 @@ async function getApiToken(): Promise<string> {
 
 export const load = (async ({ locals }) => {
   if (!locals.user?.authenticated) {
-    return { settings: [], error: 'No autenticado' };
+    return { settings: [], user: null, error: 'No autenticado' };
   }
 
   try {
     const token = await getApiToken();
-    const response = await fetch(`${API_URL}/settings`, {
-      headers: { 'Authorization': `Bearer ${token}` }
-    });
+    
+    // Cargar settings y datos del usuario en paralelo
+    const [settingsResponse, userResponse] = await Promise.all([
+      fetch(`${API_URL}/settings`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      }),
+      fetch(`${API_URL}/users/me`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      })
+    ]);
 
-    if (!response.ok) {
+    if (!settingsResponse.ok) {
       throw new Error('Error al cargar settings');
     }
 
-    const settings = await response.json();
-    return { settings, error: null };
+    const settings = await settingsResponse.json();
+    const user = userResponse.ok ? await userResponse.json() : null;
+    
+    return { settings, user, error: null };
   } catch (e) {
-    return { settings: [], error: e instanceof Error ? e.message : 'Error desconocido' };
+    return { settings: [], user: null, error: e instanceof Error ? e.message : 'Error desconocido' };
   }
 }) satisfies PageServerLoad;
 

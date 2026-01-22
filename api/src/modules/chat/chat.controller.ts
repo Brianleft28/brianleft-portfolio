@@ -6,11 +6,11 @@ import {
   HttpStatus,
   Headers,
   Req,
-  ForbiddenException,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBody, ApiHeader } from '@nestjs/swagger';
 import { Response, Request } from 'express';
 import { ChatService } from './chat.service';
+import { RateLimitService } from './rate-limit.service';
 import { Throttle } from '@nestjs/throttler';
 import { IsString, IsNotEmpty, IsOptional } from 'class-validator';
 
@@ -27,13 +27,6 @@ class ChatDto {
   userId?: number; // ID del usuario (default: 1 para endpoints públicos)
 }
 
-// Free tier: 5 intentos por IP usando la key del servidor
-const FREE_TIER_LIMIT = 5;
-const FREE_TIER_RESET_MS = 24 * 60 * 60 * 1000; // 24 horas
-
-// Almacenamiento de intentos por IP (en producción usar Redis)
-const ipUsageMap = new Map<string, { count: number; resetAt: number }>();
-
 function getClientIp(req: Request): string {
   const forwarded = req.headers['x-forwarded-for'];
   if (typeof forwarded === 'string') {
@@ -42,35 +35,13 @@ function getClientIp(req: Request): string {
   return req.ip || req.socket.remoteAddress || 'unknown';
 }
 
-function checkFreeTier(ip: string): { allowed: boolean; remaining: number } {
-  const now = Date.now();
-  const usage = ipUsageMap.get(ip);
-
-  // Si no hay registro o expiró, crear uno nuevo
-  if (!usage || now > usage.resetAt) {
-    ipUsageMap.set(ip, { count: 0, resetAt: now + FREE_TIER_RESET_MS });
-    return { allowed: true, remaining: FREE_TIER_LIMIT };
-  }
-
-  // Verificar límite
-  if (usage.count >= FREE_TIER_LIMIT) {
-    return { allowed: false, remaining: 0 };
-  }
-
-  return { allowed: true, remaining: FREE_TIER_LIMIT - usage.count };
-}
-
-function incrementUsage(ip: string): void {
-  const usage = ipUsageMap.get(ip);
-  if (usage) {
-    usage.count++;
-  }
-}
-
 @ApiTags('chat')
 @Controller('chat')
 export class ChatController {
-  constructor(private chatService: ChatService) {}
+  constructor(
+    private chatService: ChatService,
+    private rateLimitService: RateLimitService,
+  ) {}
 
   @Post()
   @Throttle({ default: { limit: 10, ttl: 60000 } }) // 10 requests por minuto
@@ -78,7 +49,7 @@ export class ChatController {
   @ApiHeader({
     name: 'X-Gemini-Api-Key',
     description:
-      'API key de Gemini del usuario (opcional). Si no se provee, usa la del servidor con límite de 5 intentos.',
+      'API key de Gemini del usuario (opcional). Si no se provee, usa la del servidor con límite de 15 intentos/día.',
     required: false,
   })
   @ApiBody({
@@ -100,10 +71,11 @@ export class ChatController {
   ) {
     const clientIp = getClientIp(req);
     const hasOwnKey = userApiKey && userApiKey.length > 20;
+    const FREE_TIER_LIMIT = this.rateLimitService.FREE_TIER_LIMIT;
 
     // Si no tiene key propia, verificar free tier
     if (!hasOwnKey) {
-      const freeTierStatus = checkFreeTier(clientIp);
+      const freeTierStatus = await this.rateLimitService.checkLimit(clientIp);
 
       if (!freeTierStatus.allowed) {
         res.setHeader('Content-Type', 'text/plain; charset=utf-8');
@@ -113,6 +85,11 @@ export class ChatController {
         res.write(`  apikey set TU_API_KEY\n\n`);
         res.write(`Obtené una key gratis en: https://aistudio.google.com/apikey\n\n`);
         res.write(`Tip: Usá "apikey -h" para más información.`);
+        if (freeTierStatus.resetIn) {
+          const hours = Math.floor(freeTierStatus.resetIn / 3600);
+          const minutes = Math.floor((freeTierStatus.resetIn % 3600) / 60);
+          res.write(`\n\n⏰ Se reinicia en: ${hours}h ${minutes}m`);
+        }
         res.end();
         return;
       }
@@ -130,10 +107,10 @@ export class ChatController {
     try {
       // Incrementar contador si usa free tier (antes de procesar)
       if (!hasOwnKey) {
-        incrementUsage(clientIp);
-        const remaining = checkFreeTier(clientIp).remaining;
+        await this.rateLimitService.incrementUsage(clientIp);
+        const status = await this.rateLimitService.checkLimit(clientIp);
         // Agregar info de intentos restantes al final
-        showRemaining = remaining > 0;
+        showRemaining = status.remaining > 0;
       }
 
       // Generar respuesta con streaming (usa la key del usuario si está disponible)
@@ -144,8 +121,8 @@ export class ChatController {
 
       // Mostrar intentos restantes si usa free tier
       if (!hasOwnKey && showRemaining) {
-        const remaining = checkFreeTier(clientIp).remaining;
-        res.write(`\n\n---\n💡 _Intentos gratuitos restantes: ${remaining}/${FREE_TIER_LIMIT}_`);
+        const status = await this.rateLimitService.checkLimit(clientIp);
+        res.write(`\n\n---\n💡 _Intentos gratuitos restantes: ${status.remaining}/${FREE_TIER_LIMIT}_`);
       }
     } catch (error) {
       res.write(`Error: ${error.message}`);
