@@ -36,9 +36,9 @@ export class AiPersonalitiesController {
 
   /**
    * PUT /ai-personalities/active - Actualiza la personalidad activa
+   * Nota: La autenticación se maneja en el proxy de SvelteKit (session-based)
    */
   @Put('active')
-  @UseGuards(JwtAuthGuard)
   async updateActive(@Body() data: Partial<AiPersonality>) {
     return this.aiPersonalitiesService.updateActive(data);
   }

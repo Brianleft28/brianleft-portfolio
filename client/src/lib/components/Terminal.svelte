@@ -56,10 +56,18 @@
 	let isInitialized = $state(false);
 
 	// Configuración dinámica
-	let aiDisplayName = $derived($aiPersonality?.displayName || 'AI Assistant');
+	let aiDisplayName = $derived($portfolioConfig?.ai_name || $aiPersonality?.displayName || 'AI Assistant');
 	let aiCommandName = $derived($portfolioConfig?.ai_command || 'ai');
 	let ownerName = $derived($portfolioConfig?.owner_name || 'Developer');
-	let aiGreeting = $derived($aiPersonality?.greeting || $portfolioConfig?.ai_greeting || '¡Hola! ¿En qué puedo ayudarte?');
+	
+	// Greeting: prioridad a la personalidad de IA (configurable en Admin > IA & Personalidad)
+	// Fallback a ai_greeting de settings si no hay personalidad configurada
+	let rawGreeting = $derived($aiPersonality?.greeting || $portfolioConfig?.ai_greeting || '¡Hola! Soy {{ai_name}}. ¿En qué puedo ayudarte?');
+	let aiGreeting = $derived(
+		rawGreeting
+			.replace(/\{\{ai_name\}\}/g, aiDisplayName)
+			.replace(/\{\{owner_name\}\}/g, ownerName)
+	);
 
 	// Cargar desde localStorage
 	function loadFromStorage() {

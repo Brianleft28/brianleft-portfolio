@@ -1,5 +1,6 @@
 import type { RequestHandler } from './$types';
 import { env } from '$env/dynamic/private';
+import { SESSION_COOKIE_NAME } from '$lib/server/auth';
 
 const API_URL = env.PUBLIC_API_URL || 'http://api:4000';
 
@@ -8,7 +9,7 @@ const API_URL = env.PUBLIC_API_URL || 'http://api:4000';
  */
 export const GET: RequestHandler = async ({ cookies }) => {
 	try {
-		const token = cookies.get('auth_token');
+		const token = cookies.get(SESSION_COOKIE_NAME);
 
 		const response = await fetch(`${API_URL}/ai-personalities/active`, {
 			headers: token ? { Authorization: `Bearer ${token}` } : {}
@@ -39,7 +40,7 @@ export const GET: RequestHandler = async ({ cookies }) => {
  */
 export const PUT: RequestHandler = async ({ request, cookies }) => {
 	try {
-		const token = cookies.get('auth_token');
+		const token = cookies.get(SESSION_COOKIE_NAME);
 
 		if (!token) {
 			return new Response(JSON.stringify({ error: 'No autorizado' }), {

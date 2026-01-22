@@ -79,9 +79,9 @@ export class SettingsController {
 
   /**
    * POST /settings/banner/preview - Preview de un texto como ASCII
+   * Nota: La autenticación se maneja en el proxy de SvelteKit (session-based)
    */
   @Post('banner/preview')
-  @UseGuards(JwtAuthGuard)
   async previewBanner(@Body('text') text: string, @Body('font') font?: string) {
     const banner = await this.settingsService.generateAsciiBanner(text, font);
     return { ascii_banner: banner };
