@@ -82,4 +82,15 @@ export const sessionCookieOptions = {
 	sameSite: 'strict' as const
 };
 
+/**
+ * Obtiene el userId del token de sesión
+ * Por ahora, como usamos autenticación simple, retornamos userId = 1 (admin)
+ * TODO: Cuando se implemente multi-usuario completo, decodificar del token
+ */
+export function getUserIdFromToken(token: string): number {
+	// Por ahora retornamos 1 (admin principal)
+	// En el futuro esto se extraerá del JWT o del token de sesión
+	return 1;
+}
+
 export { SESSION_COOKIE_NAME };

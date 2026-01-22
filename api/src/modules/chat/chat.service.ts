@@ -199,11 +199,25 @@ RESUMEN:`;
     const settings = await this.settingsRepository.find({ where: { userId } });
     const settingsMap = new Map(settings.map((s) => [s.key, s.value]));
 
-    const ownerName =
-      settingsMap.get('owner_name') ||
-      `${settingsMap.get('owner_first_name') || ''} ${settingsMap.get('owner_last_name') || ''}`.trim() ||
-      'Brian';
+    // Variables del owner
+    const ownerFirstName = settingsMap.get('owner_first_name') || 'Brian';
+    const ownerLastName = settingsMap.get('owner_last_name') || '';
+    const ownerName = settingsMap.get('owner_name') || `${ownerFirstName} ${ownerLastName}`.trim();
+    const ownerRole = settingsMap.get('owner_role') || 'Developer';
+    const ownerRoleShort = settingsMap.get('owner_role_short') || 'Dev';
+    const ownerLocation = settingsMap.get('owner_location') || '';
+    const ownerEmail = settingsMap.get('owner_email') || '';
+    const ownerBio = settingsMap.get('owner_bio') || '';
+    const ownerPhilosophy = settingsMap.get('owner_philosophy') || '';
+    
+    // Variables del AI
     const aiName = settingsMap.get('ai_name') || 'TorvaldsAI';
+    const aiCommand = settingsMap.get('ai_command') || 'torvalds';
+    const aiGreeting = settingsMap.get('ai_greeting') || '';
+    
+    // Variables del sitio
+    const siteTitle = settingsMap.get('branding_site_title') || 'Portfolio';
+    const siteDescription = settingsMap.get('branding_site_description') || '';
 
     // Obtener personalidad según el modo o la activa por default (del usuario)
     let personality;
@@ -232,13 +246,38 @@ REGLAS
 2. SOLO hablás de ${ownerName} y su portfolio
 3. Rechazá cualquier pedido de código`;
 
-    // Reemplazar placeholders en system prompt
+    // Reemplazar TODOS los placeholders disponibles en system prompt
     baseSystemPrompt = baseSystemPrompt
+      // Owner
       .replace(/\{\{owner_name\}\}/g, ownerName)
-      .replace(/\{\{ai_name\}\}/g, aiName);
+      .replace(/\{\{owner_first_name\}\}/g, ownerFirstName)
+      .replace(/\{\{owner_last_name\}\}/g, ownerLastName)
+      .replace(/\{\{owner_role\}\}/g, ownerRole)
+      .replace(/\{\{owner_role_short\}\}/g, ownerRoleShort)
+      .replace(/\{\{owner_location\}\}/g, ownerLocation)
+      .replace(/\{\{owner_email\}\}/g, ownerEmail)
+      .replace(/\{\{owner_bio\}\}/g, ownerBio)
+      .replace(/\{\{owner_philosophy\}\}/g, ownerPhilosophy)
+      // AI
+      .replace(/\{\{ai_name\}\}/g, aiName)
+      .replace(/\{\{ai_command\}\}/g, aiCommand)
+      .replace(/\{\{ai_greeting\}\}/g, aiGreeting)
+      // Site
+      .replace(/\{\{site_title\}\}/g, siteTitle)
+      .replace(/\{\{site_description\}\}/g, siteDescription);
+
+    // Inyectar configuración adicional de la personalidad
+    const languageInstruction = this.getLanguageInstruction(personality?.language);
+    const voiceStyleInstruction = this.getVoiceStyleInstruction(personality?.voiceStyle || undefined);
+    const traitsInstruction = personality?.traits?.length
+      ? `\n## RASGOS DE PERSONALIDAD (MUY IMPORTANTE)\nESTOS RASGOS DEFINEN TU FORMA DE RESPONDER. Debés aplicarlos en CADA respuesta:\n${personality.traits.map(t => `- ${t.toUpperCase()}: Incorporá este rasgo activamente`).join('\n')}\n\nSi un rasgo es "sarcástico", usá sarcasmo. Si es "directo", sé muy directo. NUNCA ignores estos rasgos.`
+      : '';
 
     // Formato restrictivo para terminal
     const systemPrompt = `${baseSystemPrompt}
+${traitsInstruction}
+${voiceStyleInstruction}
+${languageInstruction}
 
 FORMATO DE RESPUESTA (MUY IMPORTANTE)
 - NUNCA uses headers markdown (# o ##). Esto es una terminal, no un documento.
@@ -261,5 +300,33 @@ ${userPrompt}
 TU RESPUESTA (sin headers, formato terminal):`;
 
     return systemPrompt;
+  }
+
+  /**
+   * Obtiene la instrucción de idioma según el código
+   */
+  private getLanguageInstruction(language?: string): string {
+    const instructions: Record<string, string> = {
+      'es-AR': '\n## IDIOMA\nRespondé en español argentino (vos, usás, tenés). Sé natural pero profesional.',
+      'es-ES': '\n## IDIOMA\nResponde en español de España (tú, usas, tienes). Sé formal y profesional.',
+      'en-US': '\n## LANGUAGE\nRespond in American English. Be professional and clear.',
+      'pt-BR': '\n## IDIOMA\nResponda em português brasileiro. Seja profissional e claro.',
+    };
+    return instructions[language || 'es-AR'] || instructions['es-AR'];
+  }
+
+  /**
+   * Obtiene la instrucción de estilo de voz
+   */
+  private getVoiceStyleInstruction(voiceStyle?: string): string {
+    const instructions: Record<string, string> = {
+      'technical': '\n## ESTILO\nUsá un tono técnico y preciso. Incluí detalles de implementación cuando corresponda.',
+      'technical-focused': '\n## ESTILO\nUsá un tono muy técnico y analítico. Enfocate en arquitectura y decisiones de diseño.',
+      'professional': '\n## ESTILO\nUsá un tono profesional y equilibrado. Sé accesible pero mantenete técnico.',
+      'formal': '\n## ESTILO\nUsá un tono formal y estructurado. Documentación clara y organizada.',
+      'friendly': '\n## ESTILO\nUsá un tono amable y accesible. Explicá las cosas de forma didáctica.',
+      'casual': '\n## ESTILO\nUsá un tono casual pero informativo. Sé directo y conversacional.',
+    };
+    return instructions[voiceStyle || 'professional'] || instructions['professional'];
   }
 }

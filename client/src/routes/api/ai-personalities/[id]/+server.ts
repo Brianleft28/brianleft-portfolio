@@ -35,14 +35,19 @@ async function getApiToken(): Promise<string> {
 }
 
 /**
- * GET /api/ai-personalities/active - Obtiene la personalidad activa
+ * GET /api/ai-personalities/[id] - Obtiene una personalidad por ID
  */
-export const GET: RequestHandler = async () => {
+export const GET: RequestHandler = async ({ params }) => {
 	try {
-		const response = await fetch(`${API_URL}/ai-personalities/active`);
+		const token = await getApiToken();
+		const response = await fetch(`${API_URL}/ai-personalities/${params.id}`, {
+			headers: {
+				'Authorization': `Bearer ${token}`
+			}
+		});
 
 		if (!response.ok) {
-			return new Response(JSON.stringify({ error: 'Error al obtener personalidad' }), {
+			return new Response(JSON.stringify({ error: 'Personalidad no encontrada' }), {
 				status: response.status,
 				headers: { 'Content-Type': 'application/json' }
 			});
@@ -53,7 +58,7 @@ export const GET: RequestHandler = async () => {
 			headers: { 'Content-Type': 'application/json' }
 		});
 	} catch (error) {
-		console.error('[AI Personalities Error]', error);
+		console.error('Error fetching personality:', error);
 		return new Response(JSON.stringify({ error: 'Error interno' }), {
 			status: 500,
 			headers: { 'Content-Type': 'application/json' }
@@ -62,18 +67,18 @@ export const GET: RequestHandler = async () => {
 };
 
 /**
- * PUT /api/ai-personalities/active - Actualiza la personalidad activa
+ * PUT /api/ai-personalities/[id] - Actualiza una personalidad
  */
-export const PUT: RequestHandler = async ({ request }) => {
+export const PUT: RequestHandler = async ({ params, request }) => {
 	try {
 		const token = await getApiToken();
 		const body = await request.json();
 
-		const response = await fetch(`${API_URL}/ai-personalities/active`, {
+		const response = await fetch(`${API_URL}/ai-personalities/${params.id}`, {
 			method: 'PUT',
 			headers: {
 				'Content-Type': 'application/json',
-				Authorization: `Bearer ${token}`
+				'Authorization': `Bearer ${token}`
 			},
 			body: JSON.stringify(body)
 		});
@@ -91,7 +96,40 @@ export const PUT: RequestHandler = async ({ request }) => {
 			headers: { 'Content-Type': 'application/json' }
 		});
 	} catch (error) {
-		console.error('[AI Personalities PUT Error]', error);
+		console.error('Error updating personality:', error);
+		return new Response(JSON.stringify({ error: 'Error interno' }), {
+			status: 500,
+			headers: { 'Content-Type': 'application/json' }
+		});
+	}
+};
+
+/**
+ * DELETE /api/ai-personalities/[id] - Elimina una personalidad
+ */
+export const DELETE: RequestHandler = async ({ params }) => {
+	try {
+		const token = await getApiToken();
+		const response = await fetch(`${API_URL}/ai-personalities/${params.id}`, {
+			method: 'DELETE',
+			headers: {
+				'Authorization': `Bearer ${token}`
+			}
+		});
+
+		if (!response.ok) {
+			const errorData = await response.json().catch(() => ({}));
+			return new Response(JSON.stringify({ error: errorData.message || 'Error al eliminar' }), {
+				status: response.status,
+				headers: { 'Content-Type': 'application/json' }
+			});
+		}
+
+		return new Response(JSON.stringify({ success: true }), {
+			headers: { 'Content-Type': 'application/json' }
+		});
+	} catch (error) {
+		console.error('Error deleting personality:', error);
 		return new Response(JSON.stringify({ error: 'Error interno' }), {
 			status: 500,
 			headers: { 'Content-Type': 'application/json' }

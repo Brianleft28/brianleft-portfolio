@@ -35,52 +35,21 @@ async function getApiToken(): Promise<string> {
 }
 
 /**
- * GET /api/ai-personalities/active - Obtiene la personalidad activa
+ * POST /api/ai-personalities/[id]/activate - Activa una personalidad
  */
-export const GET: RequestHandler = async () => {
-	try {
-		const response = await fetch(`${API_URL}/ai-personalities/active`);
-
-		if (!response.ok) {
-			return new Response(JSON.stringify({ error: 'Error al obtener personalidad' }), {
-				status: response.status,
-				headers: { 'Content-Type': 'application/json' }
-			});
-		}
-
-		const data = await response.json();
-		return new Response(JSON.stringify(data), {
-			headers: { 'Content-Type': 'application/json' }
-		});
-	} catch (error) {
-		console.error('[AI Personalities Error]', error);
-		return new Response(JSON.stringify({ error: 'Error interno' }), {
-			status: 500,
-			headers: { 'Content-Type': 'application/json' }
-		});
-	}
-};
-
-/**
- * PUT /api/ai-personalities/active - Actualiza la personalidad activa
- */
-export const PUT: RequestHandler = async ({ request }) => {
+export const POST: RequestHandler = async ({ params }) => {
 	try {
 		const token = await getApiToken();
-		const body = await request.json();
-
-		const response = await fetch(`${API_URL}/ai-personalities/active`, {
-			method: 'PUT',
+		const response = await fetch(`${API_URL}/ai-personalities/${params.id}/activate`, {
+			method: 'POST',
 			headers: {
-				'Content-Type': 'application/json',
-				Authorization: `Bearer ${token}`
-			},
-			body: JSON.stringify(body)
+				'Authorization': `Bearer ${token}`
+			}
 		});
 
 		if (!response.ok) {
 			const errorData = await response.json().catch(() => ({}));
-			return new Response(JSON.stringify({ error: errorData.message || 'Error al actualizar' }), {
+			return new Response(JSON.stringify({ error: errorData.message || 'Error al activar' }), {
 				status: response.status,
 				headers: { 'Content-Type': 'application/json' }
 			});
@@ -91,7 +60,7 @@ export const PUT: RequestHandler = async ({ request }) => {
 			headers: { 'Content-Type': 'application/json' }
 		});
 	} catch (error) {
-		console.error('[AI Personalities PUT Error]', error);
+		console.error('Error activating personality:', error);
 		return new Response(JSON.stringify({ error: 'Error interno' }), {
 			status: 500,
 			headers: { 'Content-Type': 'application/json' }

@@ -202,7 +202,7 @@
 	}
 </script>
 
-<div class="container-fluid py-2 font-monospace d-flex flex-column" style="height: 100%; overflow: hidden;">
+<div class="container-fluid py-2 font-monospace d-flex flex-column" style="height: 100vh; overflow: hidden;">
     <!-- Indice -->
     <header class="row flex-shrink-0">
         <h3 class="col-12 mb-3">Índice de {currentPathString()}</h3>
@@ -280,7 +280,7 @@
 
 				<div
 					class="card-body p-0 flex-grow-1 overflow-auto"
-					style="background: #222;"
+					style="background: transparent;"
 				>
 					{#if activeItem()}
 						<FileViewer file={activeItem()!} />
@@ -316,21 +316,21 @@
 <style>
     /* Estilos para resumen de proyecto */
     .project-summary {
-        color: #adb5bd;
+        color: var(--theme-text-primary);
         line-height: 1.7;
     }
 
     .summary-title {
-        color: #00bc8c;
+        color: var(--theme-accent);
         font-size: 1.4rem;
         font-weight: 600;
         margin-bottom: 1rem;
         padding-bottom: 0.5rem;
-        border-bottom: 1px solid #333;
+        border-bottom: 1px solid var(--theme-border);
     }
 
     .summary-content {
-        color: #e0e0e0;
+        color: var(--theme-text-primary);
         font-size: 0.95rem;
         line-height: 1.8;
     }
@@ -341,7 +341,7 @@
     }
 
     .summary-hint {
-        border-top: 1px solid #333;
+        border-top: 1px solid var(--theme-border);
         padding-top: 1rem;
     }
 
@@ -351,19 +351,19 @@
     }
 
     .col-md-5::-webkit-scrollbar-track {
-        background: #0d0d0d;
+        background: var(--theme-bg-tertiary);
         border-radius: 2px;
     }
 
     .col-md-5::-webkit-scrollbar-thumb {
-        background: #00bc8c;
+        background: var(--theme-accent);
         border-radius: 2px;
-        box-shadow: 0 0 6px rgba(0, 188, 140, 0.5);
+        box-shadow: 0 0 6px var(--theme-accent-glow);
     }
 
     .col-md-5::-webkit-scrollbar-thumb:hover {
-        background: #00ff9f;
-        box-shadow: 0 0 10px rgba(0, 255, 159, 0.8);
+        background: var(--theme-secondary);
+        box-shadow: 0 0 10px var(--theme-secondary-glow);
     }
 
     /* Scrollbar estilo neon para card-body (visor derecho) */
@@ -372,18 +372,18 @@
     }
 
     .card-body::-webkit-scrollbar-track {
-        background: #1a1a1a;
+        background: var(--theme-bg-tertiary);
         border-radius: 2px;
     }
 
     .card-body::-webkit-scrollbar-thumb {
-        background: #00bc8c;
+        background: var(--theme-accent);
         border-radius: 2px;
-        box-shadow: 0 0 8px rgba(0, 188, 140, 0.6);
+        box-shadow: 0 0 8px var(--theme-accent-glow);
     }
 
     .card-body::-webkit-scrollbar-thumb:hover {
-        background: #00ff9f;
-        box-shadow: 0 0 12px rgba(0, 255, 159, 0.9);
+        background: var(--theme-secondary);
+        box-shadow: 0 0 12px var(--theme-secondary-glow);
     }
 </style>

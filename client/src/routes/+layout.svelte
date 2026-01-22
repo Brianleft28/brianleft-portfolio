@@ -6,6 +6,7 @@
     import Terminal from '$lib/components/Terminal.svelte';
     import { startInChatMode } from '$lib/stores/terminal';
     import { portfolioConfig, aiPersonality, loadConfig } from '$lib/stores/config';
+    import { initializeTheme } from '$lib/terminal/commands/theme';
 
     let { children }: { children: Snippet } = $props();
 
@@ -19,6 +20,9 @@
     let siteDescription = $derived($portfolioConfig?.branding_site_description || `Explora el portfolio de ${ownerName}`);
 
     onMount(() => {
+        // Inicializar tema guardado
+        initializeTheme();
+
         // Cargar configuración global
         loadConfig();
 
@@ -68,8 +72,8 @@
     {#if !$isTerminalVisible && !isAdminRoute}
         <div class="fixed-bottom p-3 d-flex justify-content-end">
             <button 
-                class="btn ai-button btn-dark border border-success text-success shadow-lg" 
-                style="background-color: rgba(0,0,0,0.8);"
+                class="btn ai-button btn-outline-success shadow-lg" 
+                style="background-color: var(--theme-bg-primary); backdrop-filter: blur(5px);"
                 onclick={openTerminalWithAI}
             >
                 <span class="me-2">⚡</span> Hablá con {aiDisplayName} (AI)

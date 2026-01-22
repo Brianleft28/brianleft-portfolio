@@ -7,6 +7,8 @@ import {
   UseInterceptors,
   UploadedFile,
   Res,
+  Req,
+  Query,
   UseGuards,
   HttpStatus,
   ParseFilePipe,
@@ -145,6 +147,7 @@ export class UploadsController {
   @UseGuards(JwtAuthGuard)
   @UseInterceptors(FileInterceptor('file'))
   async uploadCv(
+    @Req() req: any,
     @UploadedFile(
       new ParseFilePipe({
         validators: [
@@ -155,7 +158,12 @@ export class UploadsController {
     )
     file: Express.Multer.File,
   ) {
-    const result = await this.uploadsService.saveCv(file);
+    const userId = req.user?.sub;
+    if (!userId) {
+      throw new BadRequestException('Usuario no identificado');
+    }
+    
+    const result = await this.uploadsService.saveCv(file, userId);
     return {
       success: true,
       message: 'CV subido correctamente',
@@ -165,11 +173,13 @@ export class UploadsController {
 
   /**
    * GET /uploads/cv - Descargar CV (público)
+   * Si se pasa ?userId=X, descarga el CV de ese usuario
    */
   @Get('cv')
-  async downloadCv(@Res() res: Response) {
+  async downloadCv(@Res() res: Response, @Query('userId') userId?: string) {
     try {
-      const { path, displayName } = await this.uploadsService.getCvPath();
+      const numericUserId = userId ? parseInt(userId, 10) : undefined;
+      const { path, displayName } = await this.uploadsService.getCvPath(numericUserId);
 
       res.setHeader('Content-Type', 'application/pdf');
       res.setHeader('Content-Disposition', `attachment; filename="${displayName}"`);
@@ -185,10 +195,12 @@ export class UploadsController {
 
   /**
    * GET /uploads/cv/info - Info del CV (público)
+   * Si se pasa ?userId=X, retorna info del CV de ese usuario
    */
   @Get('cv/info')
-  async getCvInfo() {
-    const hasCv = await this.uploadsService.hasCv();
+  async getCvInfo(@Query('userId') userId?: string) {
+    const numericUserId = userId ? parseInt(userId, 10) : undefined;
+    const hasCv = await this.uploadsService.hasCv(numericUserId);
     
     if (!hasCv) {
       return {
@@ -197,12 +209,12 @@ export class UploadsController {
       };
     }
 
-    const displayName = await this.uploadsService.getSetting('cv_display_name');
+    const displayName = await this.uploadsService.getSetting('cv_display_name', numericUserId);
     
     return {
       available: true,
       displayName: displayName || 'curriculum-vitae.pdf',
-      downloadUrl: '/uploads/cv',
+      downloadUrl: userId ? `/uploads/cv?userId=${userId}` : '/uploads/cv',
     };
   }
 }

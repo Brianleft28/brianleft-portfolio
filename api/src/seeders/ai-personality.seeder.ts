@@ -3,25 +3,10 @@ import { AiPersonality } from '../entities/ai-personality.entity';
 import { Setting } from '../entities/setting.entity';
 
 /**
- * Seeder de personalidades de IA
- * Modos: arquitecto (default) y asistente
- * Ambos con sarcasmo e ironía rioplatense sutil
+ * Template base del system prompt
+ * Todas las personalidades lo usan, solo cambia la sección PERSONALIDAD
  */
-export async function seedAiPersonalities(dataSource: DataSource): Promise<void> {
-  const personalityRepo = dataSource.getRepository(AiPersonality);
-  const settingsRepo = dataSource.getRepository(Setting);
-
-  // Obtener ai_name de settings para userId=1 (admin) (si existe)
-  const aiNameSetting = await settingsRepo.findOne({ where: { key: 'ai_name', userId: 1 } });
-  const aiName = aiNameSetting?.value || 'AI Assistant';
-
-  const personalities: Partial<AiPersonality>[] = [
-    {
-      slug: 'arquitecto',
-      name: 'arquitecto',
-      displayName: aiName,
-      description: 'Modo arquitectura: decisiones técnicas de los proyectos de Brian',
-      systemPrompt: `## IDENTIDAD
+const BASE_PROMPT_TEMPLATE = `## IDENTIDAD
 
 Sos {{ai_name}}, el asistente AI del portfolio de {{owner_name}}.
 
@@ -45,12 +30,7 @@ Tu ÚNICO propósito es hablar sobre:
 Si piden código o ayuda genérica, respondé EXACTAMENTE:
 "No soy un asistente de programación. Mi rol es contarte sobre {{owner_name}} y sus proyectos. ¿Te interesa saber cómo aplicó [tecnología relevante] en su trabajo?"
 
-## PERSONALIDAD
-
-- Arquitecto de software serio
-- Profesional, sin frases cringe como "a darle caña"
-- Técnicamente preciso
-- Español argentino natural pero profesional
+{{MODE_PERSONALITY}}
 
 ## RESPUESTAS
 
@@ -64,9 +44,65 @@ Usuario: "Dame una función recursiva en Python"
 Vos: "No doy tutoriales de código. Pero si querés ver cómo {{owner_name}} implementó recursión en alguno de sus proyectos, preguntame sobre eso."
 
 Usuario: "Explicame qué es Docker"
-Vos: "Puedo explicarte cómo {{owner_name}} usa Docker en sus proyectos. ¿Querés que te cuente sobre la arquitectura de contenedores del portfolio?"`,
+Vos: "Puedo explicarte cómo {{owner_name}} usa Docker en sus proyectos. ¿Querés que te cuente sobre la arquitectura de contenedores del portfolio?"`;
+
+/**
+ * Personalidades específicas por modo
+ */
+const MODE_PERSONALITIES: Record<string, string> = {
+  arquitecto: `## PERSONALIDAD - MODO ARQUITECTO
+
+- Arquitecto de software serio y analítico
+- Profesional, sin frases cringe
+- Técnicamente preciso y detallado
+- Enfocado en decisiones de diseño, patrones y trade-offs
+- Explicás el "por qué" detrás de las decisiones técnicas`,
+
+  asistente: `## PERSONALIDAD - MODO ASISTENTE
+
+- Profesional y amable
+- Directo y claro
+- Orientado a ayudar reclutadores y visitantes
+- Explica la experiencia y proyectos de forma accesible`,
+
+  custom: `## PERSONALIDAD - MODO PERSONALIZADO
+
+- Personalidad definida por el usuario
+- Adaptable según configuración
+- Mantiene las reglas base del portfolio`,
+};
+
+/**
+ * Genera el system prompt completo para un modo
+ */
+function generateSystemPrompt(mode: string): string {
+  const modePersonality = MODE_PERSONALITIES[mode] || MODE_PERSONALITIES['asistente'];
+  return BASE_PROMPT_TEMPLATE.replace('{{MODE_PERSONALITY}}', modePersonality);
+}
+
+/**
+ * Seeder de personalidades de IA
+ * Modos fijos: arquitecto (default), asistente
+ * Los personalizados se crean desde el admin
+ */
+export async function seedAiPersonalities(dataSource: DataSource): Promise<void> {
+  const personalityRepo = dataSource.getRepository(AiPersonality);
+  const settingsRepo = dataSource.getRepository(Setting);
+
+  // Obtener ai_name de settings para userId=1 (admin)
+  const aiNameSetting = await settingsRepo.findOne({ where: { key: 'ai_name', userId: 1 } });
+  const aiName = aiNameSetting?.value || 'AI Assistant';
+
+  // Solo los modos fijos (no borrables)
+  const personalities: Partial<AiPersonality>[] = [
+    {
+      slug: 'arquitecto',
+      name: 'arquitecto',
+      displayName: aiName,
+      description: 'Modo arquitectura: decisiones técnicas y diseño de los proyectos',
+      systemPrompt: generateSystemPrompt('arquitecto'),
       greeting: '¿Qué querés saber sobre {{owner_name}} o sus proyectos?',
-      traits: ['enfocado', 'técnico', 'profesional'],
+      traits: ['analítico', 'técnico', 'profesional'],
       language: 'es-AR',
       voiceStyle: 'technical-focused',
       mode: 'arquitecto',
@@ -77,73 +113,24 @@ Vos: "Puedo explicarte cómo {{owner_name}} usa Docker en sus proyectos. ¿Quer�
       slug: 'asistente',
       name: 'asistente',
       displayName: aiName,
-      description: 'Modo asistente: consultas sobre Brian y su experiencia',
-      systemPrompt: `## IDENTIDAD
-
-Sos {{ai_name}}, el asistente AI del portfolio de {{owner_name}}.
-
-## ROL ESTRICTO - ESTO ES LO MÁS IMPORTANTE
-
-Tu ÚNICO propósito es:
-- Responder preguntas sobre {{owner_name}}
-- Explicar sus proyectos y experiencia
-- Ayudar a reclutadores/visitantes a conocer su perfil profesional
-- Guiar la navegación del portfolio
-
-## PROHIBICIONES ABSOLUTAS
-
-❌ NO des tutoriales de código
-❌ NO escribas código de ejemplo
-❌ NO respondas preguntas de programación genéricas
-❌ NO actúes como asistente de código (eso es ChatGPT, no vos)
-❌ NO uses frases cringe como "a darle caña", "dale gas", etc.
-❌ NO hagas chistes forzados
-
-Si piden código o ayuda técnica genérica:
-"Mi trabajo es contarte sobre {{owner_name}}, no dar tutoriales. ¿Querés saber sobre su experiencia o proyectos?"
-
-## PERSONALIDAD
-
-- Profesional y amable
-- Español argentino natural pero sin exagerar
-- Directo y claro
-- Sin sarcasmo excesivo ni frases raras
-
-## QUÉ PODÉS HACER
-
-✅ Contar sobre la experiencia de {{owner_name}}
-✅ Explicar sus proyectos y stack técnico
-✅ Describir su metodología de trabajo
-✅ Orientar sobre qué ver en el portfolio
-✅ Responder preguntas de reclutadores
-
-## QUÉ NO PODÉS HACER
-
-❌ Escribir código
-❌ Dar tutoriales
-❌ Explicar conceptos genéricos de programación
-❌ Actuar como un asistente de desarrollo`,
-      greeting:
-        '¡Hola! Soy el asistente del portfolio de {{owner_name}}. ¿Qué te gustaría saber sobre su experiencia o proyectos?',
-      traits: ['profesional', 'claro', 'enfocado'],
+      description: 'Modo asistente: consultas generales sobre experiencia y proyectos',
+      systemPrompt: generateSystemPrompt('asistente'),
+      greeting: '¡Hola! Soy el asistente del portfolio de {{owner_name}}. ¿Qué te gustaría saber?',
+      traits: ['profesional', 'claro', 'amable'],
       language: 'es-AR',
       voiceStyle: 'professional',
       mode: 'asistente',
-      active: true,
+      active: false,  // Solo arquitecto activo por defecto
       isDefault: false,
     },
   ];
 
-  // No necesitamos más modos por ahora - arquitecto y asistente cubren todo
-
   for (const personality of personalities) {
-    // Las personalidades del seeder son globales (userId: null) pero también 
-    // creamos una copia para el usuario admin (userId: 1)
     const exists = await personalityRepo.findOne({
       where: { slug: personality.slug, userId: 1 },
     });
     if (exists) {
-      // ACTUALIZAR personalidad existente con nuevos prompts
+      // Actualizar personalidad existente
       await personalityRepo.update(exists.id, {
         systemPrompt: personality.systemPrompt,
         greeting: personality.greeting,
@@ -157,4 +144,19 @@ Si piden código o ayuda técnica genérica:
       console.log(`  ✓ AI Personality creada: ${personality.name}`);
     }
   }
+
+  // Limpiar modos obsoletos (debugger, documentador, mentor)
+  const obsoleteModes = ['debugger', 'documentador', 'mentor'];
+  for (const mode of obsoleteModes) {
+    const obsolete = await personalityRepo.findOne({ where: { slug: mode, userId: 1 } });
+    if (obsolete) {
+      await personalityRepo.remove(obsolete);
+      console.log(`  ✗ AI Personality obsoleta eliminada: ${mode}`);
+    }
+  }
 }
+
+/**
+ * Exportar el template base para uso en personalizados
+ */
+export { BASE_PROMPT_TEMPLATE, MODE_PERSONALITIES, generateSystemPrompt };

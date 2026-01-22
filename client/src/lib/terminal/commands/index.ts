@@ -11,8 +11,9 @@ import { pwd } from './pwd';
 import { register } from './register';
 import { tree } from './tree';
 import { torvalds } from './torvalds';
+import { theme } from './theme';
 
-const allCommands: Command[] = [admin, apikey, cat, cd, cls, cv, help, ls, pwd, register, tree, torvalds];
+const allCommands: Command[] = [admin, apikey, cat, cd, cls, cv, help, ls, pwd, register, tree, torvalds, theme];
 const commandRegistry: Map<string, Command> = new Map();
 
 // Registrar todos los comandos

@@ -35,14 +35,19 @@ async function getApiToken(): Promise<string> {
 }
 
 /**
- * GET /api/ai-personalities/active - Obtiene la personalidad activa
+ * GET /api/ai-personalities - Lista todas las personalidades
  */
 export const GET: RequestHandler = async () => {
 	try {
-		const response = await fetch(`${API_URL}/ai-personalities/active`);
+		const token = await getApiToken();
+		const response = await fetch(`${API_URL}/ai-personalities`, {
+			headers: {
+				'Authorization': `Bearer ${token}`
+			}
+		});
 
 		if (!response.ok) {
-			return new Response(JSON.stringify({ error: 'Error al obtener personalidad' }), {
+			return new Response(JSON.stringify({ error: 'Error al obtener personalidades' }), {
 				status: response.status,
 				headers: { 'Content-Type': 'application/json' }
 			});
@@ -53,7 +58,7 @@ export const GET: RequestHandler = async () => {
 			headers: { 'Content-Type': 'application/json' }
 		});
 	} catch (error) {
-		console.error('[AI Personalities Error]', error);
+		console.error('Error fetching personalities:', error);
 		return new Response(JSON.stringify({ error: 'Error interno' }), {
 			status: 500,
 			headers: { 'Content-Type': 'application/json' }
@@ -62,25 +67,25 @@ export const GET: RequestHandler = async () => {
 };
 
 /**
- * PUT /api/ai-personalities/active - Actualiza la personalidad activa
+ * POST /api/ai-personalities - Crea una nueva personalidad
  */
-export const PUT: RequestHandler = async ({ request }) => {
+export const POST: RequestHandler = async ({ request }) => {
 	try {
 		const token = await getApiToken();
 		const body = await request.json();
 
-		const response = await fetch(`${API_URL}/ai-personalities/active`, {
-			method: 'PUT',
+		const response = await fetch(`${API_URL}/ai-personalities`, {
+			method: 'POST',
 			headers: {
 				'Content-Type': 'application/json',
-				Authorization: `Bearer ${token}`
+				'Authorization': `Bearer ${token}`
 			},
 			body: JSON.stringify(body)
 		});
 
 		if (!response.ok) {
 			const errorData = await response.json().catch(() => ({}));
-			return new Response(JSON.stringify({ error: errorData.message || 'Error al actualizar' }), {
+			return new Response(JSON.stringify({ error: errorData.message || 'Error al crear personalidad' }), {
 				status: response.status,
 				headers: { 'Content-Type': 'application/json' }
 			});
@@ -88,10 +93,11 @@ export const PUT: RequestHandler = async ({ request }) => {
 
 		const data = await response.json();
 		return new Response(JSON.stringify(data), {
+			status: 201,
 			headers: { 'Content-Type': 'application/json' }
 		});
 	} catch (error) {
-		console.error('[AI Personalities PUT Error]', error);
+		console.error('Error creating personality:', error);
 		return new Response(JSON.stringify({ error: 'Error interno' }), {
 			status: 500,
 			headers: { 'Content-Type': 'application/json' }

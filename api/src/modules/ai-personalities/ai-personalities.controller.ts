@@ -86,6 +86,15 @@ export class AiPersonalitiesController {
   }
 
   /**
+   * POST /ai-personalities/:id/activate - Activa una personalidad
+   */
+  @Post(':id/activate')
+  @UseGuards(JwtAuthGuard)
+  async activate(@Param('id', ParseIntPipe) id: number, @UserId() userId: number) {
+    return this.aiPersonalitiesService.activate(id, userId);
+  }
+
+  /**
    * DELETE /ai-personalities/:id - Elimina una personalidad
    */
   @Delete(':id')

@@ -73,8 +73,11 @@
     contact: { label: 'Contacto', icon: '📧' },
     social: { label: 'Redes Sociales', icon: '🔗' },
     branding: { label: 'Branding & Apariencia', icon: '🎨' },
-    ai: { label: 'Asistente IA (Fallback)', icon: '🤖' },
+    ai: { label: 'Asistente IA', icon: '🤖' },
   };
+
+  // Settings que se ocultan en la UI (se manejan de otra forma)
+  const hiddenSettings = ['branding_ascii_banner', 'ascii_banner'];
 
   // Helper para detectar si un valor es JSON parseable
   function isJsonValue(value: string): boolean {
@@ -261,14 +264,14 @@
       <h2>🔐 Tu Cuenta</h2>
       <div class="account-grid">
         <div class="account-field">
-          <label>Usuario</label>
+          <span class="field-label">Usuario</span>
           <div class="readonly-value">
             <span>{user.username}</span>
           </div>
         </div>
         
         <div class="account-field">
-          <label>Subdominio</label>
+          <span class="field-label">Subdominio</span>
           <div class="subdomain-display">
             <span class="subdomain-url">
               <span class="protocol">https://</span>
@@ -301,7 +304,7 @@
         </div>
         
         <div class="account-field">
-          <label>Rol</label>
+          <span class="field-label">Rol</span>
           <div class="readonly-value">
             <span class="role-badge" class:admin={user.role === 'admin'}>
               {user.role === 'admin' ? '👑 Administrador' : '👤 Usuario'}
@@ -310,7 +313,7 @@
         </div>
         
         <div class="account-field">
-          <label>Miembro desde</label>
+          <span class="field-label">Miembro desde</span>
           <div class="readonly-value">
             <span>{new Date(user.createdAt).toLocaleDateString('es-ES', { 
               year: 'numeric', 
@@ -323,40 +326,16 @@
     </section>
   {/if}
 
-  <!-- ASCII Banner Preview -->
-  <section class="ascii-section">
-    <h2>🎨 Banner ASCII</h2>
-    <p class="hint">Se genera automáticamente con tu nombre al guardar</p>
-    <div class="ascii-preview">
-      {#if loadingBanner}
-        <span class="loading-text">Generando...</span>
-      {:else if asciiBanner}
-        <pre>{asciiBanner}</pre>
-      {:else}
-        <span class="no-banner">Sin banner - Guarda tu nombre para generarlo</span>
-      {/if}
-    </div>
-    <button 
-      type="button" 
-      class="btn-regenerate"
-      onclick={() => {
-        const ownerName = settings.find(s => s.key === 'owner_name')?.value || '';
-        if (ownerName) previewAsciiBanner(ownerName);
-      }}
-      disabled={loadingBanner}
-    >
-      🔄 Regenerar
-    </button>
-  </section>
-
   <!-- Settings por categoría -->
   {#each groupedSettings as [category, categorySettings]}
     {@const catInfo = categoryLabels[category] || { label: category, icon: '📋' }}
+    {@const visibleSettings = categorySettings.filter(s => !hiddenSettings.includes(s.key))}
+    {#if visibleSettings.length > 0}
     <section class="settings-section">
       <h2>{catInfo.icon} {catInfo.label}</h2>
       
       <div class="settings-list">
-        {#each categorySettings as setting (setting.id)}
+        {#each visibleSettings as setting (setting.id)}
           <div class="setting-row" class:modified={editedSettings.has(setting.key)}>
             <div class="setting-info">
               <label for={setting.key}>{formatKeyForDisplay(setting.key)}</label>
@@ -422,6 +401,7 @@
         {/each}
       </div>
     </section>
+    {/if}
   {/each}
 
   {#if settings.length === 0}
@@ -465,6 +445,7 @@
   .settings-page {
     max-width: 900px;
     margin: 0 auto;
+    padding-bottom: 80px;
     font-family: 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
   }
 
@@ -474,13 +455,13 @@
 
   .page-header h1 {
     font-size: 1.5rem;
-    color: #00ff00;
+    color: var(--theme-accent);
     margin-bottom: 0.25rem;
     font-weight: 600;
   }
 
   .subtitle {
-    color: #aaa;
+    color: var(--theme-text-secondary);
     font-size: 0.9rem;
   }
 
@@ -493,85 +474,26 @@
 
   .alert-danger {
     background: rgba(255, 85, 85, 0.1);
-    border: 1px solid #ff5555;
-    color: #ff5555;
+    border: 1px solid var(--theme-error);
+    color: var(--theme-error);
   }
 
   .alert-success {
-    background: rgba(0, 255, 0, 0.1);
-    border: 1px solid #00ff00;
-    color: #00ff00;
-  }
-
-  .ascii-section {
-    background: #0d0d1a;
-    border: 1px solid #333;
-    border-radius: 8px;
-    padding: 1rem;
-    margin-bottom: 1.5rem;
-  }
-
-  .ascii-section h2 {
-    font-size: 1.05rem;
-    color: #00ff00;
-    margin-bottom: 0.25rem;
-    font-weight: 600;
+    background: var(--theme-accent-subtle);
+    border: 1px solid var(--theme-accent);
+    color: var(--theme-accent);
   }
 
   .hint {
     font-size: 0.85rem;
-    color: #999;
+    color: var(--theme-text-muted);
     margin-bottom: 0.75rem;
     line-height: 1.4;
   }
 
-  .ascii-preview {
-    background: #000;
-    border: 1px solid #00ff00;
-    border-radius: 4px;
-    padding: 1rem;
-    min-height: 80px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    overflow-x: auto;
-  }
-
-  .ascii-preview pre {
-    color: #00ff00;
-    font-family: 'Consolas', monospace;
-    font-size: 0.5rem;
-    line-height: 1.1;
-    margin: 0;
-  }
-
-  .loading-text, .no-banner {
-    color: #999;
-    font-style: italic;
-    font-size: 0.9rem;
-  }
-
-  .btn-regenerate {
-    margin-top: 0.75rem;
-    padding: 0.4rem 0.8rem;
-    background: transparent;
-    border: 1px solid #444;
-    color: #999;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 0.85rem;
-    font-family: 'Segoe UI', system-ui, sans-serif;
-    transition: all 0.2s;
-  }
-
-  .btn-regenerate:hover:not(:disabled) {
-    border-color: #00ff00;
-    color: #00ff00;
-  }
-
   .settings-section {
-    background: #0d0d1a;
-    border: 1px solid #333;
+    background: var(--theme-bg-secondary);
+    border: 1px solid var(--theme-border);
     border-radius: 8px;
     padding: 1rem;
     margin-bottom: 1rem;
@@ -579,10 +501,10 @@
 
   .settings-section h2 {
     font-size: 1.05rem;
-    color: #00ff00;
+    color: var(--theme-accent);
     margin-bottom: 1rem;
     padding-bottom: 0.5rem;
-    border-bottom: 1px solid #222;
+    border-bottom: 1px solid var(--theme-border);
     font-weight: 600;
   }
 
@@ -603,12 +525,12 @@
   }
 
   .setting-row:hover {
-    background: rgba(0, 255, 0, 0.02);
+    background: var(--theme-accent-subtle);
   }
 
   .setting-row.modified {
-    background: rgba(0, 255, 0, 0.05);
-    border-left: 2px solid #00ff00;
+    background: var(--theme-accent-subtle);
+    border-left: 2px solid var(--theme-accent);
   }
 
   .setting-info {
@@ -618,24 +540,24 @@
   }
 
   .setting-info label {
-    color: #e0e0e0;
+    color: var(--theme-text-primary);
     font-size: 0.9rem;
     font-weight: 600;
   }
 
   .setting-hint {
     font-size: 0.8rem;
-    color: #999;
+    color: var(--theme-text-muted);
     line-height: 1.4;
   }
 
   .setting-input {
     width: 100%;
     padding: 0.6rem 0.75rem;
-    background: #161622;
-    border: 1px solid #333;
+    background: var(--theme-bg-input);
+    border: 1px solid var(--theme-border);
     border-radius: 4px;
-    color: #e0e0e0;
+    color: var(--theme-text-primary);
     font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
     font-size: 0.9rem;
     transition: all 0.2s;
@@ -643,8 +565,8 @@
 
   .setting-input:focus {
     outline: none;
-    border-color: #00ff00;
-    box-shadow: 0 0 8px rgba(0, 255, 0, 0.15);
+    border-color: var(--theme-accent);
+    box-shadow: 0 0 8px var(--theme-accent-glow);
   }
 
   textarea.setting-input {
@@ -668,7 +590,7 @@
 
   .json-field-label {
     font-size: 0.8rem;
-    color: #4ec9b0;
+    color: var(--theme-info);
     text-transform: capitalize;
     font-weight: 500;
   }
@@ -676,7 +598,7 @@
   .empty-state {
     text-align: center;
     padding: 2rem;
-    color: #999;
+    color: var(--theme-text-muted);
     font-size: 0.95rem;
   }
 
@@ -689,15 +611,15 @@
     justify-content: space-between;
     align-items: center;
     padding: 0.75rem 2rem;
-    background: rgba(13, 13, 26, 0.98);
-    border-top: 1px solid #00ff00;
+    background: var(--theme-bg-primary);
+    border-top: 1px solid var(--theme-accent);
     backdrop-filter: blur(10px);
     z-index: 100;
     font-family: 'Segoe UI', system-ui, sans-serif;
   }
 
   .changes-count {
-    color: #00ff00;
+    color: var(--theme-accent);
     font-size: 0.9rem;
     font-weight: 500;
   }
@@ -723,19 +645,22 @@
   }
 
   .btn-save {
-    background: #00ff00;
-    color: #0d0d1a;
+    background: transparent;
+    border: 1px solid var(--theme-accent);
+    color: var(--theme-accent);
     font-weight: 600;
   }
 
   .btn-save:hover:not(:disabled) {
-    box-shadow: 0 0 15px rgba(0, 255, 0, 0.4);
+    background: var(--theme-accent);
+    color: var(--theme-bg-primary);
+    box-shadow: 0 0 15px var(--theme-accent-glow);
   }
 
   .btn-cancel {
     background: transparent;
-    border: 1px solid #ff5555;
-    color: #ff5555;
+    border: 1px solid var(--theme-error);
+    color: var(--theme-error);
   }
 
   .btn-cancel:hover:not(:disabled) {
@@ -754,20 +679,20 @@
 
   /* Account Section Styles */
   .account-section {
-    background: linear-gradient(135deg, #0d0d1a 0%, #1a1a2e 100%);
-    border: 1px solid #00ff00;
+    background: linear-gradient(135deg, var(--theme-bg-primary) 0%, var(--theme-bg-secondary) 100%);
+    border: 1px solid var(--theme-accent);
     border-radius: 8px;
     padding: 1.25rem;
     margin-bottom: 1.5rem;
-    box-shadow: 0 0 20px rgba(0, 255, 0, 0.1);
+    box-shadow: 0 0 20px var(--theme-accent-glow);
   }
 
   .account-section h2 {
     font-size: 1.1rem;
-    color: #00ff00;
+    color: var(--theme-accent);
     margin-bottom: 1rem;
     font-weight: 600;
-    border-bottom: 1px solid rgba(0, 255, 0, 0.3);
+    border-bottom: 1px solid var(--theme-accent-glow);
     padding-bottom: 0.5rem;
   }
 
@@ -783,9 +708,10 @@
     gap: 0.3rem;
   }
 
-  .account-field > label {
+  .account-field > label,
+  .account-field > .field-label {
     font-size: 0.8rem;
-    color: #888;
+    color: var(--theme-text-muted);
     text-transform: uppercase;
     letter-spacing: 0.5px;
     font-weight: 500;
@@ -793,10 +719,10 @@
 
   .readonly-value {
     padding: 0.6rem 0.8rem;
-    background: rgba(255, 255, 255, 0.03);
-    border: 1px solid #333;
+    background: var(--theme-accent-subtle);
+    border: 1px solid var(--theme-border);
     border-radius: 4px;
-    color: #eee;
+    color: var(--theme-text-primary);
     font-size: 0.95rem;
   }
 
@@ -805,8 +731,8 @@
     align-items: center;
     gap: 0.5rem;
     padding: 0.6rem 0.8rem;
-    background: rgba(0, 255, 0, 0.05);
-    border: 1px solid rgba(0, 255, 0, 0.3);
+    background: var(--theme-accent-subtle);
+    border: 1px solid var(--theme-accent-glow);
     border-radius: 4px;
   }
 
@@ -817,22 +743,22 @@
   }
 
   .subdomain-url .protocol {
-    color: #666;
+    color: var(--theme-text-muted);
   }
 
   .subdomain-url .subdomain-name {
-    color: #00ff00;
+    color: var(--theme-accent);
     font-weight: 600;
   }
 
   .subdomain-url .domain {
-    color: #888;
+    color: var(--theme-text-secondary);
   }
 
   .btn-copy {
     padding: 0.3rem 0.5rem;
     background: transparent;
-    border: 1px solid #444;
+    border: 1px solid var(--theme-border);
     border-radius: 4px;
     cursor: pointer;
     transition: all 0.2s;
@@ -840,13 +766,13 @@
   }
 
   .btn-copy:hover {
-    background: rgba(0, 255, 0, 0.1);
-    border-color: #00ff00;
+    background: var(--theme-accent-subtle);
+    border-color: var(--theme-accent);
   }
 
   .field-hint {
     font-size: 0.75rem;
-    color: #666;
+    color: var(--theme-text-muted);
     font-style: italic;
   }
 
@@ -855,14 +781,14 @@
     align-items: center;
     gap: 0.25rem;
     padding: 0.2rem 0.5rem;
-    background: rgba(255, 255, 255, 0.1);
+    background: var(--theme-accent-subtle);
     border-radius: 4px;
     font-size: 0.85rem;
   }
 
   .role-badge.admin {
     background: rgba(255, 215, 0, 0.15);
-    color: #ffd700;
+    color: var(--theme-warning);
   }
 
   @media (max-width: 700px) {

@@ -299,27 +299,68 @@ docker-compose exec db mysql -u portfolio -p portfolio
 
 ## 🖥️ Comandos de Terminal
 
-La terminal se abre con `Ctrl + Ñ` o haciendo clic en **"Hablar con Torvalds (AI)"**.
+La terminal se abre con `Ctrl + Ñ` o haciendo clic en **"Hablar con TorvaldsAI (AI)"**.
+
+### Navegación
 
 | Comando | Descripción |
 |:--------|:------------|
-| `help` | Muestra todos los comandos disponibles |
 | `ls` / `ll` / `dir` | Lista archivos del directorio actual |
 | `cd <dir>` | Cambia de directorio (`cd ..` para subir) |
-| `cat <archivo>` | Muestra contenido de un archivo |
-| `tree` | Muestra árbol de directorios |
 | `pwd` | Muestra directorio actual |
-| `cls` / `clear` | Limpia la terminal |
-| `torvalds start` | Inicia modo chat con la IA |
-| `torvalds <pregunta>` | Pregunta directa a TorvaldsAi |
+| `tree` | Muestra árbol de directorios |
 
-**Ejemplo:**
+### Archivos
+
+| Comando | Descripción |
+|:--------|:------------|
+| `cat <archivo>` | Muestra contenido de un archivo |
+| `cv` / `resume` | Descarga el curriculum vitae |
+
+### Inteligencia Artificial
+
+| Comando | Descripción |
+|:--------|:------------|
+| `torvalds <pregunta>` | Pregunta directa a TorvaldsAI |
+| `torvalds start` | Inicia modo chat interactivo |
+| `torvalds [arquitecto]` | Cambia modo: arquitecto, debug, mentor |
+| `apikey set <KEY>` | Configura tu API key de Gemini |
+| `apikey status` | Ver estado de la API key |
+
+### Cuenta & Administración
+
+| Comando | Descripción |
+|:--------|:------------|
+| `register <user> <email>` | Crea tu cuenta y obtén subdominio |
+| `admin` / `settings` | Abre panel de administración |
+
+### Terminal
+
+| Comando | Descripción |
+|:--------|:------------|
+| `cls` / `clear` | Limpia la terminal |
+| `help` / `-h` | Muestra ayuda de comandos |
+| `help <cmd>` | Ayuda detallada de un comando |
+| `exit` | Cierra la terminal |
+
+### Ejemplos de Uso
 
 ```bash
+# Navegar y explorar proyectos
 C:\> cd proyectos
-C:\proyectos> ls
+C:\proyectos> ls -l
 C:\proyectos> cat LEEME.md
-C:\proyectos> torvalds ¿Cuál es la arquitectura de este sistema?
+
+# Hablar con la IA
+C:\> torvalds ¿Cuál es la arquitectura del sistema?
+C:\> torvalds [arquitecto] diseña una API REST para usuarios
+
+# Crear tu propio portfolio
+C:\> register miuser mi@email.com --name "Mi Nombre"
+# Resultado: miuser.brianleft.com
+
+# Usar tu propia API key para la IA
+C:\> apikey set AIzaSy...tu-key
 ```
 
 ---
@@ -330,15 +371,19 @@ C:\proyectos> torvalds ¿Cuál es la arquitectura de este sistema?
 
 | Método | Endpoint | Descripción |
 |:-------|:---------|:------------|
+| POST | `/auth/register` | Crear cuenta nueva (devuelve subdominio) |
 | POST | `/auth/login` | Login con username/password |
 | POST | `/auth/refresh` | Renovar access token |
 | POST | `/auth/logout` | Invalidar refresh token |
+| GET | `/users/me` | Datos del usuario autenticado |
 
 ### Chat (IA)
 
 | Método | Endpoint | Descripción |
 |:-------|:---------|:------------|
-| POST | `/chat` | Enviar mensaje a TorvaldsAi (streaming) |
+| POST | `/chat` | Enviar mensaje a TorvaldsAI (streaming) |
+
+> **Rate Limit:** 15 peticiones/día (free tier). Usa `apikey` para ilimitado.
 
 ### Filesystem
 

@@ -214,15 +214,34 @@ export class SettingsService {
     ownerRole: string;
     email: string;
   }): Promise<void> {
-    // Settings básicos para el nuevo usuario
-    const defaultSettings = [
-      { key: 'owner_name', value: data.ownerName, category: 'owner', description: 'Nombre completo' },
-      { key: 'owner_first_name', value: data.ownerFirstName, category: 'owner', description: 'Nombre' },
-      { key: 'owner_last_name', value: data.ownerLastName, category: 'owner', description: 'Apellido' },
-      { key: 'owner_role', value: data.ownerRole, category: 'owner', description: 'Rol/Título profesional' },
-      { key: 'owner_email', value: data.email, category: 'contact', description: 'Email de contacto' },
-      { key: 'theme_color', value: '#00ff00', category: 'branding', description: 'Color principal' },
-      { key: 'terminal_prompt', value: 'C:\\>', category: 'branding', description: 'Prompt de terminal' },
+    // Settings completos para el nuevo usuario
+    const defaultSettings: Array<{
+      key: string;
+      value: string;
+      category: string;
+      type?: 'string' | 'number' | 'boolean' | 'json';
+      description: string;
+    }> = [
+      // Owner info
+      { key: 'owner_name', value: data.ownerName, category: 'owner', type: 'string', description: 'Nombre completo' },
+      { key: 'owner_first_name', value: data.ownerFirstName, category: 'owner', type: 'string', description: 'Nombre' },
+      { key: 'owner_last_name', value: data.ownerLastName, category: 'owner', type: 'string', description: 'Apellido' },
+      { key: 'owner_role', value: data.ownerRole, category: 'owner', type: 'string', description: 'Rol/Título profesional' },
+      { key: 'owner_bio', value: JSON.stringify({ short: 'Bienvenido a mi portfolio', long: '' }), category: 'owner', type: 'json', description: 'Biografía corta y larga' },
+      // Contact
+      { key: 'contact_email', value: data.email, category: 'contact', type: 'string', description: 'Email de contacto' },
+      { key: 'contact_location', value: '', category: 'contact', type: 'string', description: 'Ubicación' },
+      // Social (vacío por defecto)
+      { key: 'social_github', value: '', category: 'social', type: 'string', description: 'URL de GitHub' },
+      { key: 'social_linkedin', value: '', category: 'social', type: 'string', description: 'URL de LinkedIn' },
+      { key: 'social_twitter', value: '', category: 'social', type: 'string', description: 'URL de Twitter/X' },
+      // Branding
+      { key: 'branding_theme_color', value: '#00ff00', category: 'branding', type: 'string', description: 'Color principal (hex)' },
+      { key: 'branding_terminal_prompt', value: 'C:\\>', category: 'branding', type: 'string', description: 'Prompt de terminal' },
+      { key: 'branding_ascii_banner', value: '', category: 'branding', type: 'string', description: 'Banner ASCII (se genera automáticamente)' },
+      // AI
+      { key: 'ai_personality_name', value: 'TorvaldsAI', category: 'ai', type: 'string', description: 'Nombre del asistente IA' },
+      { key: 'ai_personality_style', value: 'técnico y directo', category: 'ai', type: 'string', description: 'Estilo de comunicación' },
     ];
 
     for (const setting of defaultSettings) {

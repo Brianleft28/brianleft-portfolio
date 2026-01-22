@@ -205,6 +205,34 @@ export class AiPersonalitiesService {
   }
 
   /**
+   * Activa una personalidad (desactiva las demás del usuario)
+   */
+  async activate(id: number, userId: number): Promise<AiPersonality> {
+    // Verificar que la personalidad existe y es accesible
+    const personality = await this.findById(id, userId);
+    if (!personality) {
+      throw new NotFoundException(`Personalidad con ID ${id} no encontrada`);
+    }
+
+    // Desactivar todas las del usuario
+    await this.aiPersonalityRepository.update({ userId }, { active: false });
+
+    // Si es global, crear una copia para el usuario
+    if (personality.userId === null) {
+      const userPersonality = this.aiPersonalityRepository.create({
+        ...personality,
+        id: undefined,
+        active: true,
+        userId,
+      });
+      return this.aiPersonalityRepository.save(userPersonality);
+    }
+
+    personality.active = true;
+    return this.aiPersonalityRepository.save(personality);
+  }
+
+  /**
    * Elimina una personalidad (solo las propias, no globales)
    */
   async delete(id: number, userId: number): Promise<void> {

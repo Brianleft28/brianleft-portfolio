@@ -1,5 +1,5 @@
 import type { Handle } from '@sveltejs/kit';
-import { validateSessionToken, SESSION_COOKIE_NAME } from '$lib/server/auth';
+import { validateSessionToken, SESSION_COOKIE_NAME, getUserIdFromToken } from '$lib/server/auth';
 
 /**
  * Este hook se ejecuta en cada petición al servidor.
@@ -11,7 +11,8 @@ export const handle: Handle = async ({ event, resolve }) => {
 	const sessionToken = event.cookies.get(SESSION_COOKIE_NAME);
 
 	if (sessionToken && validateSessionToken(sessionToken)) {
-		event.locals.user = { authenticated: true };
+		const userId = getUserIdFromToken(sessionToken);
+		event.locals.user = { authenticated: true, userId };
 	} else {
 		event.locals.user = null;
 	}

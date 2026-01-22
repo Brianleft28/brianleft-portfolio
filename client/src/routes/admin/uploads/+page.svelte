@@ -14,8 +14,6 @@
   let dragOver = $state(false);
   let uploading = $state(false);
 
-  const API_URL = 'http://localhost:4000';
-
   function handleCvSelect(event: Event) {
     const input = event.target as HTMLInputElement;
     if (input.files?.[0]) {
@@ -85,7 +83,7 @@
             <strong>{cvInfo.displayName || 'CV cargado'}</strong>
             <span class="status">✅ Disponible</span>
           </div>
-          <a href="{API_URL}{cvInfo.downloadUrl}" target="_blank" class="btn-download">
+          <a href="/api/uploads/cv" target="_blank" class="btn-download">
             ⬇️ Descargar
           </a>
         </div>
@@ -177,12 +175,12 @@
 
   .page-header h1 {
     font-size: 1.4rem;
-    color: #00ff00;
+    color: var(--theme-accent);
     margin-bottom: 0.25rem;
   }
 
   .subtitle {
-    color: #666;
+    color: var(--theme-text-muted);
     font-size: 0.85rem;
   }
 
@@ -195,19 +193,19 @@
 
   .alert-danger {
     background: rgba(255, 85, 85, 0.1);
-    border: 1px solid #ff5555;
-    color: #ff5555;
+    border: 1px solid var(--theme-danger);
+    color: var(--theme-danger);
   }
 
   .alert-success {
-    background: rgba(0, 255, 0, 0.1);
-    border: 1px solid #00ff00;
-    color: #00ff00;
+    background: var(--theme-success-bg);
+    border: 1px solid var(--theme-success);
+    color: var(--theme-success);
   }
 
   .cv-section {
-    background: #0d0d1a;
-    border: 1px solid #333;
+    background: var(--theme-bg-secondary);
+    border: 1px solid var(--theme-border);
     border-radius: 8px;
     padding: 1.25rem;
     margin-bottom: 1.5rem;
@@ -219,18 +217,18 @@
 
   .section-header h2 {
     font-size: 1.1rem;
-    color: #00ff00;
+    color: var(--theme-accent);
     margin-bottom: 0.25rem;
   }
 
   .hint {
     font-size: 0.8rem;
-    color: #666;
+    color: var(--theme-text-muted);
   }
 
   .hint code {
-    background: rgba(0, 255, 0, 0.1);
-    color: #00ff00;
+    background: var(--theme-accent-subtle);
+    color: var(--theme-accent);
     padding: 0.1rem 0.3rem;
     border-radius: 3px;
     font-size: 0.75rem;
@@ -245,17 +243,17 @@
     align-items: center;
     gap: 1rem;
     padding: 1rem;
-    background: #161622;
+    background: var(--theme-bg-primary);
     border-radius: 6px;
-    border: 1px solid #333;
+    border: 1px solid var(--theme-border);
   }
 
   .cv-card.available {
-    border-color: #00ff00;
+    border-color: var(--theme-accent);
   }
 
   .cv-card.not-available {
-    border-color: #ff8800;
+    border-color: var(--theme-warning);
   }
 
   .cv-icon {
@@ -270,20 +268,20 @@
   }
 
   .cv-info strong {
-    color: #e0e0e0;
+    color: var(--theme-text-primary);
     font-size: 0.95rem;
   }
 
   .cv-info .status {
     font-size: 0.75rem;
-    color: #888;
+    color: var(--theme-text-muted);
   }
 
   .btn-download {
     padding: 0.5rem 1rem;
     background: transparent;
-    border: 1px solid #00ff00;
-    color: #00ff00;
+    border: 1px solid var(--theme-accent);
+    color: var(--theme-accent);
     border-radius: 4px;
     text-decoration: none;
     font-size: 0.85rem;
@@ -291,32 +289,32 @@
   }
 
   .btn-download:hover {
-    background: rgba(0, 255, 0, 0.1);
+    background: var(--theme-accent-subtle);
   }
 
   .drop-zone {
     position: relative;
-    border: 2px dashed #444;
+    border: 2px dashed var(--theme-border-light);
     border-radius: 8px;
     padding: 2rem;
     text-align: center;
     cursor: pointer;
     transition: all 0.2s;
-    background: #161622;
+    background: var(--theme-bg-primary);
   }
 
   .drop-zone:hover {
-    border-color: #00ff00;
+    border-color: var(--theme-accent);
   }
 
   .drop-zone.drag-over {
-    border-color: #00ff00;
-    background: rgba(0, 255, 0, 0.05);
+    border-color: var(--theme-accent);
+    background: var(--theme-accent-subtle);
   }
 
   .drop-zone.has-file {
     border-style: solid;
-    border-color: #00ff00;
+    border-color: var(--theme-accent);
   }
 
   .file-input {
@@ -338,17 +336,17 @@
 
   .drop-content p {
     margin: 0.25rem 0;
-    color: #888;
+    color: var(--theme-text-muted);
     font-size: 0.9rem;
   }
 
   .drop-content strong {
-    color: #ccc;
+    color: var(--theme-text-secondary);
   }
 
   .format-hint {
     font-size: 0.75rem !important;
-    color: #555 !important;
+    color: var(--theme-text-muted) !important;
     margin-top: 0.5rem !important;
   }
 
@@ -372,20 +370,20 @@
   }
 
   .file-details strong {
-    color: #00ff00;
+    color: var(--theme-accent);
     font-size: 0.9rem;
   }
 
   .file-size {
     font-size: 0.75rem;
-    color: #666;
+    color: var(--theme-text-muted);
   }
 
   .btn-clear {
     pointer-events: auto;
     background: transparent;
-    border: 1px solid #ff5555;
-    color: #ff5555;
+    border: 1px solid var(--theme-danger);
+    color: var(--theme-danger);
     width: 28px;
     height: 28px;
     border-radius: 4px;
@@ -402,8 +400,8 @@
     width: 100%;
     margin-top: 1rem;
     padding: 0.75rem;
-    background: #00ff00;
-    color: #0d0d1a;
+    background: var(--theme-accent);
+    color: var(--theme-bg-primary);
     border: none;
     border-radius: 6px;
     font-size: 0.95rem;
@@ -413,7 +411,7 @@
   }
 
   .btn-upload:hover:not(:disabled) {
-    box-shadow: 0 0 15px rgba(0, 255, 0, 0.4);
+    box-shadow: 0 0 15px var(--theme-accent-glow);
   }
 
   .btn-upload:disabled {
@@ -422,15 +420,15 @@
   }
 
   .info-section {
-    background: #0d0d1a;
-    border: 1px solid #333;
+    background: var(--theme-bg-secondary);
+    border: 1px solid var(--theme-border);
     border-radius: 8px;
     padding: 1rem;
   }
 
   .info-section h3 {
     font-size: 0.95rem;
-    color: #888;
+    color: var(--theme-text-muted);
     margin-bottom: 0.75rem;
   }
 
@@ -440,21 +438,21 @@
   }
 
   .info-section li {
-    color: #666;
+    color: var(--theme-text-muted);
     font-size: 0.8rem;
     margin-bottom: 0.5rem;
   }
 
   .info-section code {
-    background: rgba(0, 255, 0, 0.1);
-    color: #00ff00;
+    background: var(--theme-accent-subtle);
+    color: var(--theme-accent);
     padding: 0.1rem 0.3rem;
     border-radius: 3px;
     font-size: 0.75rem;
   }
 
   .info-section a {
-    color: #00ff00;
+    color: var(--theme-accent);
   }
 
   form {

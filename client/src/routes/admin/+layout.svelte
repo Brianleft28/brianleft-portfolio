@@ -66,7 +66,7 @@
 <style>
 	.admin-overlay {
 		height: 100dvh;
-		background: #0a0a0f;
+		background: var(--theme-bg-primary);
 		display: flex;
 		justify-content: center;
 		align-items: center;
@@ -75,8 +75,8 @@
 	}
 
 	.admin-container {
-		background: #1a1a2e;
-		border: 1px solid #00ff00;
+		background: var(--theme-bg-tertiary);
+		border: 1px solid var(--theme-accent);
 		border-radius: 8px;
 		width: 100%;
 		max-width: 1200px;
@@ -84,8 +84,8 @@
 		display: flex;
 		flex-direction: column;
 		box-shadow:
-			0 0 20px rgba(0, 255, 0, 0.3),
-			inset 0 0 60px rgba(0, 255, 0, 0.05);
+			0 0 20px var(--theme-accent-glow),
+			inset 0 0 60px var(--theme-accent-subtle);
 		overflow: hidden;
 	}
 
@@ -94,8 +94,8 @@
 		justify-content: space-between;
 		align-items: center;
 		padding: 0.75rem 1rem;
-		background: #0d0d1a;
-		border-bottom: 1px solid #00ff00;
+		background: var(--theme-bg-secondary);
+		border-bottom: 1px solid var(--theme-accent);
 		border-radius: 8px 8px 0 0;
 		flex-shrink: 0;
 	}
@@ -111,7 +111,7 @@
 	}
 
 	.header-title {
-		color: #00ff00;
+		color: var(--theme-accent);
 		font-family: 'Courier New', monospace;
 		font-size: 1rem;
 		font-weight: bold;
@@ -124,7 +124,7 @@
 	}
 
 	.nav-link {
-		color: #00ff00;
+		color: var(--theme-accent);
 		text-decoration: none;
 		font-family: 'Courier New', monospace;
 		font-size: 0.85rem;
@@ -137,8 +137,8 @@
 
 	.logout-btn {
 		background: transparent;
-		border: 1px solid #ff5555;
-		color: #ff5555;
+		border: 1px solid var(--theme-danger);
+		color: var(--theme-danger);
 		padding: 0.4rem 0.8rem;
 		border-radius: 4px;
 		cursor: pointer;
@@ -148,21 +148,21 @@
 	}
 
 	.logout-btn:hover {
-		background: #ff5555;
-		color: #0d0d1a;
+		background: var(--theme-danger);
+		color: var(--theme-bg-primary);
 	}
 
 	.admin-nav {
 		display: flex;
-		background: #0d0d1a;
-		border-bottom: 1px solid #333;
+		background: var(--theme-bg-secondary);
+		border-bottom: 1px solid var(--theme-border);
 		overflow-x: auto;
 		flex-shrink: 0;
 	}
 
 	.nav-tab {
 		padding: 0.75rem 1.5rem;
-		color: #888;
+		color: var(--theme-text-muted);
 		text-decoration: none;
 		font-family: 'Courier New', monospace;
 		font-size: 0.9rem;
@@ -172,14 +172,14 @@
 	}
 
 	.nav-tab:hover {
-		color: #00ff00;
-		background: rgba(0, 255, 0, 0.05);
+		color: var(--theme-accent);
+		background: var(--theme-accent-subtle);
 	}
 
 	.nav-tab.active {
-		color: #00ff00;
-		border-bottom-color: #00ff00;
-		background: rgba(0, 255, 0, 0.1);
+		color: var(--theme-accent);
+		border-bottom-color: var(--theme-accent);
+		background: var(--theme-accent-subtle);
 	}
 
 	.admin-content {
@@ -188,11 +188,11 @@
 		padding: 1.5rem;
 		overflow-y: auto;
 		overflow-x: hidden;
-		color: #e0e0e0;
+		color: var(--theme-text-primary);
 		font-family: 'Courier New', monospace;
-		background: #161622;
+		background: var(--theme-bg-primary);
 		scrollbar-width: thin;
-		scrollbar-color: #00ff00 #0d0d1a;
+		scrollbar-color: var(--theme-accent) var(--theme-bg-secondary);
 	}
 
 	/* Scrollbar estilo FileViewer - WebKit */
@@ -201,21 +201,21 @@
 	}
 
 	.admin-content::-webkit-scrollbar-track {
-		background: #0d0d1a;
-		border-left: 1px solid #222;
+		background: var(--theme-bg-secondary);
+		border-left: 1px solid var(--theme-border);
 	}
 
 	.admin-content::-webkit-scrollbar-thumb {
-		background: linear-gradient(180deg, #00ff00 0%, #00cc00 100%);
+		background: linear-gradient(180deg, var(--theme-accent) 0%, var(--theme-accent-alt) 100%);
 		border-radius: 6px;
-		border: 3px solid #0d0d1a;
+		border: 3px solid var(--theme-bg-secondary);
 	}
 
 	.admin-content::-webkit-scrollbar-thumb:hover {
-		background: linear-gradient(180deg, #00ff00 0%, #00aa00 100%);
+		background: var(--theme-accent);
 	}
 
 	.admin-content::-webkit-scrollbar-corner {
-		background: #0d0d1a;
+		background: var(--theme-bg-secondary);
 	}
 </style>

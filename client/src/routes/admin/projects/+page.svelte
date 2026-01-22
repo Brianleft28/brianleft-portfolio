@@ -403,16 +403,17 @@
 {#if confirmDelete}
 	<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
 	<div 
-		class="modal-overlay" 
+		class="confirm-overlay" 
 		role="presentation"
 		onclick={() => confirmDelete = null}
 		onkeydown={(e) => e.key === 'Escape' && (confirmDelete = null)}
 	>
 		<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
 		<div 
-			class="modal" 
+			class="confirm-modal" 
 			role="dialog" 
 			aria-modal="true"
+			tabindex="-1"
 			onclick={(e) => e.stopPropagation()}
 			onkeydown={(e) => e.stopPropagation()}
 		>
@@ -423,7 +424,7 @@
 			{:else}
 				<p class="warning">Si existe una memoria de proyecto asociada, también será eliminada.</p>
 			{/if}
-			<div class="modal-actions">
+			<div class="confirm-actions">
 				<button type="button" class="btn-cancel" onclick={() => confirmDelete = null}>Cancelar</button>
 				<form 
 					method="POST" 
@@ -457,7 +458,10 @@
 				<button 
 					class="btn-delete" 
 					title="Eliminar carpeta"
-					onclick={() => confirmDelete = { type: 'folder', id: node.id, name: node.name }}
+					onclick={(e) => {
+						e.stopPropagation();
+						confirmDelete = { type: 'folder', id: node.id, name: node.name };
+					}}
 				>
 					🗑️
 				</button>
@@ -478,7 +482,10 @@
 				<button 
 					class="btn-delete" 
 					title="Eliminar archivo"
-					onclick={() => confirmDelete = { type: 'file', id: node.id, name: node.name }}
+					onclick={(e) => {
+						e.stopPropagation();
+						confirmDelete = { type: 'file', id: node.id, name: node.name };
+					}}
 				>
 					🗑️
 				</button>
@@ -499,13 +506,13 @@
 
 	.page-header h1 {
 		font-size: 1.6rem;
-		color: #00ff00;
+		color: var(--theme-accent);
 		font-family: 'Courier New', monospace;
 		margin-bottom: 0.3rem;
 	}
 
 	.subtitle {
-		color: #888;
+		color: var(--theme-text-muted);
 		font-size: 0.85rem;
 		font-family: 'Courier New', monospace;
 	}
@@ -520,14 +527,14 @@
 
 	.error-message {
 		background: rgba(255, 0, 0, 0.1);
-		border: 1px solid #ff4444;
-		color: #ff6666;
+		border: 1px solid var(--theme-danger);
+		color: var(--theme-danger);
 	}
 
 	.success-message {
-		background: rgba(0, 255, 0, 0.1);
-		border: 1px solid #00ff00;
-		color: #00ff00;
+		background: var(--theme-success-bg);
+		border: 1px solid var(--theme-success);
+		color: var(--theme-success);
 	}
 
 	/* Tabs */
@@ -535,15 +542,15 @@
 		display: flex;
 		gap: 0.5rem;
 		margin-bottom: 1.5rem;
-		border-bottom: 1px solid #333;
+		border-bottom: 1px solid var(--theme-border);
 		padding-bottom: 0.5rem;
 	}
 
 	.tab {
 		padding: 0.6rem 1rem;
 		background: transparent;
-		border: 1px solid #333;
-		color: #888;
+		border: 1px solid var(--theme-border);
+		color: var(--theme-text-muted);
 		cursor: pointer;
 		font-family: 'Courier New', monospace;
 		font-size: 0.85rem;
@@ -552,14 +559,14 @@
 	}
 
 	.tab:hover {
-		color: #00ff00;
-		border-color: #00ff00;
+		color: var(--theme-accent);
+		border-color: var(--theme-accent);
 	}
 
 	.tab.active {
-		background: rgba(0, 255, 0, 0.1);
-		color: #00ff00;
-		border-color: #00ff00;
+		background: var(--theme-accent-subtle);
+		color: var(--theme-accent);
+		border-color: var(--theme-accent);
 	}
 
 	/* Projects List */
@@ -570,14 +577,14 @@
 	}
 
 	.project-card {
-		background: rgba(0, 255, 0, 0.03);
-		border: 1px solid #333;
+		background: var(--theme-accent-subtle);
+		border: 1px solid var(--theme-border);
 		border-radius: 6px;
 		padding: 1rem;
 	}
 
 	.project-card:hover {
-		border-color: #00ff00;
+		border-color: var(--theme-accent);
 	}
 
 	.project-header {
@@ -588,26 +595,26 @@
 	}
 
 	.project-header h3 {
-		color: #00ff00;
+		color: var(--theme-accent);
 		font-size: 1.1rem;
 		font-family: 'Courier New', monospace;
 	}
 
 	.slug {
-		color: #666;
+		color: var(--theme-text-muted);
 		font-size: 0.8rem;
 		font-family: 'Courier New', monospace;
 	}
 
 	.summary {
-		color: #aaa;
+		color: var(--theme-text-secondary);
 		font-size: 0.85rem;
 		line-height: 1.4;
 		margin-bottom: 0.8rem;
 	}
 
 	.no-summary {
-		color: #666;
+		color: var(--theme-text-muted);
 		font-style: italic;
 		font-size: 0.8rem;
 	}
@@ -620,8 +627,8 @@
 	}
 
 	.keyword {
-		background: rgba(0, 255, 0, 0.1);
-		color: #00ff00;
+		background: var(--theme-accent-subtle);
+		color: var(--theme-accent);
 		padding: 0.2rem 0.5rem;
 		border-radius: 3px;
 		font-size: 0.75rem;
@@ -631,7 +638,7 @@
 	.project-meta {
 		display: flex;
 		gap: 1rem;
-		color: #555;
+		color: var(--theme-text-muted);
 		font-size: 0.75rem;
 		font-family: 'Courier New', monospace;
 	}
@@ -640,7 +647,7 @@
 	.empty-state {
 		text-align: center;
 		padding: 3rem;
-		color: #666;
+		color: var(--theme-text-muted);
 	}
 
 	.empty-state p {
@@ -655,19 +662,19 @@
 	}
 
 	.section-header h3 {
-		color: #00ff00;
+		color: var(--theme-accent);
 		font-family: 'Courier New', monospace;
 		margin-bottom: 0.3rem;
 	}
 
 	.hint {
-		color: #666;
+		color: var(--theme-text-muted);
 		font-size: 0.8rem;
 	}
 
 	.tree {
 		background: rgba(0, 0, 0, 0.3);
-		border: 1px solid #333;
+		border: 1px solid var(--theme-border);
 		border-radius: 4px;
 		padding: 1rem;
 		font-family: 'Courier New', monospace;
@@ -687,7 +694,7 @@
 	.folder-toggle {
 		background: none;
 		border: none;
-		color: #00ff00;
+		color: var(--theme-accent);
 		cursor: pointer;
 		display: flex;
 		align-items: center;
@@ -698,16 +705,16 @@
 	}
 
 	.folder-toggle:hover {
-		background: rgba(0, 255, 0, 0.1);
+		background: var(--theme-accent-subtle);
 		border-radius: 3px;
 	}
 
 	.folder-name {
-		color: #00ff00;
+		color: var(--theme-accent);
 	}
 
 	.count {
-		color: #555;
+		color: var(--theme-text-muted);
 		font-size: 0.8rem;
 	}
 
@@ -716,21 +723,23 @@
 	}
 
 	.file-name {
-		color: #aaa;
+		color: var(--theme-text-secondary);
 	}
 
 	.btn-delete {
 		background: none;
 		border: none;
 		cursor: pointer;
-		opacity: 0.3;
-		padding: 0.2rem;
+		opacity: 0.5;
+		padding: 0.3rem 0.5rem;
 		font-size: 0.9rem;
-		transition: opacity 0.2s;
+		transition: opacity 0.2s, background 0.2s;
+		border-radius: 4px;
 	}
 
 	.btn-delete:hover {
 		opacity: 1;
+		background: rgba(255, 0, 0, 0.2);
 	}
 
 	/* Create Folder Inline */
@@ -738,12 +747,12 @@
 		margin-top: 1rem;
 		padding: 1rem;
 		background: rgba(0, 0, 0, 0.2);
-		border: 1px solid #333;
+		border: 1px solid var(--theme-border);
 		border-radius: 4px;
 	}
 
 	.create-folder-inline h4 {
-		color: #888;
+		color: var(--theme-text-muted);
 		font-size: 0.85rem;
 		margin-bottom: 0.5rem;
 	}
@@ -756,18 +765,18 @@
 	.create-folder-inline input {
 		flex: 1;
 		padding: 0.5rem;
-		background: #111;
-		border: 1px solid #333;
-		color: #fff;
+		background: var(--theme-bg-secondary);
+		border: 1px solid var(--theme-border);
+		color: var(--theme-text-primary);
 		border-radius: 3px;
 		font-family: 'Courier New', monospace;
 	}
 
 	.btn-small {
 		padding: 0.5rem 1rem;
-		background: rgba(0, 255, 0, 0.1);
-		border: 1px solid #00ff00;
-		color: #00ff00;
+		background: var(--theme-accent-subtle);
+		border: 1px solid var(--theme-accent);
+		color: var(--theme-accent);
 		cursor: pointer;
 		border-radius: 3px;
 		font-family: 'Courier New', monospace;
@@ -779,7 +788,7 @@
 	}
 
 	.create-section h3 {
-		color: #00ff00;
+		color: var(--theme-accent);
 		font-family: 'Courier New', monospace;
 		margin-bottom: 1.5rem;
 	}
@@ -790,7 +799,7 @@
 
 	.form-group label {
 		display: block;
-		color: #888;
+		color: var(--theme-text-muted);
 		font-size: 0.85rem;
 		margin-bottom: 0.4rem;
 		font-family: 'Courier New', monospace;
@@ -800,9 +809,9 @@
 	.form-group textarea {
 		width: 100%;
 		padding: 0.7rem;
-		background: #111;
-		border: 1px solid #333;
-		color: #fff;
+		background: var(--theme-bg-secondary);
+		border: 1px solid var(--theme-border);
+		color: var(--theme-text-primary);
 		border-radius: 4px;
 		font-family: 'Courier New', monospace;
 		font-size: 0.9rem;
@@ -811,7 +820,7 @@
 	.form-group input:focus,
 	.form-group textarea:focus {
 		outline: none;
-		border-color: #00ff00;
+		border-color: var(--theme-accent);
 	}
 
 	.form-group textarea {
@@ -826,9 +835,9 @@
 
 	.btn-primary {
 		padding: 0.8rem 1.5rem;
-		background: rgba(0, 255, 0, 0.15);
-		border: 1px solid #00ff00;
-		color: #00ff00;
+		background: transparent;
+		border: 1px solid var(--theme-accent);
+		color: var(--theme-accent);
 		cursor: pointer;
 		border-radius: 4px;
 		font-family: 'Courier New', monospace;
@@ -837,50 +846,56 @@
 	}
 
 	.btn-primary:hover {
-		background: rgba(0, 255, 0, 0.25);
+		background: var(--theme-accent-subtle);
 	}
 
-	/* Modal */
-	.modal-overlay {
+	/* Modal de Confirmación */
+	.confirm-overlay {
 		position: fixed;
 		top: 0;
 		left: 0;
 		right: 0;
 		bottom: 0;
-		background: rgba(0, 0, 0, 0.8);
+		background: rgba(0, 0, 0, 0.85);
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		z-index: 1000;
+		z-index: 99999;
 	}
 
-	.modal {
-		background: #1a1a1a;
-		border: 1px solid #333;
+	.confirm-modal {
+		background: var(--theme-bg-primary);
+		border: 2px solid var(--theme-accent);
 		border-radius: 8px;
 		padding: 1.5rem;
-		max-width: 400px;
+		max-width: 450px;
 		width: 90%;
+		box-shadow: 0 0 30px var(--theme-accent-glow);
 	}
 
-	.modal h3 {
-		color: #ff6666;
+	.confirm-modal h3 {
+		color: var(--theme-warning);
 		margin-bottom: 1rem;
 		font-family: 'Courier New', monospace;
+		font-size: 1.1rem;
 	}
 
-	.modal p {
-		color: #aaa;
+	.confirm-modal p {
+		color: var(--theme-text-primary);
 		margin-bottom: 0.5rem;
 		font-size: 0.9rem;
 	}
 
-	.modal .warning {
-		color: #ff6666;
+	.confirm-modal .warning {
+		color: var(--theme-danger);
 		font-size: 0.85rem;
+		padding: 0.5rem;
+		background: rgba(255, 85, 85, 0.1);
+		border-radius: 4px;
+		margin-top: 0.5rem;
 	}
 
-	.modal-actions {
+	.confirm-actions {
 		display: flex;
 		gap: 0.8rem;
 		justify-content: flex-end;
@@ -890,8 +905,8 @@
 	.btn-cancel {
 		padding: 0.6rem 1rem;
 		background: transparent;
-		border: 1px solid #555;
-		color: #888;
+		border: 1px solid var(--theme-border-light);
+		color: var(--theme-text-muted);
 		cursor: pointer;
 		border-radius: 4px;
 		font-family: 'Courier New', monospace;
@@ -900,8 +915,8 @@
 	.btn-danger {
 		padding: 0.6rem 1rem;
 		background: rgba(255, 0, 0, 0.15);
-		border: 1px solid #ff4444;
-		color: #ff6666;
+		border: 1px solid var(--theme-danger);
+		color: var(--theme-danger);
 		cursor: pointer;
 		border-radius: 4px;
 		font-family: 'Courier New', monospace;
@@ -928,7 +943,7 @@
 	}
 
 	.info-box p {
-		color: #aaa;
+		color: var(--theme-text-secondary);
 		margin: 0 0 0.5rem 0;
 		font-size: 0.85rem;
 	}
@@ -936,7 +951,7 @@
 	.info-box ul {
 		margin: 0;
 		padding-left: 1.2rem;
-		color: #888;
+		color: var(--theme-text-muted);
 		font-size: 0.85rem;
 	}
 
@@ -945,10 +960,10 @@
 	}
 
 	.info-box code {
-		background: rgba(0, 255, 0, 0.1);
+		background: var(--theme-accent-subtle);
 		padding: 0.1rem 0.4rem;
 		border-radius: 3px;
-		color: #00ff00;
+		color: var(--theme-accent);
 		font-size: 0.85em;
 	}
 
@@ -956,9 +971,9 @@
 	.form-group select {
 		width: 100%;
 		padding: 0.6rem;
-		background: #222;
-		border: 1px solid #444;
-		color: #ddd;
+		background: var(--theme-bg-tertiary);
+		border: 1px solid var(--theme-border);
+		color: var(--theme-text-primary);
 		border-radius: 4px;
 		font-family: 'Courier New', monospace;
 		font-size: 0.9rem;
@@ -966,12 +981,12 @@
 
 	.form-group select:focus {
 		outline: none;
-		border-color: #00ff00;
+		border-color: var(--theme-accent);
 	}
 
 	.form-group select option {
-		background: #222;
-		color: #ddd;
+		background: var(--theme-bg-tertiary);
+		color: var(--theme-text-primary);
 	}
 
 	/* Projects Toolbar */
@@ -987,9 +1002,9 @@
 		align-items: center;
 		gap: 0.5rem;
 		padding: 0.5rem 1rem;
-		background: rgba(0, 255, 0, 0.1);
-		border: 1px solid #00ff00;
-		color: #00ff00;
+		background: var(--theme-accent-subtle);
+		border: 1px solid var(--theme-accent);
+		color: var(--theme-accent);
 		border-radius: 4px;
 		font-family: 'Courier New', monospace;
 		font-size: 0.85rem;
@@ -999,7 +1014,7 @@
 
 	.btn-action:hover:not(:disabled) {
 		background: rgba(0, 255, 0, 0.2);
-		box-shadow: 0 0 10px rgba(0, 255, 0, 0.3);
+		box-shadow: 0 0 10px var(--theme-accent-glow);
 	}
 
 	.btn-action:disabled {
@@ -1026,15 +1041,4 @@
 		margin-bottom: 1rem;
 	}
 
-	.sync-message.success {
-		background: rgba(0, 255, 0, 0.1);
-		border: 1px solid #00ff00;
-		color: #00ff00;
-	}
-
-	.sync-message.error {
-		background: rgba(255, 0, 0, 0.1);
-		border: 1px solid #ff4444;
-		color: #ff4444;
-	}
 </style>

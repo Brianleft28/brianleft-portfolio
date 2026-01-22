@@ -172,18 +172,23 @@
 
 <span class="category-header">  📄 Archivos</span>
        <span class="command-highlight">cat</span>         Ver contenido de archivo
-
-<span class="category-header">  ⚙️ Terminal</span>
-       <span class="command-highlight">cls</span>         Limpiar consola (Ctrl+L)
-       <span class="command-highlight">help</span> o <span class="command-highlight">-h</span>   Mostrar ayuda completa
-       <span class="command-highlight">exit</span>        Cerrar terminal
+       <span class="command-highlight">cv</span>          Descargar curriculum vitae
 
 <span class="category-header">  🤖 Inteligencia Artificial</span>
        <span class="command-highlight">${aiCmd}</span>        ${aiNm} con modos especializados
-
-<span class="category-header">  🔐 Configuración</span>
        <span class="command-highlight">apikey</span>      Configurar tu API key de Gemini
+
+<span class="category-header">  🔐 Cuenta & Admin</span>
+       <span class="command-highlight">register</span>    Crear cuenta (obtén tu subdominio)
        <span class="command-highlight">admin</span>       Panel de administración
+
+<span class="category-header">  🎨 Personalización</span>
+       <span class="command-highlight">theme</span>       Cambiar tema de colores (7 temas)
+
+<span class="category-header">  ⚙️ Terminal</span>
+       <span class="command-highlight">cls</span>         Limpiar consola (Ctrl+L)
+       <span class="command-highlight">help</span>        Mostrar ayuda completa
+       <span class="command-highlight">exit</span>        Cerrar terminal (Ctrl+Ñ)
 
 <span class="system-hint">💡 Tip: Usa &lt;comando&gt; -h para ayuda detallada</span>`;
 		addSystemMessage(welcomeMsg);
@@ -617,9 +622,9 @@
 <style>
 	.terminal-overlay {
 		height: 70vh;
-		background-color: rgba(20, 20, 20, 0.97);
+		background-color: var(--theme-bg-primary);
 		backdrop-filter: blur(5px);
-		border-top: 1px solid #333;
+		border-top: 1px solid var(--theme-border);
 		z-index: 1000;
 		animation: slide-up 0.3s ease-out;
 		font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
@@ -628,7 +633,7 @@
 
 	.terminal-output {
 		scrollbar-width: thin;
-		scrollbar-color: #444 #1a1a1a;
+		scrollbar-color: var(--theme-border-light) var(--theme-bg-primary);
 	}
 
 	.line {
@@ -662,12 +667,12 @@
 	:global(.ai-markdown pre) {
 		display: block;
 		clear: both;
-		background: #1e1e1e;
+		background: var(--theme-bg-tertiary);
 		padding: 0.75rem;
 		border-radius: 4px;
 		overflow-x: auto;
 		margin: 0.5rem 0;
-		border: 1px solid #333;
+		border: 1px solid var(--theme-border);
 	}
 
 	:global(.ai-markdown code) {
@@ -676,7 +681,7 @@
 	}
 
 	:global(.ai-markdown code:not(pre code)) {
-		background: #2d2d2d;
+		background: var(--theme-bg-secondary);
 		padding: 0.1rem 0.3rem;
 		border-radius: 3px;
 	}
@@ -703,20 +708,20 @@
 
 	:global(.ai-markdown li) {
 		margin-bottom: 0.2rem;
-		color: #d4d4d4;
+		color: var(--theme-text-primary);
 	}
 
 	:global(.ai-markdown li::marker) {
-		color: #4ec9b0; /* Verde como el prompt */
+		color: var(--theme-prompt); /* Verde como el prompt */
 	}
 
 	:global(.ai-markdown li strong) {
-		color: #bb3b00; /* Azul para negritas en listas */
+		color: var(--theme-secondary); /* Color de acento para negritas en listas */
 	}
 
 	:global(.ai-markdown li code) {
-		background: #2d2d2d;
-		color: #ce9178; /* Naranja para código inline */
+		background: var(--theme-bg-secondary);
+		color: var(--theme-warning); /* Naranja para código inline */
 		padding: 0.1rem 0.4rem;
 		border-radius: 3px;
 	}
@@ -729,17 +734,17 @@
 	}
 
 	:global(.ai-markdown th) {
-		background: #2d2d2d;
-		color: #4ec9b0;
+		background: var(--theme-bg-secondary);
+		color: var(--theme-prompt);
 		padding: 0.4rem 0.8rem;
 		text-align: left;
-		border: 1px solid #444;
+		border: 1px solid var(--theme-border-light);
 	}
 
 	:global(.ai-markdown td) {
 		padding: 0.3rem 0.8rem;
-		border: 1px solid #333;
-		color: #d4d4d4;
+		border: 1px solid var(--theme-border);
+		color: var(--theme-text-primary);
 	}
 
 	:global(.ai-markdown tr:nth-child(even)) {
@@ -747,79 +752,79 @@
 	}
 
 	.prompt-user {
-		color: #4ec9b0;
+		color: var(--theme-prompt);
 	}
 
 	.prompt-error {
-		color: #f44747;
+		color: var(--theme-error);
 	}
 
 	.system-message {
-		color: #808080;
+		color: var(--theme-text-muted);
 		white-space: pre-wrap;
 	}
 
 	:global(.command-highlight) {
-		color: #9cdcfe;
+		color: var(--theme-command);
 		font-weight: bold;
 	}
 
 	/* Estilos para TorvaldsAI */
 	:global(.ai-header) {
-		color: #9b59b6;
+		color: var(--theme-path);
 	}
 
 	:global(.ai-success) {
-		color: #2ecc71;
+		color: var(--theme-success);
 	}
 
 	:global(.ai-warning) {
-		color: #f39c12;
+		color: var(--theme-warning);
 	}
 
 	:global(.ai-error) {
-		color: #e74c3c;
+		color: var(--theme-error);
 	}
 
 	:global(.ai-prompt) {
-		color: #9b59b6;
+		color: var(--theme-path);
 		font-style: italic;
 	}
 
 	:global(.ai-prompt-active) {
-		color: #9b59b6;
+		color: var(--theme-path);
 		font-weight: bold;
 	}
 
 	:global(.system-header) {
-		color: #00bc8c;
+		color: var(--theme-secondary);
 		font-weight: bold;
 	}
 
 	:global(.system-hint) {
-		color: #666;
+		color: var(--theme-text-muted);
 		font-style: italic;
 	}
 
 	:global(.mode-name) {
-		color: #9b59b6;
+		color: var(--theme-path);
 		font-weight: bold;
 	}
 
 	:global(.folder-name) {
-		color: #f1c40f;
+		color: var(--theme-warning);
 	}
 
 	:global(.file-name) {
-		color: #e0e0e0;
+		color: var(--theme-text-primary);
 	}
 
 	:global(.error-text) {
-		color: #e74c3c;
+		color: var(--theme-error);
 	}
 
 	:global(.ascii-logo) {
-		color: #4ec9b0;
+		color: var(--theme-prompt);
 		white-space: pre;
 		font-size: 11px;
 		line-height: 1.15;
@@ -831,7 +836,7 @@
 	}
 
 	:global(.welcome-subtitle) {
-		color: #9b59b6;
+		color: var(--theme-path);
 		font-weight: bold;
 		display: block;
 		margin-top: 1rem;
@@ -841,7 +846,7 @@
 	}
 
 	:global(.help-box) {
-		color: #3d5a80;
+		color: var(--theme-info);
 		white-space: pre;
 		font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
 		font-size: 13px;
@@ -853,7 +858,7 @@
 	}
 
 	:global(.category-header) {
-		color: #f39c12;
+		color: var(--theme-warning);
 		font-weight: bold;
 	}
 
@@ -863,7 +868,7 @@
 	}
 
 	.typing-cursor {
-		color: #4ec9b0;
+		color: var(--theme-prompt);
 		animation: blink 0.7s infinite;
 		font-weight: bold;
 	}
