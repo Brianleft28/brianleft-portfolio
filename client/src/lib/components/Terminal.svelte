@@ -56,7 +56,8 @@
 	let isInitialized = $state(false);
 
 	// Configuración dinámica
-	let aiDisplayName = $derived($portfolioConfig?.ai_name || $aiPersonality?.displayName || 'AI Assistant');
+	// Prioridad: AI Personality > Settings > Default
+	let aiDisplayName = $derived($aiPersonality?.displayName || $portfolioConfig?.ai_name || 'AI Assistant');
 	let aiCommandName = $derived($portfolioConfig?.ai_command || 'ai');
 	let ownerName = $derived($portfolioConfig?.owner_name || 'Developer');
 	

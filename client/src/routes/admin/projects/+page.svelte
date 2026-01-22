@@ -14,7 +14,8 @@
 		name: '',
 		slug: '',
 		content: '',
-		keywords: ''
+		keywords: '',
+		folderId: ''
 	});
 	
 	// Form de nueva carpeta
@@ -45,7 +46,7 @@
 	}
 
 	function resetForm() {
-		newProject = { name: '', slug: '', content: '', keywords: '' };
+		newProject = { name: '', slug: '', content: '', keywords: '', folderId: '' };
 		newFolder = { name: '', parentId: '' };
 	}
 
@@ -206,6 +207,19 @@
 		{:else if activeTab === 'create'}
 			<div class="create-section">
 				<h3>➕ Nuevo Proyecto</h3>
+				
+				<div class="info-box">
+					<h4>🧠 Retroalimentación de Memoria Automática</h4>
+					<p>Al crear un proyecto, el sistema automáticamente:</p>
+					<ul>
+						<li>✓ Genera un resumen con IA del contenido</li>
+						<li>✓ Actualiza <code>memory.md</code> con el nuevo proyecto</li>
+						<li>✓ Actualiza <code>index.md</code> con nuevas tecnologías detectadas</li>
+						<li>✓ Crea la memoria específica del proyecto en la BD</li>
+						<li>✓ Crea el archivo .md en la carpeta seleccionada</li>
+					</ul>
+				</div>
+				
 				<form method="POST" action="?/createProject" use:enhance={() => {
 					return async ({ update }) => {
 						await update();
@@ -241,15 +255,31 @@
 					</div>
 
 					<div class="form-group">
+						<label for="folderId">📁 Carpeta de destino (opcional)</label>
+						<select 
+							id="folderId" 
+							name="folderId"
+							bind:value={newProject.folderId}
+						>
+							<option value="">-- Sin archivo en filesystem --</option>
+							{#each data.folders as folder}
+								<option value={folder.id}>{folder.path}</option>
+							{/each}
+						</select>
+						<span class="hint">Si seleccionás una carpeta, se creará un archivo {newProject.slug || 'proyecto'}.md ahí</span>
+					</div>
+
+					<div class="form-group">
 						<label for="content">Contenido (Markdown)</label>
 						<textarea 
 							id="content"
 							name="content" 
 							rows="15"
-							placeholder="# Mi Proyecto&#10;&#10;Descripción del proyecto..."
+							placeholder="# Mi Proyecto&#10;&#10;- **Tipo:** Personal/Corporativo&#10;- **Tech Stack:** React, Node.js, Docker&#10;&#10;## Descripción&#10;Este proyecto..."
 							bind:value={newProject.content}
 							required
 						></textarea>
+						<span class="hint">Incluí: Tipo, Tech Stack, Descripción y Características para mejor detección</span>
 					</div>
 
 					<div class="form-group">
@@ -261,10 +291,11 @@
 							placeholder="react, typescript, portfolio"
 							bind:value={newProject.keywords}
 						/>
+						<span class="hint">Se detectan automáticamente si no se especifican</span>
 					</div>
 
 					<button type="submit" class="btn-primary">
-						Crear Proyecto
+						🚀 Crear Proyecto y Actualizar Memorias
 					</button>
 				</form>
 			</div>
@@ -767,5 +798,68 @@
 
 	.btn-danger:hover {
 		background: rgba(255, 0, 0, 0.25);
+	}
+
+	/* Info box para retroalimentación */
+	.info-box {
+		background: rgba(0, 200, 255, 0.08);
+		border: 1px solid rgba(0, 200, 255, 0.3);
+		border-radius: 6px;
+		padding: 1rem 1.2rem;
+		margin-bottom: 1.5rem;
+	}
+
+	.info-box h4 {
+		color: #00c8ff;
+		margin: 0 0 0.5rem 0;
+		font-size: 0.95rem;
+		font-family: 'Courier New', monospace;
+	}
+
+	.info-box p {
+		color: #aaa;
+		margin: 0 0 0.5rem 0;
+		font-size: 0.85rem;
+	}
+
+	.info-box ul {
+		margin: 0;
+		padding-left: 1.2rem;
+		color: #888;
+		font-size: 0.85rem;
+	}
+
+	.info-box li {
+		margin-bottom: 0.3rem;
+	}
+
+	.info-box code {
+		background: rgba(0, 255, 0, 0.1);
+		padding: 0.1rem 0.4rem;
+		border-radius: 3px;
+		color: #00ff00;
+		font-size: 0.85em;
+	}
+
+	/* Select styling */
+	.form-group select {
+		width: 100%;
+		padding: 0.6rem;
+		background: #222;
+		border: 1px solid #444;
+		color: #ddd;
+		border-radius: 4px;
+		font-family: 'Courier New', monospace;
+		font-size: 0.9rem;
+	}
+
+	.form-group select:focus {
+		outline: none;
+		border-color: #00ff00;
+	}
+
+	.form-group select option {
+		background: #222;
+		color: #ddd;
 	}
 </style>

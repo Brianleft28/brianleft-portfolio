@@ -33,7 +33,7 @@
       groups[s.category].push(s);
     }
     // Ordenar categorías
-    const order = ['owner', 'contact', 'social', 'branding'];
+    const order = ['owner', 'contact', 'social', 'branding', 'ai'];
     const sorted: [string, Setting[]][] = [];
     for (const cat of order) {
       if (groups[cat]) sorted.push([cat, groups[cat]]);
@@ -50,6 +50,7 @@
     contact: { label: 'Contacto', icon: '📧' },
     social: { label: 'Redes Sociales', icon: '🔗' },
     branding: { label: 'Branding & Apariencia', icon: '🎨' },
+    ai: { label: 'Asistente IA (Fallback)', icon: '🤖' },
   };
 
   // Helper para detectar si un valor es JSON parseable

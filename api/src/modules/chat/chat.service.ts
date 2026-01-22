@@ -4,6 +4,9 @@ import { GoogleGenerativeAI, GenerativeModel } from '@google/generative-ai';
 import { MemoryService } from '../memory/memory.service';
 import { MemoryType } from '../../entities/memory.entity';
 import { AiPersonalitiesService } from '../ai-personalities/ai-personalities.service';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { Setting } from '../../entities/setting.entity';
 
 @Injectable()
 export class ChatService {
@@ -16,6 +19,8 @@ export class ChatService {
     private configService: ConfigService,
     private memoryService: MemoryService,
     private aiPersonalitiesService: AiPersonalitiesService,
+    @InjectRepository(Setting)
+    private settingsRepository: Repository<Setting>,
   ) {
     this.defaultApiKey = this.configService.get('GEMINI_API_KEY') || null;
     if (!this.defaultApiKey) {
@@ -150,36 +155,37 @@ RESUMEN:`;
 
   /**
    * Construye el contexto para el prompt
+   * Usa memory.md como fuente principal de conocimiento sobre proyectos
    */
   private async buildContext(prompt: string, isListRequest: boolean): Promise<string> {
+    // SIEMPRE cargar memory.md como base de conocimiento
+    const memoryDoc = await this.memoryService.findBySlug('memory');
+    const baseContext = memoryDoc?.content || '';
+
     if (isListRequest) {
-      // Para listas, usar resúmenes
-      const summaries = await this.memoryService.getProjectSummaries();
-      return summaries.map((s) => `## ${s.title}\n${s.summary}`).join('\n\n');
+      // Para listas de proyectos, usar memory.md que tiene todos los resúmenes
+      return baseContext;
     }
 
-    // Buscar memorias relevantes
+    // Buscar memorias relevantes adicionales
     const memories = await this.memoryService.findRelevant(prompt);
 
     if (memories.length === 0) {
-      // Si no hay match, cargar contexto base
-      const baseMemories = await Promise.all([
-        this.memoryService.findByType(MemoryType.INDEX),
-        this.memoryService.findByType(MemoryType.META),
-      ]);
-
-      return baseMemories
-        .flat()
-        .map((m) => m.content)
-        .join('\n\n---\n\n');
+      // Si no hay match específico, usar memory.md + meta
+      const metaMemory = await this.memoryService.findByType(MemoryType.META);
+      const metaContext = metaMemory.map((m) => m.content).join('\n\n');
+      return `${baseContext}\n\n---\n\n${metaContext}`;
     }
 
-    return memories.map((m) => m.content).join('\n\n---\n\n');
+    // Combinar memory.md con memorias específicas encontradas
+    const specificContext = memories.map((m) => m.content).join('\n\n---\n\n');
+    return `${baseContext}\n\n---\n\n${specificContext}`;
   }
 
   /**
    * Construye el prompt completo con sistema + contexto + usuario
    * Usa la personalidad configurada en la BD según el modo
+   * Reemplaza placeholders con valores de settings
    */
   private async buildFullPrompt(
     userPrompt: string,
@@ -187,6 +193,16 @@ RESUMEN:`;
     isListRequest: boolean,
     mode?: string,
   ): Promise<string> {
+    // Cargar settings para placeholders
+    const settings = await this.settingsRepository.find();
+    const settingsMap = new Map(settings.map((s) => [s.key, s.value]));
+
+    const ownerName =
+      settingsMap.get('owner_name') ||
+      `${settingsMap.get('owner_first_name') || ''} ${settingsMap.get('owner_last_name') || ''}`.trim() ||
+      'Brian';
+    const aiName = settingsMap.get('ai_name') || 'TorvaldsAI';
+
     // Obtener personalidad según el modo o la activa por default
     let personality;
     if (mode) {
@@ -197,40 +213,50 @@ RESUMEN:`;
     }
 
     // Usar el system prompt de la personalidad o un fallback MUY RESTRICTIVO
-    const baseSystemPrompt =
+    let baseSystemPrompt =
       personality?.systemPrompt ||
-      `## IDENTIDAD
-Sos un asistente del portfolio de Brian. SOLO respondés preguntas sobre Brian y sus proyectos.
+      `IDENTIDAD
 
-## PROHIBICIONES ABSOLUTAS
+Sos un asistente del portfolio de ${ownerName}. SOLO respondés preguntas sobre ${ownerName} y sus proyectos.
+
+PROHIBICIONES ABSOLUTAS
 - NO des tutoriales de código
 - NO escribas funciones o clases
 - NO respondas preguntas genéricas de programación
-- Si piden código, respondé: "No soy un asistente de programación. ¿Querés saber sobre los proyectos de Brian?"
+- Si piden código, respondé: "No soy un asistente de programación. ¿Querés saber sobre los proyectos de ${ownerName}?"
 
-## REGLAS
+REGLAS
 1. Respondé en español
-2. SOLO hablás de Brian y su portfolio
+2. SOLO hablás de ${ownerName} y su portfolio
 3. Rechazá cualquier pedido de código`;
 
+    // Reemplazar placeholders en system prompt
+    baseSystemPrompt = baseSystemPrompt
+      .replace(/\{\{owner_name\}\}/g, ownerName)
+      .replace(/\{\{ai_name\}\}/g, aiName);
+
+    // Formato restrictivo para terminal
     const systemPrompt = `${baseSystemPrompt}
 
-## FORMATO DE RESPUESTA
-- Usá headers (##) para secciones
-- Usá listas para enumerar
-- Usá \`código inline\` para términos técnicos
-- Usá bloques de código con syntax highlighting
-- Para arquitectura, podés usar diagramas ASCII
+FORMATO DE RESPUESTA (MUY IMPORTANTE)
+- NUNCA uses headers markdown (# o ##). Esto es una terminal, no un documento.
+- Usá texto plano con saltos de línea para separar secciones
+- Usá listas con viñetas (• o -) para enumerar
+- Usá \`código inline\` solo para términos técnicos específicos
+- Podés usar **negritas** para énfasis
+- Para diagramas, usá ASCII art o Mermaid
+- Mantené respuestas concisas y directas
+- Si listás proyectos, usá formato: "• NombreProyecto: descripción breve"
 
-${isListRequest ? '## INSTRUCCIÓN ESPECIAL\nEl usuario pide una lista de proyectos. Mostrá los proyectos de forma organizada con nombre y descripción breve.' : ''}
+${isListRequest ? 'INSTRUCCIÓN: El usuario pide lista de proyectos. Mostralos de forma organizada, sin headers, con viñetas.' : ''}
 
-## CONTEXTO
+CONTEXTO (BASE DE CONOCIMIENTO)
 ${context}
 
-## PREGUNTA DEL USUARIO
+PREGUNTA DEL USUARIO
 ${userPrompt}
 
-## TU RESPUESTA`;
+TU RESPUESTA (sin headers, formato terminal):`;
 
     return systemPrompt;
   }

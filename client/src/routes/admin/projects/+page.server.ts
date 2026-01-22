@@ -37,30 +37,35 @@ async function getApiToken(): Promise<string> {
 
 export const load = (async ({ locals }) => {
 	if (!locals.user?.authenticated) {
-		return { projects: [], filesystem: [], error: 'No autenticado' };
+		return { projects: [], filesystem: [], folders: [], error: 'No autenticado' };
 	}
 
 	try {
 		const token = await getApiToken();
 
-		// Cargar proyectos y filesystem en paralelo
-		const [projectsRes, filesystemRes] = await Promise.all([
+		// Cargar proyectos, filesystem y carpetas en paralelo
+		const [projectsRes, filesystemRes, foldersRes] = await Promise.all([
 			fetch(`${API_URL}/projects`, {
 				headers: { Authorization: `Bearer ${token}` }
 			}),
 			fetch(`${API_URL}/filesystem`, {
+				headers: { Authorization: `Bearer ${token}` }
+			}),
+			fetch(`${API_URL}/filesystem/folders`, {
 				headers: { Authorization: `Bearer ${token}` }
 			})
 		]);
 
 		const projects = projectsRes.ok ? await projectsRes.json() : [];
 		const filesystem = filesystemRes.ok ? await filesystemRes.json() : [];
+		const folders = foldersRes.ok ? await foldersRes.json() : [];
 
-		return { projects, filesystem, error: null };
+		return { projects, filesystem, folders, error: null };
 	} catch (e) {
 		return {
 			projects: [],
 			filesystem: [],
+			folders: [],
 			error: e instanceof Error ? e.message : 'Error desconocido'
 		};
 	}

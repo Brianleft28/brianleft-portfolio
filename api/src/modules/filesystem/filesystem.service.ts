@@ -104,7 +104,7 @@ export class FilesystemService {
    */
   async getFolderByPath(path: string): Promise<Folder | null> {
     const parts = path.split('/').filter(Boolean);
-    
+
     let currentFolder: Folder | null = null;
 
     for (const part of parts) {
@@ -196,5 +196,46 @@ export class FilesystemService {
   async deleteFile(id: number): Promise<void> {
     const file = await this.getFileById(id);
     await this.filesRepository.remove(file);
+  }
+
+  /**
+   * Obtiene lista plana de todas las carpetas (para selectores)
+   */
+  async getAllFolders(): Promise<{ id: number; name: string; path: string }[]> {
+    const folders = await this.foldersRepository.find({
+      order: { name: 'ASC' },
+    });
+
+    // Construir paths
+    const folderMap = new Map(folders.map((f) => [f.id, f]));
+    const result: { id: number; name: string; path: string }[] = [];
+
+    for (const folder of folders) {
+      const path = this.buildFolderPath(folder, folderMap);
+      result.push({
+        id: folder.id,
+        name: folder.name,
+        path,
+      });
+    }
+
+    return result.sort((a, b) => a.path.localeCompare(b.path));
+  }
+
+  /**
+   * Construye el path completo de una carpeta
+   */
+  private buildFolderPath(folder: Folder, folderMap: Map<number, Folder>): string {
+    const parts: string[] = [folder.name];
+    let current = folder;
+
+    while (current.parentId) {
+      const parent = folderMap.get(current.parentId);
+      if (!parent) break;
+      parts.unshift(parent.name);
+      current = parent;
+    }
+
+    return parts.join('\\');
   }
 }

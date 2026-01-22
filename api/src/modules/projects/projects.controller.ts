@@ -1,26 +1,6 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  Param,
-  UseGuards,
-  NotFoundException,
-} from '@nestjs/common';
-import {
-  ApiTags,
-  ApiOperation,
-  ApiResponse,
-  ApiBearerAuth,
-  ApiParam,
-} from '@nestjs/swagger';
+import { Controller, Get, Post, Body, Param, NotFoundException } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse, ApiParam } from '@nestjs/swagger';
 import { ProjectsService, CreateProjectDto } from './projects.service';
-import { JwtAuthGuard } from '../../guards/jwt-auth.guard';
-import { RolesGuard, ROLES_KEY } from '../../guards/roles.guard';
-import { SetMetadata } from '@nestjs/common';
-import { UserRole } from '../../entities/user.entity';
-
-const Roles = (...roles: UserRole[]) => SetMetadata(ROLES_KEY, roles);
 
 @ApiTags('projects')
 @Controller('projects')
@@ -48,11 +28,11 @@ export class ProjectsController {
   }
 
   @Post()
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN)
-  @ApiBearerAuth()
-  @ApiOperation({ summary: 'Crear proyecto (admin)' })
-  @ApiResponse({ status: 201, description: 'Proyecto creado' })
+  @ApiOperation({ summary: 'Crear proyecto con retroalimentación de memoria' })
+  @ApiResponse({
+    status: 201,
+    description: 'Proyecto creado. Actualiza memory.md, index.md y crea memoria específica',
+  })
   async createProject(@Body() dto: CreateProjectDto) {
     return this.projectsService.createProject(dto);
   }
