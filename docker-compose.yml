@@ -1,0 +1,106 @@
+services:
+  # ═══════════════════════════════════════════════════════════════
+  # Frontend + SSR (SvelteKit)
+  # ═══════════════════════════════════════════════════════════════
+  client:
+    build: ./client
+    ports:
+      - "3000:3000"
+    environment:
+      - PUBLIC_API_URL=http://api:4000
+      - SESSION_SECRET=${SESSION_SECRET}
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - ADMIN_USERNAME=${ADMIN_USERNAME}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD}
+    depends_on:
+      - api
+    networks:
+      - portfolio-network
+    restart: unless-stopped
+
+  # ═══════════════════════════════════════════════════════════════
+  # Backend API (NestJS + TypeORM)
+  # ═══════════════════════════════════════════════════════════════
+  api:
+    build: ./api
+    ports:
+      - "4000:4000"
+    environment:
+      - DB_HOST=db
+      - DB_PORT=3306
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_NAME=${DB_NAME}
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET}
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - ADMIN_USERNAME=${ADMIN_USERNAME}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD}
+      - SMTP_HOST=${SMTP_HOST:-}
+      - SMTP_PORT=${SMTP_PORT:-587}
+      - SMTP_USER=${SMTP_USER:-}
+      - SMTP_PASS=${SMTP_PASS:-}
+      - SMTP_SECURE=${SMTP_SECURE:-false}
+      - SMTP_FROM=${SMTP_FROM:-}
+    volumes:
+      - ./api/uploads:/app/uploads
+      - ./client/src/lib/data/memory:/app/data/memory:ro  # Memorias (read-only)
+    user: "1001:1001"
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    networks:
+      - portfolio-network
+    restart: unless-stopped
+
+  # ═══════════════════════════════════════════════════════════════
+  # MySQL 8 Database
+  # ═══════════════════════════════════════════════════════════════
+  db:
+    build: ./db
+    ports:
+      - "3307:3306"  # Puerto 3307 en host -> 3306 en container
+    volumes:
+      - mysql_data:/var/lib/mysql
+    environment:
+      - MYSQL_ROOT_PASSWORD=${DB_ROOT_PASSWORD}
+      - MYSQL_DATABASE=${DB_NAME}
+      - MYSQL_USER=${DB_USER}
+      - MYSQL_PASSWORD=${DB_PASSWORD}
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${DB_ROOT_PASSWORD}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    networks:
+      - portfolio-network
+    restart: unless-stopped
+
+  # ═══════════════════════════════════════════════════════════════
+  # Redis (Sessions + Cache + Rate Limiting)
+  # ═══════════════════════════════════════════════════════════════
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"  # Expuesto para desarrollo local
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+    networks:
+      - portfolio-network
+    restart: unless-stopped
+
+
+networks:
+  portfolio-network:
+    driver: bridge
+
+volumes:
+  mysql_data:
+  redis_data:
+
