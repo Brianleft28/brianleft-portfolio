@@ -4,7 +4,9 @@ import { env } from '$env/dynamic/private';
 
 const API_URL = env.PUBLIC_API_URL || 'http://api:4000';
 
+
 // Cache simple del token JWT
+
 let cachedToken: { token: string; expires: number } | null = null;
 
 async function getApiToken(): Promise<string> {
@@ -38,7 +40,7 @@ async function getApiToken(): Promise<string> {
   return data.accessToken;
 }
 
-export const load = (async ({ locals }) => {
+export const load: PageServerLoad = async ({ locals, fetch }) => {
   if (!locals.user?.authenticated) {
     return { settings: [], user: null, error: 'No autenticado' };
   }
@@ -51,6 +53,7 @@ export const load = (async ({ locals }) => {
       fetch(`${API_URL}/settings`, {
         headers: { 'Authorization': `Bearer ${token}` }
       }),
+      
       fetch(`${API_URL}/users/me`, {
         headers: { 'Authorization': `Bearer ${token}` }
       })
@@ -67,15 +70,16 @@ export const load = (async ({ locals }) => {
   } catch (e) {
     return { settings: [], user: null, error: e instanceof Error ? e.message : 'Error desconocido' };
   }
-}) satisfies PageServerLoad;
+};
 
-export const actions = {
-  save: async ({ request, locals }) => {
+export const actions: Actions = {
+  save: async ({ request, locals, fetch }) => {
     if (!locals.user?.authenticated) {
       return fail(401, { error: 'No autenticado' });
     }
 
     const formData = await request.formData();
+
     const updates = JSON.parse(formData.get('updates')?.toString() || '[]');
 
     if (!updates.length) {

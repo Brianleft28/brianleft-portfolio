@@ -5,6 +5,7 @@ import { cat } from './cat';
 import { cd } from './cd';
 import { cls } from './cls';
 import { cv } from './cv';
+import email from './email';
 import { help } from './help';
 import { ls } from './ls';
 import { pwd } from './pwd';
@@ -12,8 +13,9 @@ import { register } from './register';
 import { tree } from './tree';
 import { torvalds } from './torvalds';
 import { theme } from './theme';
+import { verify } from './verify';
 
-const allCommands: Command[] = [admin, apikey, cat, cd, cls, cv, help, ls, pwd, register, tree, torvalds, theme];
+const allCommands: Command[] = [admin, apikey, cat, cd, cls, cv, email, help, ls, pwd, register, tree, torvalds, theme, verify];
 const commandRegistry: Map<string, Command> = new Map();
 
 // Registrar todos los comandos
@@ -40,6 +42,10 @@ commandRegistry.set('assistant', torvalds);
 // Aliases para register
 commandRegistry.set('signup', register);
 commandRegistry.set('createuser', register);
+
+// Aliases para verify
+commandRegistry.set('confirmar', verify);
+commandRegistry.set('verificar', verify);
 
 // ll es ls -l (alias especial)
 const llCommand: Command = {
@@ -72,6 +78,11 @@ export function registerAiCommandAlias(alias: string): void {
 
 export function getCommand(name: string): Command | undefined {
 	return commandRegistry.get(name.toLowerCase());
+}
+
+export function isCommandProtected(name: string): boolean {
+	const cmd = commandRegistry.get(name.toLowerCase());
+	return cmd?.requiresAuth === true;
 }
 
 export function getAllCommands(): Command[] {

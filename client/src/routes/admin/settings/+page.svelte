@@ -39,6 +39,49 @@
   // Estado para copiar subdominio
   let copiedSubdomain = $state(false);
   
+  // Estado para editar email
+  let userEmail = $state('');
+  let emailChanged = $derived(user ? userEmail !== (user.email || '') : false);
+  let savingEmail = $state(false);
+  let emailSaved = $state(false);
+  let emailError = $state('');
+
+  // Inicializar email cuando carga el user
+  $effect(() => {
+    if (user && userEmail === '') {
+      userEmail = user.email || '';
+    }
+  });
+
+  async function saveUserEmail() {
+    if (!user || !emailChanged) return;
+    
+    savingEmail = true;
+    emailError = '';
+    emailSaved = false;
+    
+    try {
+      const response = await fetch('/api/users/me', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ email: userEmail })
+      });
+      
+      if (response.ok) {
+        emailSaved = true;
+        setTimeout(() => emailSaved = false, 3000);
+      } else {
+        const data = await response.json();
+        emailError = data.message || 'Error al guardar el email';
+      }
+    } catch (e) {
+      emailError = 'Error de conexión';
+    } finally {
+      savingEmail = false;
+    }
+  }
+  
   function copySubdomain() {
     if (user?.subdomain) {
       const fullUrl = `https://${user.subdomain}.brianleft.com`;
@@ -292,15 +335,33 @@
         
         <div class="account-field">
           <label for="user_email">Email</label>
-          <input 
-            id="user_email"
-            type="email" 
-            class="setting-input"
-            value={user.email || ''}
-            placeholder="tu@email.com"
-            disabled
-          />
-          <span class="field-hint">Contacta soporte para cambiar el email</span>
+          <div class="email-field-wrapper">
+            <input 
+              id="user_email"
+              type="email" 
+              class="setting-input"
+              value={userEmail}
+              placeholder="tu@email.com"
+              onchange={(e) => userEmail = (e.target as HTMLInputElement).value}
+            />
+            {#if emailChanged}
+              <button 
+                type="button" 
+                class="btn-save-email" 
+                onclick={saveUserEmail}
+                disabled={savingEmail}
+              >
+                {savingEmail ? '⏳' : '💾'} Guardar
+              </button>
+            {/if}
+          </div>
+          {#if emailSaved}
+            <span class="field-hint success">✅ Email actualizado</span>
+          {:else if emailError}
+            <span class="field-hint error">{emailError}</span>
+          {:else}
+            <span class="field-hint">Tu email para recibir mensajes de contacto</span>
+          {/if}
         </div>
         
         <div class="account-field">
@@ -774,6 +835,49 @@
     font-size: 0.75rem;
     color: var(--theme-text-muted);
     font-style: italic;
+  }
+
+  .field-hint.success {
+    color: var(--theme-success, #4ade80);
+    font-style: normal;
+  }
+
+  .field-hint.error {
+    color: var(--theme-error, #f87171);
+    font-style: normal;
+  }
+
+  .email-field-wrapper {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+  }
+
+  .email-field-wrapper .setting-input {
+    flex: 1;
+  }
+
+  .btn-save-email {
+    padding: 0.5rem 0.75rem;
+    background: var(--theme-accent);
+    border: 1px solid var(--theme-accent);
+    border-radius: 4px;
+    cursor: pointer;
+    color: var(--theme-bg-primary);
+    font-weight: 600;
+    font-size: 0.85rem;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+
+  .btn-save-email:hover:not(:disabled) {
+    background: var(--theme-accent-glow);
+    border-color: var(--theme-accent-glow);
+  }
+
+  .btn-save-email:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
   }
 
   .role-badge {

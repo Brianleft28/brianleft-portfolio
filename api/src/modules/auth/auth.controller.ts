@@ -85,4 +85,40 @@ export class AuthController {
     await this.authService.logout(req.user.sub);
     return { message: 'Sesión cerrada correctamente' };
   }
+
+  @Post('verify-email')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Verificar email con código' })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      required: ['email', 'code'],
+      properties: {
+        email: { type: 'string', example: 'john@example.com' },
+        code: { type: 'string', example: '123456', description: 'Código de 6 dígitos' },
+      },
+    },
+  })
+  @ApiResponse({ status: 200, description: 'Email verificado' })
+  @ApiResponse({ status: 400, description: 'Código inválido o expirado' })
+  async verifyEmail(@Body() body: { email: string; code: string }) {
+    return this.authService.verifyEmail(body.email, body.code);
+  }
+
+  @Post('resend-verification')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Reenviar código de verificación' })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      required: ['email'],
+      properties: {
+        email: { type: 'string', example: 'john@example.com' },
+      },
+    },
+  })
+  @ApiResponse({ status: 200, description: 'Código reenviado' })
+  async resendVerification(@Body() body: { email: string }) {
+    return this.authService.resendVerificationCode(body.email);
+  }
 }

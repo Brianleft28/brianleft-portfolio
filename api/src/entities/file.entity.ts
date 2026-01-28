@@ -13,6 +13,7 @@ import { User } from './user.entity';
 export enum FileType {
   MARKDOWN = 'markdown',
   COMPONENT = 'component',
+  EXE = 'exe',
 }
 
 @Entity('files')

@@ -440,6 +440,17 @@ export class FilesystemService {
     });
     await this.foldersRepository.save(apps);
 
+    // Crear archivo contacto.exe en apps
+    const contactoExe = this.filesRepository.create({
+      name: 'contacto.exe',
+      type: FileType.EXE,
+      content: '# Formulario de Contacto\n\nEste es un ejecutable especial que abre el formulario de contacto.',
+      folderId: apps.id,
+      userId,
+      isActive: true,
+    });
+    await this.filesRepository.save(contactoExe);
+
     this.logger.log(`Filesystem inicializado para usuario ${userId}`);
   }
 }

@@ -4,6 +4,7 @@
     import hljs from 'highlight.js';
     import 'highlight.js/styles/github-dark.css';
     import { onMount } from 'svelte';
+    import ContactForm from './ContactForm.svelte';
 
     import type { FileNode } from '$lib/data/file-system';
 
@@ -13,6 +14,12 @@
 
     let { file }: Props = $props();
     let renderedHtml = $state<string>('');
+
+    // Detectar archivos especiales (apps)
+    const isContactApp = $derived(
+        file.name.toLowerCase() === 'contacto.exe' || 
+        file.name.toLowerCase() === 'contact.exe'
+    );
 
     // Crear instancia de Marked con highlight integrado
     const marked = new Marked(
@@ -34,17 +41,25 @@
     }
 
     onMount(() => {
-        updateContent(file.content || '*Archivo sin contenido*');
+        if (!isContactApp) {
+            updateContent(file.content || '*Archivo sin contenido*');
+        }
     });
 
     $effect(() => {
-        updateContent(file.content || '*Archivo sin contenido*');
+        if (!isContactApp) {
+            updateContent(file.content || '*Archivo sin contenido*');
+        }
     });
 </script>
 
-<article class="file-viewer-content">
-	{@html renderedHtml}
-</article>
+{#if isContactApp}
+    <ContactForm />
+{:else}
+    <article class="file-viewer-content">
+        {@html renderedHtml}
+    </article>
+{/if}
 
 <style>
 	.file-viewer-content {

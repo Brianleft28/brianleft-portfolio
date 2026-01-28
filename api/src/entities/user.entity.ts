@@ -46,6 +46,15 @@ export class User {
   @Column({ type: 'varchar', name: 'refresh_token', nullable: true, length: 500 })
   refreshToken: string | null;
 
+  @Column({ type: 'boolean', name: 'email_verified', default: false })
+  emailVerified: boolean;
+
+  @Column({ type: 'varchar', name: 'verification_code', nullable: true, length: 6 })
+  verificationCode: string | null;
+
+  @Column({ type: 'timestamp', name: 'verification_expires', nullable: true })
+  verificationExpires: Date | null;
+
   @OneToMany(() => Folder, (folder) => folder.user)
   folders: Folder[];
 

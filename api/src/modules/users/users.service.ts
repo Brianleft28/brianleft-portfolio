@@ -159,4 +159,113 @@ export class UsersService {
       return userWithoutSensitive as User;
     });
   }
+
+  /**
+   * Genera un código de verificación de 6 dígitos
+   */
+  generateVerificationCode(): string {
+    return Math.floor(100000 + Math.random() * 900000).toString();
+  }
+
+  /**
+   * Guarda el código de verificación para un usuario
+   */
+  async setVerificationCode(userId: number): Promise<string> {
+    const code = this.generateVerificationCode();
+    const expires = new Date(Date.now() + 15 * 60 * 1000); // 15 minutos
+
+    await this.usersRepository.update(userId, {
+      verificationCode: code,
+      verificationExpires: expires,
+    });
+
+    return code;
+  }
+
+  /**
+   * Verifica el código de un usuario
+   */
+  async verifyEmail(userId: number, code: string): Promise<boolean> {
+    const user = await this.usersRepository.findOne({ where: { id: userId } });
+    
+    if (!user || !user.verificationCode || !user.verificationExpires) {
+      return false;
+    }
+
+    // Verificar expiración
+    if (new Date() > user.verificationExpires) {
+      return false;
+    }
+
+    // Verificar código
+    if (user.verificationCode !== code) {
+      return false;
+    }
+
+    // Marcar como verificado
+    await this.usersRepository.update(userId, {
+      emailVerified: true,
+      verificationCode: null,
+      verificationExpires: null,
+    });
+
+    return true;
+  }
+
+  /**
+   * Busca usuario por código de verificación pendiente
+   */
+  async findByVerificationCode(email: string, code: string): Promise<User | null> {
+    return this.usersRepository.findOne({
+      where: {
+        email,
+        verificationCode: code,
+      },
+    });
+  }
+
+  /**
+   * Actualiza el email de un usuario
+   */
+  async updateEmail(userId: number, newEmail: string): Promise<User | null> {
+    if (!newEmail || !newEmail.includes('@')) {
+      throw new BadRequestException('Email inválido');
+    }
+
+    // Verificar si el email ya está en uso por otro usuario
+    const existingUser = await this.findByEmail(newEmail);
+    if (existingUser && existingUser.id !== userId) {
+      throw new ConflictException('Este email ya está registrado por otro usuario');
+    }
+
+    await this.usersRepository.update(userId, {
+      email: newEmail,
+      emailVerified: false, // Requiere re-verificación
+    });
+
+    const updatedUser = await this.findById(userId);
+    this.logger.log(`Email actualizado para usuario ${userId}`);
+    return updatedUser;
+  }
+
+  /**
+   * Actualiza datos del perfil del usuario
+   */
+  async updateProfile(userId: number, data: { displayName?: string; email?: string }): Promise<User | null> {
+    const updateData: Partial<User> = {};
+
+    if (data.displayName !== undefined) {
+      updateData.displayName = data.displayName;
+    }
+
+    if (data.email !== undefined) {
+      return this.updateEmail(userId, data.email);
+    }
+
+    if (Object.keys(updateData).length > 0) {
+      await this.usersRepository.update(userId, updateData);
+    }
+
+    return this.findById(userId);
+  }
 }

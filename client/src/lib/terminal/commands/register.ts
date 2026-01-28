@@ -155,14 +155,26 @@ async function createUser(params: RegisterParams) {
 			return;
 		}
 
-		// Mostrar resultado exitoso
+		// Guardar email para verificación
+		if (typeof window !== 'undefined') {
+			sessionStorage.setItem('pending_verification_email', params.email);
+		}
+
+		// Mostrar resultado exitoso con instrucciones de verificación
+		const verificationMessage = data.requiresVerification 
+			? `
+<span class="ai-warning">📧 VERIFICACIÓN REQUERIDA</span>
+<span class="system-hint">Se envió un código de 6 dígitos a <strong>${params.email}</strong></span>
+`
+			: '';
+
 		showResult(`<span class="ai-success">✅ Usuario creado exitosamente!</span>
 
 <span class="category-header">Credenciales:</span>
   <span class="ai-info">Username:</span> <strong>${data.user.username}</strong>
   <span class="ai-info">Email:</span> ${data.user.email}
   <span class="ai-info">Password:</span> <code class="password-reveal">${data.password}</code>
-
+${verificationMessage}
 <span class="category-header">Acceso:</span>
   <span class="ai-info">Subdomain:</span> <a href="https://${data.subdomain}" target="_blank">${data.subdomain}</a>
   <span class="ai-info">Admin:</span> <a href="/admin/login" target="_blank">/admin/login</a>
@@ -171,6 +183,15 @@ async function createUser(params: RegisterParams) {
 <span class="ai-warning">   No se puede recuperar después.</span>
 
 <span class="system-hint">💡 Tip: Usa <code>admin login</code> para acceder al panel</span>`);
+
+		// Activar modo verificación inline si se requiere
+		if (data.requiresVerification) {
+			window.dispatchEvent(
+				new CustomEvent('terminal:verification-mode', {
+					detail: { email: params.email }
+				})
+			);
+		}
 
 	} catch (error) {
 		showResult(`<span class="error-text">❌ Error de conexión</span>

@@ -8,7 +8,7 @@ import {
 } from '$lib/server/auth';
 
 // Si ya está autenticado, redirigir a /admin/projects
-export const load: PageServerLoad = async ({ locals }) => {
+export const load: PageServerLoad = async ({ locals, fetch }) => {
 	if (locals.user?.authenticated) {
 		throw redirect(302, '/admin/projects');
 	}
@@ -24,6 +24,7 @@ export const actions: Actions = {
 		if (!username || !password) {
 			return fail(400, { error: 'Usuario y contraseña son requeridos' });
 		}
+		
 
 		if (!validateCredentials(username, password)) {
 			return fail(401, { error: 'Credenciales inválidas' });

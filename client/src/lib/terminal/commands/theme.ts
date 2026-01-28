@@ -23,18 +23,40 @@ function getCurrentTheme(): string {
 	return localStorage.getItem(THEME_STORAGE_KEY) || 'matrix';
 }
 
-function setTheme(themeName: string): boolean {
-	const validTheme = AVAILABLE_THEMES.find((t) => t.name === themeName);
-	if (!validTheme) return false;
-
+function applyTheme(themeName: string): void {
 	if (typeof window !== 'undefined') {
-		// Guardar en localStorage
 		localStorage.setItem(THEME_STORAGE_KEY, themeName);
-
-		// Aplicar al document
 		document.documentElement.setAttribute('data-theme', themeName);
 	}
-	return true;
+}
+
+async function saveThemeToServer(themeName: string): Promise<boolean> {
+	try {
+		const response = await fetch('/api/settings/theme', {
+			method: 'PUT',
+			credentials: 'include',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({ value: themeName })
+		});
+		return response.ok;
+	} catch {
+		return false;
+	}
+}
+
+function setTheme(themeName: string, isAuthenticated: boolean = false): { success: boolean; savedToServer: boolean } {
+	const validTheme = AVAILABLE_THEMES.find((t) => t.name === themeName);
+	if (!validTheme) return { success: false, savedToServer: false };
+
+	applyTheme(themeName);
+	
+	// Si está autenticado, también guardar en servidor
+	if (isAuthenticated) {
+		saveThemeToServer(themeName); // Fire and forget
+		return { success: true, savedToServer: true };
+	}
+	
+	return { success: true, savedToServer: false };
 }
 
 function formatThemeList(currentTheme: string): string {
@@ -80,8 +102,11 @@ function formatCurrentTheme(themeName: string): string {
 	].join('\n');
 }
 
-function formatThemeChanged(themeName: string): string {
+function formatThemeChanged(themeName: string, savedToServer: boolean): string {
 	const theme = AVAILABLE_THEMES.find((t) => t.name === themeName)!;
+	const serverNote = savedToServer 
+		? '<span class="success">✓ Guardado como tema por defecto del portfolio</span>'
+		: '<span class="text-muted">💡 Inicia sesión para guardar como tema por defecto</span>';
 
 	return [
 		'',
@@ -89,7 +114,7 @@ function formatThemeChanged(themeName: string): string {
 		'',
 		`  ${theme.preview} <span class="highlight">${theme.name}</span> - ${theme.description}`,
 		'',
-		'<span class="text-muted">El tema se ha guardado y persistirá entre sesiones.</span>',
+		serverNote,
 		''
 	].join('\n');
 }
@@ -116,9 +141,9 @@ export const theme: Command = {
 	name: 'theme',
 	description: 'Cambia el tema visual de la terminal y el sitio',
 	usage: 'theme [list|set <nombre>|-h]',
-	// eslint-disable-next-line @typescript-eslint/no-unused-vars
-	execute: (args: string[], _context: CommandContext): CommandResult => {
+	execute: (args: string[], context: CommandContext): CommandResult => {
 		const currentTheme = getCurrentTheme();
+		const isAuth = context.isAuthenticated || false;
 
 		// Sin argumentos: mostrar tema actual
 		if (args.length === 0) {
@@ -161,9 +186,9 @@ export const theme: Command = {
 				};
 			}
 
-			const success = setTheme(themeName);
+			const result = setTheme(themeName, isAuth);
 
-			if (!success) {
+			if (!result.success) {
 				return {
 					output: [
 						'',
@@ -177,16 +202,16 @@ export const theme: Command = {
 			}
 
 			return {
-				output: formatThemeChanged(themeName)
+				output: formatThemeChanged(themeName, result.savedToServer)
 			};
 		}
 
 		// Si pasan directamente un nombre de tema (atajo)
 		const directTheme = AVAILABLE_THEMES.find((t) => t.name === subcommand);
 		if (directTheme) {
-			setTheme(subcommand);
+			const result = setTheme(subcommand, isAuth);
 			return {
-				output: formatThemeChanged(subcommand)
+				output: formatThemeChanged(subcommand, result.savedToServer)
 			};
 		}
 
@@ -204,14 +229,33 @@ export const theme: Command = {
 };
 
 // Función para inicializar el tema al cargar la página
-export function initializeTheme(): void {
+export async function initializeTheme(): Promise<void> {
 	if (typeof window === 'undefined') return;
 
+	// Primero intentar cargar el tema del servidor (tema del dueño)
+	try {
+		const response = await fetch('/api/settings/theme');
+		if (response.ok) {
+			const data = await response.json();
+			const serverTheme = data.value;
+			if (serverTheme && AVAILABLE_THEMES.find((t) => t.name === serverTheme)) {
+				// Solo aplicar si el usuario no tiene un tema guardado localmente
+				const localTheme = localStorage.getItem(THEME_STORAGE_KEY);
+				if (!localTheme) {
+					document.documentElement.setAttribute('data-theme', serverTheme);
+					return;
+				}
+			}
+		}
+	} catch {
+		// Si falla, seguir con localStorage
+	}
+
+	// Fallback a localStorage o default
 	const savedTheme = localStorage.getItem(THEME_STORAGE_KEY);
 	if (savedTheme && AVAILABLE_THEMES.find((t) => t.name === savedTheme)) {
 		document.documentElement.setAttribute('data-theme', savedTheme);
 	} else {
-		// Default a matrix
 		document.documentElement.setAttribute('data-theme', 'matrix');
 	}
 }

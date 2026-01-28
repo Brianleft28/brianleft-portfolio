@@ -10,6 +10,8 @@ export interface CommandContext {
 	aiCommandName?: string;
 	aiDisplayName?: string;
 	ownerName?: string;
+	// Autenticación
+	isAuthenticated?: boolean;
 }
 
 export interface CommandResult {
@@ -24,7 +26,8 @@ export interface Command {
     name: string;
     description: string;
     usage?: string;
-    execute: (args: string[], ctx: CommandContext) => CommandResult;
+    requiresAuth?: boolean; // Si true, solo disponible para usuarios logueados
+    execute: (args: string[], ctx: CommandContext) => CommandResult | Promise<CommandResult>;
 }
 
 export interface HistoryEntry {

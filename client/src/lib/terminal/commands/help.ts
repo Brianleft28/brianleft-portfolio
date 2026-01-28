@@ -60,6 +60,7 @@ export const help: Command = {
 			'',
 			`<span class="category-header">🔐 Cuenta & Admin</span>`,
 			`   <span class="command-highlight">register</span>  Crear cuenta (obtén tu subdominio)`,
+			`   <span class="command-highlight">email</span>     Ver o cambiar tu email (login)`,
 			`   <span class="command-highlight">admin</span>     Abrir panel de administración`,
 			'',
 			`<span class="category-header">🎨 Personalización</span>`,

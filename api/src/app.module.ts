@@ -14,6 +14,7 @@ import { HealthModule } from './modules/health/health.module';
 import { UploadsModule } from './modules/uploads/uploads.module';
 import { SettingsModule } from './modules/settings/settings.module';
 import { AiPersonalitiesModule } from './modules/ai-personalities/ai-personalities.module';
+import { ContactModule } from './modules/contact/contact.module';
 
 // Entities
 import { User } from './entities/user.entity';
@@ -80,6 +81,7 @@ import { AiPersonality } from './entities/ai-personality.entity';
     UploadsModule,
     SettingsModule,
     AiPersonalitiesModule,
+    ContactModule,
   ],
 })
 export class AppModule {}

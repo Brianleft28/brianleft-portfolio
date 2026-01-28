@@ -6,7 +6,7 @@
 	import { fileSystemData, type FileSystemNode, type FolderNode } from '$lib/data/file-system';
 	
 	// Sistema modular de comandos
-	import { getCommand, getAllCommands, registerAiCommandAlias } from '$lib/terminal/commands';
+	import { getCommand, getAllCommands, registerAiCommandAlias, isCommandProtected } from '$lib/terminal/commands';
 	import type { CommandContext } from '$lib/terminal/types';
 
 	// Importaciones para Markdown y Highlight
@@ -39,6 +39,43 @@
 		return marked.parse(text) as string;
 	}
 
+	/**
+	 * Parsear línea de comando respetando comillas
+	 * Ej: register user email --name "Juan Pérez" --role "Dev"
+	 * Retorna: ['register', 'user', 'email', '--name', 'Juan Pérez', '--role', 'Dev']
+	 */
+	function parseCommandLine(input: string): string[] {
+		const result: string[] = [];
+		let current = '';
+		let inQuotes = false;
+		let quoteChar = '';
+
+		for (let i = 0; i < input.length; i++) {
+			const char = input[i];
+
+			if ((char === '"' || char === "'") && !inQuotes) {
+				inQuotes = true;
+				quoteChar = char;
+			} else if (char === quoteChar && inQuotes) {
+				inQuotes = false;
+				quoteChar = '';
+			} else if (char === ' ' && !inQuotes) {
+				if (current) {
+					result.push(current);
+					current = '';
+				}
+			} else {
+				current += char;
+			}
+		}
+
+		if (current) {
+			result.push(current);
+		}
+
+		return result;
+	}
+
 	type HistoryItem = {
 		type: 'prompt' | 'response' | 'error' | 'system';
 		text: string;
@@ -54,6 +91,13 @@
 	let terminalElement: HTMLDivElement;
 	let isChatModeActive = $state(false);
 	let isInitialized = $state(false);
+	
+	// Modo verificación inline
+	let isVerificationMode = $state(false);
+	let verificationEmail = $state('');
+	
+	// Estado de autenticación
+	let isAuthenticated = $state(false);
 
 	// Configuración dinámica
 	// Prioridad: AI Personality > Settings > Default
@@ -117,11 +161,16 @@
 		loadConfig();
 		loadGeminiApiKey();
 		
+		// Verificar si hay sesión activa
+		checkAuthStatus();
+		
 		// Limpiar terminal al abrir
 		history = [];
 		promptHistory = [];
 		historyIndex = -1;
 		isChatModeActive = false;
+		isVerificationMode = false;
+		verificationEmail = '';
 		currentPath.set('C:\\');
 
 		// Registrar alias dinámico para el comando AI
@@ -142,9 +191,47 @@
 			startInChatMode.set(false); // Reset
 		}
 
+		// Listeners para eventos de comandos async
+		const handleTerminalOutput = (e: CustomEvent) => {
+			addSystemMessage(e.detail.output);
+		};
+		
+		const handleVerificationMode = (e: CustomEvent) => {
+			isVerificationMode = true;
+			verificationEmail = e.detail.email;
+			addSystemMessage(`<span class="ai-info">📧 Ingresa el código de 6 dígitos enviado a <strong>${e.detail.email}</strong></span>
+<span class="system-hint">Escribe el código o "cancelar" para salir</span>`);
+		};
+		
+		// Listener para cambios de auth (login/logout)
+		const handleAuthChange = () => {
+			checkAuthStatus();
+		};
+
+		window.addEventListener('terminal:output', handleTerminalOutput as EventListener);
+		window.addEventListener('terminal:verification-mode', handleVerificationMode as EventListener);
+		window.addEventListener('auth:change', handleAuthChange);
+
 		isInitialized = true;
 		inputElement?.focus();
+		
+		// Cleanup
+		return () => {
+			window.removeEventListener('terminal:output', handleTerminalOutput as EventListener);
+			window.removeEventListener('terminal:verification-mode', handleVerificationMode as EventListener);
+			window.removeEventListener('auth:change', handleAuthChange);
+		};
 	});
+	
+	// Verificar estado de autenticación
+	async function checkAuthStatus() {
+		try {
+			const response = await fetch('/api/users/me', { credentials: 'include' });
+			isAuthenticated = response.ok;
+		} catch {
+			isAuthenticated = false;
+		}
+	}
 
 	function showWelcome() {
 		const name = ownerName;
@@ -180,6 +267,7 @@
 
 <span class="category-header">  🔐 Cuenta & Admin</span>
        <span class="command-highlight">register</span>    Crear cuenta (obtén tu subdominio)
+       <span class="command-highlight">email</span>       Ver o cambiar tu email
        <span class="command-highlight">admin</span>       Panel de administración
 
 <span class="category-header">  🎨 Personalización</span>
@@ -226,11 +314,13 @@
 			setPath: (newPath: string) => currentPath.set(newPath),
 			getNodeAtPath,
 			aiMode: $iaMode,
-			setAiMode: (mode: string | null) => iaMode.set(mode || 'arquitecto'),
+			setAiMode: (mode: string | null) => iaMode.set(mode),
 			// Configuración dinámica
 			aiCommandName: aiCommandName,
 			aiDisplayName: aiDisplayName,
-			ownerName: ownerName
+			ownerName: ownerName,
+			// Autenticación
+			isAuthenticated: isAuthenticated
 		};
 	}
 
@@ -279,8 +369,10 @@
 		promptHistory = [];
 		historyIndex = -1;
 		isChatModeActive = false;
+		isVerificationMode = false;
+		verificationEmail = '';
 		currentPath.set('C:\\');
-		iaMode.set('arquitecto');
+		iaMode.set(null);
 
 		// Limpiar localStorage
 		if (typeof window !== 'undefined') {
@@ -298,6 +390,59 @@
 		addHistoryItem({ type: 'prompt', text: promptText, promptIndicator });
 		currentPrompt = '';
 
+		// Modo verificación inline
+		if (isVerificationMode) {
+			if (promptText.toLowerCase().trim() === 'cancelar' || promptText.toLowerCase().trim() === 'cancel') {
+				isVerificationMode = false;
+				verificationEmail = '';
+				addSystemMessage('<span class="ai-warning">Verificación cancelada</span>');
+				await tick();
+				scrollToBottom();
+				return;
+			}
+			
+			// Intentar verificar código
+			const code = promptText.trim();
+			if (/^\d{6}$/.test(code)) {
+				isLoading = true;
+				await tick();
+				scrollToBottom();
+				
+				try {
+					const response = await fetch('/api/auth/verify-email', {
+						method: 'POST',
+						headers: { 'Content-Type': 'application/json' },
+						body: JSON.stringify({ email: verificationEmail, code })
+					});
+					
+					const data = await response.json();
+					
+					if (response.ok) {
+						isVerificationMode = false;
+						verificationEmail = '';
+						sessionStorage.removeItem('pending_verification_email');
+						addSystemMessage(`<span class="ai-success">✅ Email verificado exitosamente!</span>
+<span class="system-hint">Tu cuenta está activa. Usa <code>admin login</code> para acceder.</span>`);
+					} else {
+						addSystemMessage(`<span class="error-text">❌ ${data.message || 'Código inválido'}</span>
+<span class="system-hint">Intenta de nuevo o escribe "cancelar"</span>`);
+					}
+				} catch (error) {
+					addSystemMessage('<span class="error-text">❌ Error de conexión</span>');
+				}
+				
+				isLoading = false;
+				await tick();
+				scrollToBottom();
+				return;
+			} else {
+				addSystemMessage('<span class="error-text">El código debe ser de 6 dígitos</span>');
+				await tick();
+				scrollToBottom();
+				return;
+			}
+		}
+
 		if (isChatModeActive && promptText.toLowerCase().trim() === 'exit') {
 			isChatModeActive = false;
 			addSystemMessage('Chau loco! 👋');
@@ -306,8 +451,8 @@
 			return;
 		}
 
-		const parts = promptText.trim().split(' ');
-		const command = parts[0].toLowerCase();
+		const parts = parseCommandLine(promptText.trim());
+		const command = parts[0]?.toLowerCase() || '';
 		const args = parts.slice(1);
 
 		// Manejar comandos de modo de IA
@@ -353,12 +498,24 @@
 		// Luego verificar comandos modulares
 		const modularCommand = getCommand(command);
 		if (modularCommand) {
+			// Verificar si el comando requiere autenticación
+			if (isCommandProtected(command) && !isAuthenticated) {
+				addSystemMessage(`<span class="error">🔒 El comando <code>${command}</code> requiere iniciar sesión</span>
+
+Usa <code>admin login</code> para acceder.`);
+				isLoading = false;
+				await tick();
+				inputElement?.focus();
+				scrollToBottom();
+				return;
+			}
+			
 			const ctx = createCommandContext();
-			const result = modularCommand.execute(args, ctx);
+			const result = await modularCommand.execute(args, ctx);
 
 			// Sincronizar estado del modo AI con el componente
 			if (ctx.aiMode !== $iaMode) {
-				iaMode.set(ctx.aiMode || 'arquitecto');
+				iaMode.set(ctx.aiMode);
 			}
 
 			// Activar/desactivar modo chat basado en comando AI
@@ -547,9 +704,13 @@
 		});
 	}
 
-	let promptIndicator = $derived(isChatModeActive
-		? `🤖 ${aiDisplayName} [${$iaMode || 'arquitecto'}]> `
-		: $currentPath + '> ');
+	let promptIndicator = $derived(
+		isVerificationMode
+			? '🔐 Código> '
+			: isChatModeActive
+				? `🤖 ${aiDisplayName} [${$iaMode || 'asistente'}]> `
+				: $currentPath + '> '
+	);
 </script>
 
 <div
