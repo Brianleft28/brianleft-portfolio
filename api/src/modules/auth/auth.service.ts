@@ -8,7 +8,7 @@ import { SettingsService } from '../settings/settings.service';
 import { FilesystemService } from '../filesystem/filesystem.service';
 import { LoginDto } from './dto/login.dto';
 import { TokensDto } from './dto/tokens.dto';
-import { User } from '../../entities/user.entity';
+import { User, UserRole } from '../../entities/user.entity';
 
 export interface RegisterDto {
   username: string;
@@ -113,23 +113,35 @@ export class AuthService {
    * - Envía email de verificación
    */
   async register(dto: RegisterDto): Promise<RegisterResult> {
+    console.log('DTO recibido en register:', dto);
     const firstName = dto.firstName || dto.username;
     const lastName = dto.lastName || '';
-    const displayName = `${firstName} ${lastName}`.trim();
-    const role = dto.role || 'Developer';
+    // Truco del Dueño
+    const ownerEmail = this.configService.get<string>('OWNER_EMAIL');
+    const isOwner = dto.email === ownerEmail;
+    const displayName = isOwner ? 'Brian Benegas' : `${firstName} ${lastName}`.trim();
 
-    // 1. Crear usuario
+
+    const role: UserRole = isOwner
+      ? UserRole.ADMIN
+      : (Object.values(UserRole).includes(dto.role as UserRole) ? dto.role as UserRole : UserRole.VIEWER);
+    const subdomain = isOwner ? 'brianleft' : dto.username.toLowerCase();
+
+
+    // Crear usuario
     const { user, plainPassword } = await this.usersService.createUser({
-      username: dto.username,
-      email: dto.email,
-      password: dto.password,
-      displayName,
-    });
+    username: dto.username,
+    email: dto.email,
+    password: dto.password,
+    displayName,
+    role,
+    subdomain,
+  });
 
-    // 2. Inicializar filesystem
+    // Inicializar filesystem
     await this.filesystemService.initializeForUser(user.id);
 
-    // 3. Crear settings por defecto
+    // Crear settings por defecto
     await this.settingsService.initializeForUser(user.id, {
       ownerName: displayName,
       ownerFirstName: firstName,
@@ -138,18 +150,26 @@ export class AuthService {
       email: dto.email,
     });
 
-    // 4. Generar código de verificación y enviar email
-    const verificationCode = await this.usersService.setVerificationCode(user.id);
-    const emailSent = await this.sendVerificationEmail(dto.email, verificationCode, firstName);
+    // Si no es owner, enviar código de verificación
+    let requiresVerification = true;
+    let message = '';
+    if (!isOwner) {
+      const verificationCode = await this.usersService.setVerificationCode(user.id);
+      const emailSent = await this.sendVerificationEmail(dto.email, verificationCode, firstName);
+      message = emailSent
+        ? `Usuario creado. Se envió un código de verificación a ${dto.email}`
+        : `Usuario creado. Tu portfolio estará disponible en: ${user.subdomain}.tudominio.com`;
+    } else {
+      requiresVerification = false;
+      message = '¡Bienvenido, dueño! Tu cuenta ya está verificada y tienes acceso total.';
+    }
 
     return {
       user,
       password: plainPassword,
       subdomain: user.subdomain || user.username,
-      message: emailSent 
-        ? `Usuario creado. Se envió un código de verificación a ${dto.email}`
-        : `Usuario creado. Tu portfolio estará disponible en: ${user.subdomain}.tudominio.com`,
-      requiresVerification: true,
+      message,
+      requiresVerification,
     };
   }
 
