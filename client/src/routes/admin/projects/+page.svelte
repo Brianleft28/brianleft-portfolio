@@ -401,14 +401,12 @@
 
 <!-- Modal de confirmación -->
 {#if confirmDelete}
-	<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
 	<div 
 		class="confirm-overlay" 
 		role="presentation"
 		onclick={() => confirmDelete = null}
 		onkeydown={(e) => e.key === 'Escape' && (confirmDelete = null)}
 	>
-		<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
 		<div 
 			class="confirm-modal" 
 			role="dialog" 

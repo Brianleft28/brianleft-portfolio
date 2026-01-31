@@ -2,61 +2,62 @@ import { DataSource } from 'typeorm';
 import { Setting } from '../entities/setting.entity';
 
 /**
- * Seeder de configuraciones del portfolio
- * Parametriza: owner, contacto, branding, etc.
+ * Seeder de configuraciones del portfolio (versión white-label)
+ * Inicializa las claves con valores genéricos o vacíos.
+ * La personalización se realiza desde el panel de administración.
  */
 export async function seedSettings(dataSource: DataSource): Promise<void> {
   const settingRepo = dataSource.getRepository(Setting);
 
   const settings: Partial<Setting>[] = [
     // ═══════════════════════════════════════════════════════════════
-    // Owner Info
+    // Owner Info (genérico)
     // ═══════════════════════════════════════════════════════════════
     {
       key: 'owner_name',
-      value: 'Brian Benegas',
+      value: 'Nombre Apellido',
       type: 'string',
       category: 'owner',
       description: 'Nombre completo del dueño del portfolio',
     },
     {
       key: 'owner_first_name',
-      value: 'Brian',
+      value: 'Nombre',
       type: 'string',
       category: 'owner',
       description: 'Nombre del dueño',
     },
     {
       key: 'owner_last_name',
-      value: 'Benegas',
+      value: 'Apellido',
       type: 'string',
       category: 'owner',
       description: 'Apellido del dueño',
     },
     {
       key: 'owner_role',
-      value: 'Full Stack Developer & DevOps | Integrador de Sistemas',
+      value: 'Tu Rol Profesional',
       type: 'string',
       category: 'owner',
       description: 'Rol profesional principal',
     },
     {
       key: 'owner_role_short',
-      value: 'Full Stack Developer',
+      value: 'Developer',
       type: 'string',
       category: 'owner',
       description: 'Rol profesional corto (para placeholders)',
     },
     {
       key: 'owner_location',
-      value: 'Argentina',
+      value: 'Tu Ciudad, Tu País',
       type: 'string',
       category: 'owner',
       description: 'Ubicación geográfica',
     },
     {
       key: 'owner_philosophy',
-      value: 'El código es el medio, la arquitectura es el fin.',
+      value: 'Tu filosofía profesional.',
       type: 'string',
       category: 'owner',
       description: 'Filosofía profesional',
@@ -64,8 +65,8 @@ export async function seedSettings(dataSource: DataSource): Promise<void> {
     {
       key: 'owner_bio',
       value: JSON.stringify({
-        short: 'Full Stack Developer especializado en integraciones complejas',
-        long: 'Brian se especializa en unir mundos desconectados: Web a Hardware, Nube a On-Premise, Frontend a sistemas legacy. Su metodología combina procesos estocásticos para medir rendimiento, documentación obsesiva para mitigar el caos, arquitectura primero y automatización para despliegues.',
+        short: 'Describe tu perfil profesional en una línea.',
+        long: 'Detalla aquí tu experiencia, metodología y lo que te hace único. Este es el espacio para tu biografía profesional completa.',
       }),
       type: 'json',
       category: 'owner',
@@ -73,114 +74,71 @@ export async function seedSettings(dataSource: DataSource): Promise<void> {
     },
 
     // ═══════════════════════════════════════════════════════════════
-    // Contact Info
+    // Contact Info (vacío)
     // ═══════════════════════════════════════════════════════════════
     {
       key: 'contact_email_primary',
-      value: 'contacto@brianleft.com',
+      value: 'tu@email.com',
       type: 'string',
       category: 'contact',
       description: 'Email principal de contacto',
     },
     {
       key: 'owner_email',
-      value: 'contacto@brianleft.com',
+      value: 'tu@email.com',
       type: 'string',
       category: 'contact',
       description: 'Email para placeholders {{owner_email}}',
     },
     {
-      key: 'owner_email_alt',
-      value: 'contactobrianleft@gmail.com',
-      type: 'string',
-      category: 'contact',
-      description: 'Email alternativo para placeholders',
-    },
-    {
-      key: 'contact_email_secondary',
-      value: 'contactobrianleft@gmail.com',
-      type: 'string',
-      category: 'contact',
-      description: 'Email secundario',
-    },
-    {
       key: 'contact_availability',
-      value: 'Abierto a desafíos técnicos complejos en Full Stack y DevOps',
+      value: 'Disponible para nuevos proyectos.',
       type: 'string',
       category: 'contact',
       description: 'Estado de disponibilidad',
     },
     {
       key: 'contact_cta',
-      value:
-        'Si buscas a alguien que entienda qué pasa desde que el usuario hace click hasta que el servidor procesa el byte, habla con Brian.',
+      value: 'Si mi perfil te interesa, no dudes en contactarme.',
       type: 'string',
       category: 'contact',
       description: 'Call to action para contacto',
     },
 
     // ═══════════════════════════════════════════════════════════════
-    // Social Links
+    // Social Links (vacío)
     // ═══════════════════════════════════════════════════════════════
     {
       key: 'social_github',
-      value: 'https://github.com/brianleft28',
+      value: '',
       type: 'string',
       category: 'social',
       description: 'URL de GitHub',
     },
     {
-      key: 'github_url',
-      value: 'github.com/brianleft28',
-      type: 'string',
-      category: 'social',
-      description: 'URL de GitHub sin https (para placeholders)',
-    },
-    {
       key: 'github_username',
-      value: 'brianleft28',
+      value: '',
       type: 'string',
       category: 'social',
       description: 'Username de GitHub',
     },
     {
       key: 'social_linkedin',
-      value: 'https://linkedin.com/in/brian-benegas',
+      value: '',
       type: 'string',
       category: 'social',
       description: 'URL de LinkedIn',
     },
     {
-      key: 'linkedin_url',
-      value: 'linkedin.com/in/brian-benegas',
-      type: 'string',
-      category: 'social',
-      description: 'URL de LinkedIn sin https (para placeholders)',
-    },
-    {
-      key: 'cv_filename',
-      value: 'cv-brian-benegas.pdf',
-      type: 'string',
-      category: 'files',
-      description: 'Nombre del archivo CV para descarga',
-    },
-    {
-      key: 'cv_display_name',
-      value: 'CV - Brian Benegas - Full Stack Developer.pdf',
-      type: 'string',
-      category: 'files',
-      description: 'Nombre mostrado al descargar el CV',
-    },
-    {
       key: 'social_website',
-      value: 'https://brianleft.com',
+      value: '',
       type: 'string',
       category: 'social',
-      description: 'URL del sitio web',
+      description: 'URL del sitio web personal o de empresa',
     },
 
     // ═══════════════════════════════════════════════════════════════
-    // Branding
+    // Branding (genérico)
     // ═══════════════════════════════════════════════════════════════
     {
       key: 'branding_site_title',
@@ -198,23 +156,23 @@ export async function seedSettings(dataSource: DataSource): Promise<void> {
     },
     {
       key: 'branding_terminal_prompt',
-      value: 'C:\\',
+      value: 'C:\\>',
       type: 'string',
       category: 'branding',
-      description: 'Prompt de la terminal (estilo Windows)',
+      description: 'Prompt de la terminal',
     },
 
     // ═══════════════════════════════════════════════════════════════
-    // Tech Stack (para mostrar en UI)
+    // Tech Stack (vacío)
     // ═══════════════════════════════════════════════════════════════
     {
       key: 'tech_stack',
       value: JSON.stringify({
-        backend: ['Node.js', 'NestJS', '.NET 8', 'Python'],
-        frontend: ['SvelteKit', 'React'],
-        databases: ['MySQL', 'MongoDB', 'Redis'],
-        devops: ['Docker', 'Linux', 'Nginx', 'WebSockets'],
-        integrations: ['APIs REST', 'Raw Printing', 'ESC-POS', 'ZPL'],
+        backend: [],
+        frontend: [],
+        databases: [],
+        devops: [],
+        integrations: [],
       }),
       type: 'json',
       category: 'tech',
@@ -222,18 +180,18 @@ export async function seedSettings(dataSource: DataSource): Promise<void> {
     },
 
     // ═══════════════════════════════════════════════════════════════
-    // AI Configuration
+    // AI Configuration (genérico)
     // ═══════════════════════════════════════════════════════════════
     {
       key: 'ai_name',
-      value: 'TorvaldsAI',
+      value: 'Asistente IA',
       type: 'string',
       category: 'ai',
       description: 'Nombre del asistente IA',
     },
     {
       key: 'ai_command',
-      value: 'torvalds',
+      value: 'ask',
       type: 'string',
       category: 'ai',
       description: 'Comando para invocar al asistente en la terminal',
@@ -241,7 +199,7 @@ export async function seedSettings(dataSource: DataSource): Promise<void> {
     {
       key: 'ai_greeting',
       value:
-        '¡Hola! Soy el asistente AI de este portfolio. Preguntame sobre proyectos, experiencia o arquitectura.',
+        '¡Hola! Soy el asistente IA de este portfolio. Pregúntame sobre proyectos, experiencia o arquitectura.',
       type: 'string',
       category: 'ai',
       description: 'Mensaje de bienvenida del asistente',
@@ -249,10 +207,14 @@ export async function seedSettings(dataSource: DataSource): Promise<void> {
   ];
 
   for (const setting of settings) {
+    // Usar findOne para verificar por `key` y `userId`
     const exists = await settingRepo.findOne({ where: { key: setting.key, userId: 1 } });
     if (!exists) {
+      // Crear solo si no existe para el usuario admin (userId: 1)
       await settingRepo.save({ ...setting, userId: 1 });
-      console.log(`  ✓ Setting: ${setting.key}`);
+      console.log(`  ✓ Setting creado: ${setting.key}`);
+    } else {
+      console.log(`  ⏭️ Setting ya existe: ${setting.key}`);
     }
   }
 }

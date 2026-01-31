@@ -7,7 +7,7 @@ import type { Command } from '../types';
 export const register: Command = {
 	name: 'register',
 	description: 'Registrar nuevo usuario (crear portfolio)',
-	usage: 'register <username> <email> [--name "Nombre Apellido"] [--role "Developer"]',
+	usage: 'register --username <username> --email <email> --password <password> [--name "Nombre Apellido"] [--role "Developer"]',
 
 	execute(args) {
 		if (!args.length || args[0] === 'help' || args[0] === '-h') {
@@ -20,7 +20,7 @@ export const register: Command = {
 		if (!parsed.username) {
 			return {
 				output: `<span class="error-text">❌ Username requerido</span>
-Uso: <span class="command-highlight">register &lt;username&gt; &lt;email&gt;</span>`,
+Uso: <span class="command-highlight">register --username &lt;username&gt; --email &lt;email&gt; --password &lt;password&gt;</span>`,
 				isHtml: true
 			};
 		}
@@ -28,7 +28,15 @@ Uso: <span class="command-highlight">register &lt;username&gt; &lt;email&gt;</sp
 		if (!parsed.email) {
 			return {
 				output: `<span class="error-text">❌ Email requerido</span>
-Uso: <span class="command-highlight">register ${parsed.username} &lt;email&gt;</span>`,
+Uso: <span class="command-highlight">register --username ${parsed.username} --email &lt;email&gt; --password &lt;password&gt;</span>`,
+				isHtml: true
+			};
+		}
+
+		if (!parsed.password) {
+			return {
+				output: `<span class="error-text">❌ Password requerida</span>
+Uso: <span class="command-highlight">register --username ${parsed.username} --email ${parsed.email || '&lt;email&gt;'} --password &lt;password&gt;</span>`,
 				isHtml: true
 			};
 		}
@@ -56,21 +64,22 @@ Uso: <span class="command-highlight">register ${parsed.username} &lt;email&gt;</
 	}
 };
 
+
+
 function showHelp() {
 	return {
 		output: `<span class="system-header">👤 REGISTRO DE USUARIO</span>
 
 <span class="category-header">Uso:</span>
-  <span class="command-highlight">register &lt;username&gt; &lt;email&gt; [opciones]</span>
+  <span class="command-highlight">register --username &lt;username&gt; --email &lt;email&gt; --password &lt;password&gt; [opciones]</span>
 
 <span class="category-header">Opciones:</span>
   <span class="command-highlight">--name "Nombre Apellido"</span>   Nombre completo
   <span class="command-highlight">--role "Developer"</span>        Rol profesional
-  <span class="command-highlight">--password "..."</span>          Contraseña (auto-generada si no se proporciona)
 
-<span class="category-header">Ejemplos:</span>
-  <span class="command-highlight">register johndoe john@example.com</span>
-  <span class="command-highlight">register janedoe jane@dev.io --name "Jane Doe" --role "Full Stack Developer"</span>
+<span class="category-header">Ejemplo:</span>
+  <span class="command-highlight">register --username johndoe --email john@example.com --password 123456</span>
+  <span class="command-highlight">register --username janedoe --email jane@dev.io --password 123456 --name "Jane Doe" --role "Full Stack Developer"</span>
 
 <span class="category-header">Qué se crea:</span>
   • Usuario en la base de datos
@@ -78,7 +87,7 @@ function showHelp() {
   • Configuración inicial del sitio
   • Subdomain: &lt;username&gt;.portfolio.dev
 
-<span class="ai-warning">⚠️ Guarda la contraseña generada en un lugar seguro!</span>`,
+<span class="ai-warning">⚠️ La contraseña es obligatoria y no se puede recuperar después.</span>`,
 		isHtml: true
 	};
 }
@@ -90,51 +99,43 @@ interface RegisterParams {
 	lastName?: string;
 	role?: string;
 	password?: string;
-}
+} 
+
 
 function parseArgs(args: string[]): RegisterParams {
 	const result: RegisterParams = {
 		username: '',
-		email: ''
+		email: '',
+		password: ''
 	};
 
-	let i = 0;
-
-	// Primer argumento: username
-	if (args[i] && !args[i].startsWith('--')) {
-		result.username = args[i];
-		i++;
-	}
-
-	// Segundo argumento: email
-	if (args[i] && !args[i].startsWith('--')) {
-		result.email = args[i];
-		i++;
-	}
-
-	// Parsear opciones
-	while (i < args.length) {
+	for (let i = 0; i < args.length; i++) {
 		const arg = args[i];
-		
-		if (arg === '--name' && args[i + 1]) {
+		if ((arg === '--username' || arg === '-u') && args[i + 1]) {
+			result.username = args[i + 1];
+			i++;
+		} else if ((arg === '--email' || arg === '-e') && args[i + 1]) {
+			result.email = args[i + 1];
+			i++;
+		} else if ((arg === '--password' || arg === '-p') && args[i + 1]) {
+			result.password = args[i + 1];
+			i++;
+		} else if (arg === '--name' && args[i + 1]) {
 			const name = args[i + 1];
 			const parts = name.split(' ');
 			result.firstName = parts[0];
 			result.lastName = parts.slice(1).join(' ') || undefined;
-			i += 2;
+			i++;
 		} else if (arg === '--role' && args[i + 1]) {
 			result.role = args[i + 1];
-			i += 2;
-		} else if (arg === '--password' && args[i + 1]) {
-			result.password = args[i + 1];
-			i += 2;
-		} else {
 			i++;
 		}
 	}
 
 	return result;
 }
+
+
 
 async function createUser(params: RegisterParams) {
 	try {
