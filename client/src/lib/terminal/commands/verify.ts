@@ -1,11 +1,12 @@
 import type { Command } from '../types';
+import { t } from '$lib/i18n/helpers';
 
 /**
  * Comando para verificar email después de registro
  */
 export const verify: Command = {
 	name: 'verify',
-	description: 'Verificar email con código de confirmación',
+	description: t('terminal.verify.description'),
 	usage: 'verify <código> | verify resend [email]',
 
 	execute(args) {
@@ -18,27 +19,27 @@ export const verify: Command = {
 			const email = args[1] || getPendingEmail();
 			if (!email) {
 				return {
-					output: `<span class="error-text">❌ Email requerido</span>
-Uso: <span class="command-highlight">verify resend &lt;email&gt;</span>`,
+					output: `<span class="error-text">❌ ${t('terminal.verify.errors.email_required')}</span>
+${t('common.usage')}: <span class="command-highlight">verify resend &lt;email&gt;</span>`,
 					isHtml: true
 				};
 			}
 			resendCode(email);
 			return {
-				output: `<span class="ai-info">⏳ Reenviando código a <strong>${email}</strong>...</span>`,
+				output: `<span class="ai-info">⏳ ${t('terminal.verify.resending')} <strong>${email}</strong>...</span>`,
 				isHtml: true
 			};
 		}
 
 		// Verificar código
 		const code = args[0];
-		
+
 		// Validar formato de código (6 dígitos)
 		if (!/^\d{6}$/.test(code)) {
 			return {
-				output: `<span class="error-text">❌ Código inválido</span>
-<span class="system-hint">El código debe ser de 6 dígitos numéricos</span>
-<span class="system-hint">Ejemplo: <code>verify 123456</code></span>`,
+				output: `<span class="error-text">❌ ${t('terminal.verify.errors.invalid_code')}</span>
+<span class="system-hint">${t('terminal.verify.errors.code_format')}</span>
+<span class="system-hint">${t('common.examples')}: <code>verify 123456</code></span>`,
 				isHtml: true
 			};
 		}
@@ -47,16 +48,16 @@ Uso: <span class="command-highlight">verify resend &lt;email&gt;</span>`,
 		const email = args[1] || getPendingEmail();
 		if (!email) {
 			return {
-				output: `<span class="error-text">❌ No hay verificación pendiente</span>
-<span class="system-hint">Incluye el email: <code>verify ${code} tu@email.com</code></span>`,
+				output: `<span class="error-text">❌ ${t('terminal.verify.errors.no_pending')}</span>
+<span class="system-hint">${t('terminal.verify.include_email')} <code>verify ${code} tu@email.com</code></span>`,
 				isHtml: true
 			};
 		}
 
 		verifyCode(email, code);
-		
+
 		return {
-			output: `<span class="ai-info">⏳ Verificando código...</span>`,
+			output: `<span class="ai-info">⏳ ${t('terminal.verify.verifying')}</span>`,
 			isHtml: true
 		};
 	}
@@ -64,21 +65,21 @@ Uso: <span class="command-highlight">verify resend &lt;email&gt;</span>`,
 
 function showHelp() {
 	return {
-		output: `<span class="system-header">🔐 VERIFICACIÓN DE EMAIL</span>
+		output: `<span class="system-header">🔐 ${t('terminal.verify.title')}</span>
 
-<span class="category-header">Uso:</span>
-  <span class="command-highlight">verify &lt;código&gt;</span>           Verificar con código de 6 dígitos
-  <span class="command-highlight">verify &lt;código&gt; &lt;email&gt;</span>    Verificar especificando email
-  <span class="command-highlight">verify resend</span>              Reenviar código
-  <span class="command-highlight">verify resend &lt;email&gt;</span>      Reenviar a email específico
+<span class="category-header">${t('common.usage')}:</span>
+  <span class="command-highlight">verify &lt;código&gt;</span>           ${t('terminal.verify.examples.verify_code')}
+  <span class="command-highlight">verify &lt;código&gt; &lt;email&gt;</span>    ${t('terminal.verify.examples.verify_email')}
+  <span class="command-highlight">verify resend</span>              ${t('terminal.verify.examples.resend')}
+  <span class="command-highlight">verify resend &lt;email&gt;</span>      ${t('terminal.verify.examples.resend_email')}
 
-<span class="category-header">Ejemplos:</span>
+<span class="category-header">${t('common.examples')}:</span>
   <span class="command-highlight">verify 123456</span>
   <span class="command-highlight">verify 123456 user@example.com</span>
   <span class="command-highlight">verify resend</span>
   <span class="command-highlight">verify resend user@example.com</span>
 
-<span class="system-hint">💡 El código se envía al registrarse y expira en 15 minutos</span>`,
+<span class="system-hint">💡 ${t('terminal.verify.note_expiry')}</span>`,
 		isHtml: true
 	};
 }
@@ -103,10 +104,10 @@ async function verifyCode(email: string, code: string) {
 		const data = await response.json();
 
 		if (!response.ok) {
-			showResult(`<span class="error-text">❌ Verificación fallida</span>
-<span class="ai-warning">${data.message || 'Código inválido o expirado'}</span>
+			showResult(`<span class="error-text">❌ ${t('terminal.verify.errors.failed')}</span>
+<span class="ai-warning">${data.message || t('terminal.verify.errors.invalid_or_expired')}</span>
 
-<span class="system-hint">Prueba con: <code>verify resend</code> para obtener un nuevo código</span>`);
+<span class="system-hint">${t('terminal.verify.try_with')} <code>verify resend</code> ${t('terminal.verify.get_new_code')}</span>`);
 			return;
 		}
 
@@ -115,17 +116,17 @@ async function verifyCode(email: string, code: string) {
 			sessionStorage.removeItem('pending_verification_email');
 		}
 
-		showResult(`<span class="ai-success">✅ Email verificado exitosamente!</span>
+		showResult(`<span class="ai-success">✅ ${t('terminal.verify.success')}</span>
 
-<span class="category-header">Tu cuenta está activa</span>
+<span class="category-header">${t('terminal.verify.account_active')}</span>
 
-<span class="system-hint">🚀 Ya puedes acceder a tu panel:</span>
+<span class="system-hint">🚀 ${t('terminal.verify.access_panel')}</span>
   <span class="command-highlight">admin login</span>
-  o visita <a href="/admin/login" target="_blank">/admin/login</a>`);
+  ${t('terminal.verify.or_visit')} <a href="/admin/login" target="_blank">/admin/login</a>`);
 
 	} catch (error) {
-		showResult(`<span class="error-text">❌ Error de conexión</span>
-<span class="ai-warning">${error instanceof Error ? error.message : 'Error desconocido'}</span>`);
+		showResult(`<span class="error-text">❌ ${t('terminal.verify.errors.connection_error')}</span>
+<span class="ai-warning">${error instanceof Error ? error.message : 'Error'}</span>`);
 	}
 }
 
@@ -142,30 +143,30 @@ async function resendCode(email: string) {
 		const data = await response.json();
 
 		if (!response.ok) {
-			showResult(`<span class="error-text">❌ Error al reenviar</span>
-<span class="ai-warning">${data.message || 'Error desconocido'}</span>`);
+			showResult(`<span class="error-text">❌ ${t('common.error')}</span>
+<span class="ai-warning">${data.message || t('common.error')}</span>`);
 			return;
 		}
 
 		if (data.message === 'Email ya verificado') {
-			showResult(`<span class="ai-success">✅ El email ya está verificado</span>
+			showResult(`<span class="ai-success">✅ ${t('terminal.verify.already_verified')}</span>
 
-<span class="system-hint">Ya puedes hacer login:</span>
+<span class="system-hint">${t('terminal.verify.can_login')}</span>
   <span class="command-highlight">admin login</span>`);
 			return;
 		}
 
-		showResult(`<span class="ai-success">📧 Código reenviado!</span>
+		showResult(`<span class="ai-success">📧 ${t('terminal.verify.code_resent')}</span>
 
-<span class="system-hint">Revisa tu correo <strong>${email}</strong></span>
-<span class="system-hint">El código expira en 15 minutos</span>
+<span class="system-hint">${t('terminal.verify.check_email')} <strong>${email}</strong></span>
+<span class="system-hint">${t('terminal.verify.expires_15min')}</span>
 
-<span class="category-header">Siguiente paso:</span>
+<span class="category-header">${t('terminal.verify.next_step')}</span>
   <span class="command-highlight">verify &lt;código&gt;</span>`);
 
 	} catch (error) {
-		showResult(`<span class="error-text">❌ Error de conexión</span>
-<span class="ai-warning">${error instanceof Error ? error.message : 'Error desconocido'}</span>`);
+		showResult(`<span class="error-text">❌ ${t('terminal.verify.errors.connection_error')}</span>
+<span class="ai-warning">${error instanceof Error ? error.message : 'Error'}</span>`);
 	}
 }
 

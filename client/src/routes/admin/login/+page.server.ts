@@ -8,10 +8,10 @@ import { PUBLIC_API_URL } from '$env/static/public';
 
 const API_URL = PUBLIC_API_URL || 'http://api:4000';
 
-// Si ya está autenticado, redirigir a /admin/projects
+// Si ya está autenticado, redirigir a /admin/settings
 export const load: PageServerLoad = async ({ locals }) => {
 	if (locals.user?.authenticated) {
-		throw redirect(302, '/admin/projects');
+		throw redirect(302, '/admin/settings');
 	}
 	return {};
 };
@@ -64,6 +64,6 @@ export const actions: Actions = {
 			return fail(500, { error: 'Error de conexión con el servidor' });
 		}
 
-		throw redirect(302, '/admin/projects');
+		throw redirect(302, '/admin/settings');
 	}
 };

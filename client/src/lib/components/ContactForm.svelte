@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { portfolioConfig } from '$lib/stores/config';
+	import { _ } from 'svelte-i18n';
 
 	let name = $state('');
 	let email = $state('');
@@ -13,14 +14,14 @@
 
 	async function handleSubmit(e: Event) {
 		e.preventDefault();
-		
+
 		if (!name.trim() || !email.trim() || !message.trim()) {
-			submitResult = { success: false, message: 'Por favor completa todos los campos requeridos' };
+			submitResult = { success: false, message: $_('components.contact.errors.required_fields') };
 			return;
 		}
 
 		if (!email.includes('@') || !email.includes('.')) {
-			submitResult = { success: false, message: 'Por favor ingresa un email válido' };
+			submitResult = { success: false, message: $_('components.contact.errors.invalid_email') };
 			return;
 		}
 
@@ -42,16 +43,16 @@
 			const data = await response.json();
 
 			if (response.ok) {
-				submitResult = { success: true, message: '✅ Mensaje enviado correctamente!' };
+				submitResult = { success: true, message: '✅ ' + $_('components.contact.success') };
 				name = '';
 				email = '';
 				subject = '';
 				message = '';
 			} else {
-				submitResult = { success: false, message: data.message || 'Error al enviar el mensaje' };
+				submitResult = { success: false, message: data.message || $_('components.contact.errors.send_error') };
 			}
 		} catch (error) {
-			submitResult = { success: false, message: 'Error de conexión. Intenta de nuevo.' };
+			submitResult = { success: false, message: $_('components.contact.errors.connection_error') };
 		} finally {
 			isSubmitting = false;
 		}
@@ -65,20 +66,20 @@
 <article class="contact-form-wrapper">
 	<header class="contact-header">
 		<div class="contact-icon">📧</div>
-		<h1>contacto.exe</h1>
-		<p class="subtitle">Enviar mensaje a {ownerName}</p>
+		<h1>{$_('components.contact.title')}</h1>
+		<p class="subtitle">{$_('components.contact.send_message_to')} {ownerName}</p>
 	</header>
 
 	<form class="contact-form" onsubmit={handleSubmit}>
 		<div class="form-group">
 			<label for="contact-name">
-				<span class="icon">👤</span> Nombre <span class="required">*</span>
+				<span class="icon">👤</span> {$_('components.contact.name')} <span class="required">*</span>
 			</label>
 			<input
 				id="contact-name"
 				type="text"
 				bind:value={name}
-				placeholder="Tu nombre"
+				placeholder={$_('components.contact.name_placeholder')}
 				disabled={isSubmitting}
 				onfocus={clearResult}
 			/>
@@ -86,13 +87,13 @@
 
 		<div class="form-group">
 			<label for="contact-email">
-				<span class="icon">📬</span> Email <span class="required">*</span>
+				<span class="icon">📬</span> {$_('components.contact.email')} <span class="required">*</span>
 			</label>
 			<input
 				id="contact-email"
 				type="email"
 				bind:value={email}
-				placeholder="tu@email.com"
+				placeholder={$_('components.contact.email_placeholder')}
 				disabled={isSubmitting}
 				onfocus={clearResult}
 			/>
@@ -100,13 +101,13 @@
 
 		<div class="form-group">
 			<label for="contact-subject">
-				<span class="icon">📋</span> Asunto
+				<span class="icon">📋</span> {$_('components.contact.subject')}
 			</label>
 			<input
 				id="contact-subject"
 				type="text"
 				bind:value={subject}
-				placeholder="Asunto del mensaje (opcional)"
+				placeholder={$_('components.contact.subject_placeholder')}
 				disabled={isSubmitting}
 				onfocus={clearResult}
 			/>
@@ -114,12 +115,12 @@
 
 		<div class="form-group">
 			<label for="contact-message">
-				<span class="icon">💬</span> Mensaje <span class="required">*</span>
+				<span class="icon">💬</span> {$_('components.contact.message')} <span class="required">*</span>
 			</label>
 			<textarea
 				id="contact-message"
 				bind:value={message}
-				placeholder="Escribe tu mensaje aquí..."
+				placeholder={$_('components.contact.message_placeholder')}
 				rows="5"
 				disabled={isSubmitting}
 				onfocus={clearResult}
@@ -134,15 +135,15 @@
 
 		<button type="submit" class="submit-btn" disabled={isSubmitting}>
 			{#if isSubmitting}
-				<span class="spinner">⏳</span> Enviando...
+				<span class="spinner">⏳</span> {$_('components.contact.sending')}
 			{:else}
-				<span>🚀</span> Enviar mensaje
+				<span>🚀</span> {$_('components.contact.send')}
 			{/if}
 		</button>
 	</form>
 
 	<footer class="contact-footer">
-		<p>Los mensajes se envían directamente a <strong>{ownerEmail || ownerName}</strong></p>
+		<p>{$_('components.contact.note')} <strong>{ownerEmail || ownerName}</strong></p>
 	</footer>
 </article>
 

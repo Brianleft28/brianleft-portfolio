@@ -1,0 +1,370 @@
+{
+	"common": {
+		"loading": "Cargando...",
+		"error": "Error",
+		"success": "Éxito",
+		"cancel": "Cancelar",
+		"save": "Guardar",
+		"saving": "Guardando...",
+		"delete": "Eliminar",
+		"edit": "Editar",
+		"close": "Cerrar",
+		"back": "Volver",
+		"next": "Siguiente",
+		"yes": "Sí",
+		"no": "No",
+		"required": "Requerido",
+		"optional": "Opcional",
+		"usage": "Uso",
+		"examples": "Ejemplos",
+		"options": "Opciones",
+		"tip": "Tip",
+		"alias": "Alias"
+	},
+	"terminal": {
+		"help": {
+			"title": "Sistema de ayuda",
+			"description": "Muestra esta ayuda",
+			"categories": {
+				"navigation": "Navegación",
+				"files": "Archivos",
+				"ai": "Inteligencia Artificial",
+				"account": "Cuenta & Admin",
+				"customization": "Personalización",
+				"terminal": "Terminal"
+			},
+			"commands": {
+				"cd": "Cambiar directorio",
+				"ls": "Listar archivos y carpetas",
+				"pwd": "Mostrar directorio actual",
+				"tree": "Árbol de directorios",
+				"cat": "Ver contenido de archivo",
+				"cv": "Descargar curriculum vitae",
+				"ai_modes": "Modos especializados",
+				"apikey": "Configura tu API key de Gemini",
+				"register": "Crear cuenta (obtén tu subdominio)",
+				"email": "Ver o cambiar tu email (login)",
+				"admin": "Abrir panel de administración",
+				"theme": "Cambiar tema de colores",
+				"clear": "Limpiar consola (Ctrl+L)",
+				"help": "Mostrar esta ayuda",
+				"exit": "Cerrar terminal (Ctrl+Ñ)"
+			}
+		},
+		"register": {
+			"description": "Registrar nuevo usuario (crear portfolio)",
+			"title": "REGISTRO DE USUARIO",
+			"errors": {
+				"username_required": "Username requerido",
+				"email_required": "Email requerido",
+				"password_required": "Password requerida",
+				"invalid_email": "Email inválido"
+			},
+			"creating": "Creando usuario",
+			"will_create": "Esto creará:",
+			"projects_folder": "Carpeta ~/projects",
+			"initial_config": "Configuración inicial",
+			"subdomain": "Subdomain",
+			"options": {
+				"username": "Username (requerido)",
+				"email": "Email (requerido)",
+				"password": "Password (requerido)",
+				"name": "Nombre completo",
+				"role": "Rol profesional",
+				"help": "Mostrar ayuda"
+			},
+			"creates": {
+				"user_db": "Usuario en la base de datos",
+				"projects_folder": "Carpeta ~/projects para el portfolio",
+				"initial_config": "Configuración inicial del sitio"
+			},
+			"warning": "La contraseña es obligatoria y no se puede recuperar después.",
+			"success": "Usuario creado exitosamente!",
+			"credentials": "Credenciales",
+			"access": "Acceso",
+			"important": "IMPORTANTE: Guarda la contraseña en un lugar seguro!",
+			"no_recovery": "No se puede recuperar después."
+		},
+		"login": {
+			"description": "Iniciar sesión",
+			"title": "INICIAR SESIÓN",
+			"opening_panel": "Abriendo panel de login...",
+			"also_use": "También puedes usar:",
+			"errors": {
+				"username_required": "Username requerido",
+				"password_required": "Password requerida",
+				"auth_error": "Error de autenticación",
+				"invalid_credentials": "Credenciales inválidas"
+			},
+			"options": {
+				"username": "Nombre de usuario",
+				"password": "Contraseña",
+				"help": "Mostrar ayuda"
+			},
+			"examples": {
+				"panel": "Abre panel de login",
+				"terminal": "Login desde terminal"
+			},
+			"no_account": "No tienes cuenta? Usa",
+			"forgot_password": "¿Olvidaste tu contraseña? Contacta al administrador.",
+			"success": "Sesión iniciada correctamente!",
+			"welcome": "Bienvenido,",
+			"admin_panel": "Panel de admin:",
+			"your_info": "Ver tu info:",
+			"logout": "Cerrar sesión:"
+		},
+		"logout": {
+			"description": "Cerrar sesión",
+			"logging_out": "Cerrando sesión...",
+			"success": "Sesión cerrada correctamente",
+			"goodbye": "¡Hasta pronto!",
+			"to_login": "Para iniciar sesión:"
+		},
+		"whoami": {
+			"description": "Ver información del usuario actual",
+			"guest": "Usuario: invitado",
+			"no_session": "No hay sesión activa.",
+			"to_register": "Para registrarte:",
+			"to_login": "Para iniciar sesión:",
+			"authenticated": "Usuario autenticado",
+			"info": "Información:",
+			"username": "Username",
+			"email": "Email",
+			"role": "Rol",
+			"display": "Display",
+			"subdomain": "Subdomain",
+			"verified": "Verificado",
+			"admin_panel": "Panel de admin:",
+			"logout": "Cerrar sesión:",
+			"error": "Error al obtener información del usuario"
+		},
+		"admin": {
+			"description": "Abrir panel de administración",
+			"panel": "Panel Admin",
+			"config": "Configuración",
+			"unknown_section": "Sección desconocida:",
+			"available_sections": "Secciones disponibles:",
+			"login": "Iniciar sesión",
+			"settings": "Configuración del portfolio",
+			"opening": "Abriendo",
+			"new_tab": "en nueva pestaña...",
+			"tip_sections": "para ver todas las secciones disponibles."
+		},
+		"cv": {
+			"description": "Descarga el curriculum vitae",
+			"options": {
+				"download": "Descarga el CV activo",
+				"info": "Muestra información del CV",
+				"help": "Muestra esta ayuda"
+			},
+			"notes": {
+				"upload": "El CV se puede cargar desde el panel de admin",
+				"multiple": "Si hay múltiples CVs, se descarga el marcado como activo",
+				"formats": "Formatos soportados: PDF, DOC, DOCX"
+			},
+			"title": "Curriculum Vitae",
+			"examples": {
+				"info": "Ver información del CV",
+				"download": "Descargar CV directamente"
+			},
+			"tip_download": "sin argumentos para descargar",
+			"tip_manage": "El CV se gestiona desde",
+			"downloading": "Descargando CV...",
+			"manual_download": "Si la descarga no inicia automáticamente:",
+			"download_link": "Descargar CV"
+		},
+		"ls": {
+			"description": "Lista archivos y carpetas",
+			"options": {
+				"compact": "Lista compacta",
+				"detailed": "Lista detallada",
+				"help": "Muestra esta ayuda"
+			},
+			"long_format": "Formato largo con detalles",
+			"same_as_ls": "Igual que ls",
+			"same_as_ls_l": "Igual que ls -l",
+			"errors": {
+				"not_accessible": "no se puede acceder a",
+				"not_directory": "No es un directorio"
+			},
+			"empty_directory": "(directorio vacío)"
+		},
+		"theme": {
+			"description": "Cambia el tema visual de la terminal y el sitio",
+			"themes": {
+				"hacker": "Hacker verde clásico",
+				"dracula": "Violetas y rosas elegantes",
+				"cyberpunk": "Colores vibrantes retro",
+				"nord": "Tonos azules árticos",
+				"synthwave": "Neón magenta y cyan",
+				"monokai": "Científico y legible",
+				"gruvbox": "Retro warm tones"
+			},
+			"available": "TEMAS DISPONIBLES",
+			"active": "[ACTIVO]",
+			"options": {
+				"current": "Muestra el tema actual",
+				"list": "Lista todos los temas disponibles",
+				"change": "Cambia al tema especificado",
+				"help": "Muestra esta ayuda"
+			},
+			"examples": {
+				"dracula": "Cambia al tema Dracula",
+				"cyberpunk": "Cambia al tema Cyberpunk"
+			},
+			"unknown": "Tema actual desconocido:",
+			"current": "Tema actual:",
+			"saved_default": "Guardado como tema por defecto del portfolio",
+			"login_to_save": "Inicia sesión para guardar como tema por defecto",
+			"changed": "Tema cambiado exitosamente",
+			"specify_name": "Debes especificar un nombre de tema",
+			"not_found": "no encontrado",
+			"available_themes": "Temas disponibles:",
+			"unknown_subcommand": "Subcomando desconocido:",
+			"title": "Sistema de temas visuales"
+		},
+		"verify": {
+			"description": "Verificar email con código de confirmación",
+			"title": "VERIFICACIÓN DE EMAIL",
+			"errors": {
+				"email_required": "Email requerido",
+				"invalid_code": "Código inválido",
+				"code_format": "El código debe ser de 6 dígitos numéricos",
+				"no_pending": "No hay verificación pendiente",
+				"failed": "Verificación fallida",
+				"invalid_or_expired": "Código inválido o expirado",
+				"connection_error": "Error de conexión"
+			},
+			"resending": "Reenviando código a",
+			"include_email": "Incluye el email:",
+			"verifying": "Verificando código...",
+			"examples": {
+				"verify_code": "Verificar con código de 6 dígitos",
+				"verify_email": "Verificar especificando email",
+				"resend": "Reenviar código",
+				"resend_email": "Reenviar a email específico"
+			},
+			"note_expiry": "El código se envía al registrarse y expira en 15 minutos",
+			"try_with": "Prueba con:",
+			"get_new_code": "para obtener un nuevo código",
+			"success": "Email verificado exitosamente!",
+			"account_active": "Tu cuenta está activa",
+			"access_panel": "Ya puedes acceder a tu panel:",
+			"or_visit": "o visita",
+			"already_verified": "Email ya verificado",
+			"can_login": "Ya puedes hacer login:",
+			"code_resent": "Código reenviado!",
+			"check_email": "Revisa tu correo",
+			"expires_15min": "El código expira en 15 minutos",
+			"next_step": "Siguiente paso:"
+		},
+		"lang": {
+			"description": "Cambia el idioma de la interfaz",
+			"title": "CONFIGURACIÓN DE IDIOMA",
+			"code": "código",
+			"current": "Idioma actual",
+			"available": "Idiomas disponibles",
+			"active": "ACTIVO",
+			"changed": "Idioma cambiado exitosamente",
+			"reload_hint": "Algunos textos se actualizarán al recargar",
+			"see_available": "para ver idiomas disponibles",
+			"to_change": "para cambiar idioma",
+			"run_list": "Ejecuta <code>lang list</code> para ver opciones",
+			"persistence_note": "El idioma se guarda en localStorage",
+			"options": {
+				"current": "Muestra el idioma actual",
+				"list": "Lista todos los idiomas disponibles",
+				"change": "Cambia al idioma especificado",
+				"help": "Muestra esta ayuda"
+			},
+			"examples": {
+				"english": "Cambia a inglés",
+				"spanish": "Cambia a español",
+				"shortcut": "Atajo directo"
+			},
+			"errors": {
+				"code_required": "Código de idioma requerido",
+				"not_found": "idioma no encontrado",
+				"unknown": "Subcomando desconocido",
+				"unknown_current": "Idioma actual desconocido"
+			}
+		}
+	},
+	"admin": {
+		"layout": {
+			"title": "Panel de Administración",
+			"back_to_site": "Volver al sitio",
+			"logout": "Cerrar sesión"
+		},
+		"login": {
+			"username": "Usuario",
+			"password": "Contraseña",
+			"submit": "Ingresar",
+			"back_to_portfolio": "Volver al Portfolio"
+		},
+		"settings": {
+			"title": "Configuración del Portfolio",
+			"subtitle": "Personaliza toda la información de tu portfolio white-label",
+			"saved": "Cambios guardados correctamente",
+			"your_account": "Tu Cuenta",
+			"user": "Usuario",
+			"subdomain": "Subdominio",
+			"email": "Email",
+			"role": "Rol",
+			"member_since": "Miembro desde",
+			"subdomain_readonly": "Este es tu subdominio personalizado (solo lectura)",
+			"email_help": "Tu email para recibir mensajes de contacto",
+			"email_updated": "Email actualizado",
+			"role_admin": "Administrador",
+			"role_user": "Usuario",
+			"tabs": {
+				"personal": "Información Personal",
+				"contact": "Contacto",
+				"social": "Redes Sociales",
+				"branding": "Branding & Apariencia",
+				"ai": "Asistente IA"
+			},
+			"no_settings": "No hay configuraciones disponibles.",
+			"run_seeders": "Ejecuta los seeders para cargar la configuración inicial.",
+			"change": "cambio",
+			"changes": "cambios sin guardar",
+			"discard": "Descartar"
+		}
+	},
+	"components": {
+		"contact": {
+			"title": "contacto.exe",
+			"send_message_to": "Enviar mensaje a",
+			"name": "Nombre",
+			"name_placeholder": "Tu nombre",
+			"email": "Email",
+			"email_placeholder": "tu@email.com",
+			"subject": "Asunto",
+			"subject_placeholder": "Asunto del mensaje (opcional)",
+			"message": "Mensaje",
+			"message_placeholder": "Escribe tu mensaje aquí...",
+			"errors": {
+				"required_fields": "Por favor completa todos los campos requeridos",
+				"invalid_email": "Por favor ingresa un email válido",
+				"send_error": "Error al enviar el mensaje",
+				"connection_error": "Error de conexión. Intenta de nuevo."
+			},
+			"sending": "Enviando...",
+			"send": "Enviar mensaje",
+			"success": "Mensaje enviado correctamente!",
+			"note": "Los mensajes se envían directamente a"
+		}
+	},
+	"page": {
+		"home": {
+			"index_of": "Índice de",
+			"main_directory": "[directorio principal]",
+			"no_file_selected": "Sin archivo seleccionado",
+			"close_file": "Cerrar archivo",
+			"select_file_details": "Seleccioná un archivo del panel izquierdo para ver más detalles.",
+			"select_file_start": "Seleccioná un archivo para comenzar...",
+			"use_shortcut": "Usá",
+			"to_open_console": "para abrir la consola."
+		}
+	}
+}

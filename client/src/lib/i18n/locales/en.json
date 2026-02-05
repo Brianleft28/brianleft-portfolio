@@ -1,0 +1,370 @@
+{
+	"common": {
+		"loading": "Loading...",
+		"error": "Error",
+		"success": "Success",
+		"cancel": "Cancel",
+		"save": "Save",
+		"saving": "Saving...",
+		"delete": "Delete",
+		"edit": "Edit",
+		"close": "Close",
+		"back": "Back",
+		"next": "Next",
+		"yes": "Yes",
+		"no": "No",
+		"required": "Required",
+		"optional": "Optional",
+		"usage": "Usage",
+		"examples": "Examples",
+		"options": "Options",
+		"tip": "Tip",
+		"alias": "Alias"
+	},
+	"terminal": {
+		"help": {
+			"title": "Help System",
+			"description": "Show this help",
+			"categories": {
+				"navigation": "Navigation",
+				"files": "Files",
+				"ai": "Artificial Intelligence",
+				"account": "Account & Admin",
+				"customization": "Customization",
+				"terminal": "Terminal"
+			},
+			"commands": {
+				"cd": "Change directory",
+				"ls": "List files and folders",
+				"pwd": "Show current directory",
+				"tree": "Directory tree",
+				"cat": "View file content",
+				"cv": "Download resume/CV",
+				"ai_modes": "Specialized modes",
+				"apikey": "Configure your Gemini API key",
+				"register": "Create account (get your subdomain)",
+				"email": "View or change your email (login)",
+				"admin": "Open admin panel",
+				"theme": "Change color theme",
+				"clear": "Clear console (Ctrl+L)",
+				"help": "Show this help",
+				"exit": "Close terminal (Ctrl+Ñ)"
+			}
+		},
+		"register": {
+			"description": "Register new user (create portfolio)",
+			"title": "USER REGISTRATION",
+			"errors": {
+				"username_required": "Username required",
+				"email_required": "Email required",
+				"password_required": "Password required",
+				"invalid_email": "Invalid email"
+			},
+			"creating": "Creating user",
+			"will_create": "This will create:",
+			"projects_folder": "~/projects folder",
+			"initial_config": "Initial configuration",
+			"subdomain": "Subdomain",
+			"options": {
+				"username": "Username (required)",
+				"email": "Email (required)",
+				"password": "Password (required)",
+				"name": "Full name",
+				"role": "Professional role",
+				"help": "Show help"
+			},
+			"creates": {
+				"user_db": "User in the database",
+				"projects_folder": "~/projects folder for portfolio",
+				"initial_config": "Initial site configuration"
+			},
+			"warning": "Password is required and cannot be recovered later.",
+			"success": "User created successfully!",
+			"credentials": "Credentials",
+			"access": "Access",
+			"important": "IMPORTANT: Save your password in a safe place!",
+			"no_recovery": "Cannot be recovered later."
+		},
+		"login": {
+			"description": "Sign in",
+			"title": "SIGN IN",
+			"opening_panel": "Opening login panel...",
+			"also_use": "You can also use:",
+			"errors": {
+				"username_required": "Username required",
+				"password_required": "Password required",
+				"auth_error": "Authentication error",
+				"invalid_credentials": "Invalid credentials"
+			},
+			"options": {
+				"username": "Username",
+				"password": "Password",
+				"help": "Show help"
+			},
+			"examples": {
+				"panel": "Open login panel",
+				"terminal": "Login from terminal"
+			},
+			"no_account": "Don't have an account? Use",
+			"forgot_password": "Forgot your password? Contact the administrator.",
+			"success": "Signed in successfully!",
+			"welcome": "Welcome,",
+			"admin_panel": "Admin panel:",
+			"your_info": "View your info:",
+			"logout": "Sign out:"
+		},
+		"logout": {
+			"description": "Sign out",
+			"logging_out": "Signing out...",
+			"success": "Signed out successfully",
+			"goodbye": "Goodbye!",
+			"to_login": "To sign in:"
+		},
+		"whoami": {
+			"description": "View current user info",
+			"guest": "User: guest",
+			"no_session": "No active session.",
+			"to_register": "To register:",
+			"to_login": "To sign in:",
+			"authenticated": "Authenticated user",
+			"info": "Information:",
+			"username": "Username",
+			"email": "Email",
+			"role": "Role",
+			"display": "Display",
+			"subdomain": "Subdomain",
+			"verified": "Verified",
+			"admin_panel": "Admin panel:",
+			"logout": "Sign out:",
+			"error": "Error getting user information"
+		},
+		"admin": {
+			"description": "Open admin panel",
+			"panel": "Admin Panel",
+			"config": "Settings",
+			"unknown_section": "Unknown section:",
+			"available_sections": "Available sections:",
+			"login": "Sign in",
+			"settings": "Portfolio settings",
+			"opening": "Opening",
+			"new_tab": "in new tab...",
+			"tip_sections": "to see all available sections."
+		},
+		"cv": {
+			"description": "Download resume/CV",
+			"options": {
+				"download": "Download active CV",
+				"info": "Show CV information",
+				"help": "Show this help"
+			},
+			"notes": {
+				"upload": "CV can be uploaded from admin panel",
+				"multiple": "If there are multiple CVs, the active one is downloaded",
+				"formats": "Supported formats: PDF, DOC, DOCX"
+			},
+			"title": "Resume / CV",
+			"examples": {
+				"info": "View CV information",
+				"download": "Download CV directly"
+			},
+			"tip_download": "without arguments to download",
+			"tip_manage": "CV is managed from",
+			"downloading": "Downloading CV...",
+			"manual_download": "If download doesn't start automatically:",
+			"download_link": "Download CV"
+		},
+		"ls": {
+			"description": "List files and folders",
+			"options": {
+				"compact": "Compact list",
+				"detailed": "Detailed list",
+				"help": "Show this help"
+			},
+			"long_format": "Long format with details",
+			"same_as_ls": "Same as ls",
+			"same_as_ls_l": "Same as ls -l",
+			"errors": {
+				"not_accessible": "cannot access",
+				"not_directory": "Not a directory"
+			},
+			"empty_directory": "(empty directory)"
+		},
+		"theme": {
+			"description": "Change terminal and site visual theme",
+			"themes": {
+				"hacker": "Classic green hacker",
+				"dracula": "Elegant violets and pinks",
+				"cyberpunk": "Vibrant retro colors",
+				"nord": "Arctic blue tones",
+				"synthwave": "Magenta and cyan neon",
+				"monokai": "Scientific and readable",
+				"gruvbox": "Retro warm tones"
+			},
+			"available": "AVAILABLE THEMES",
+			"active": "[ACTIVE]",
+			"options": {
+				"current": "Show current theme",
+				"list": "List all available themes",
+				"change": "Change to specified theme",
+				"help": "Show this help"
+			},
+			"examples": {
+				"dracula": "Change to Dracula theme",
+				"cyberpunk": "Change to Cyberpunk theme"
+			},
+			"unknown": "Unknown current theme:",
+			"current": "Current theme:",
+			"saved_default": "Saved as portfolio default theme",
+			"login_to_save": "Sign in to save as default theme",
+			"changed": "Theme changed successfully",
+			"specify_name": "You must specify a theme name",
+			"not_found": "not found",
+			"available_themes": "Available themes:",
+			"unknown_subcommand": "Unknown subcommand:",
+			"title": "Visual themes system"
+		},
+		"verify": {
+			"description": "Verify email with confirmation code",
+			"title": "EMAIL VERIFICATION",
+			"errors": {
+				"email_required": "Email required",
+				"invalid_code": "Invalid code",
+				"code_format": "Code must be 6 numeric digits",
+				"no_pending": "No pending verification",
+				"failed": "Verification failed",
+				"invalid_or_expired": "Invalid or expired code",
+				"connection_error": "Connection error"
+			},
+			"resending": "Resending code to",
+			"include_email": "Include email:",
+			"verifying": "Verifying code...",
+			"examples": {
+				"verify_code": "Verify with 6-digit code",
+				"verify_email": "Verify specifying email",
+				"resend": "Resend code",
+				"resend_email": "Resend to specific email"
+			},
+			"note_expiry": "Code is sent on registration and expires in 15 minutes",
+			"try_with": "Try with:",
+			"get_new_code": "to get a new code",
+			"success": "Email verified successfully!",
+			"account_active": "Your account is active",
+			"access_panel": "You can now access your panel:",
+			"or_visit": "or visit",
+			"already_verified": "Email already verified",
+			"can_login": "You can now login:",
+			"code_resent": "Code resent!",
+			"check_email": "Check your inbox",
+			"expires_15min": "Code expires in 15 minutes",
+			"next_step": "Next step:"
+		},
+		"lang": {
+			"description": "Change interface language",
+			"title": "LANGUAGE SETTINGS",
+			"code": "code",
+			"current": "Current language",
+			"available": "Available languages",
+			"active": "ACTIVE",
+			"changed": "Language changed successfully",
+			"reload_hint": "Some text will update on page reload",
+			"see_available": "to see available languages",
+			"to_change": "to change language",
+			"run_list": "Run <code>lang list</code> to see options",
+			"persistence_note": "Language is saved in localStorage",
+			"options": {
+				"current": "Show current language",
+				"list": "List all available languages",
+				"change": "Change to specified language",
+				"help": "Show this help"
+			},
+			"examples": {
+				"english": "Change to English",
+				"spanish": "Change to Spanish",
+				"shortcut": "Direct shortcut"
+			},
+			"errors": {
+				"code_required": "Language code required",
+				"not_found": "language not found",
+				"unknown": "Unknown subcommand",
+				"unknown_current": "Unknown current language"
+			}
+		}
+	},
+	"admin": {
+		"layout": {
+			"title": "Admin Panel",
+			"back_to_site": "Back to site",
+			"logout": "Sign out"
+		},
+		"login": {
+			"username": "Username",
+			"password": "Password",
+			"submit": "Sign in",
+			"back_to_portfolio": "Back to Portfolio"
+		},
+		"settings": {
+			"title": "Portfolio Settings",
+			"subtitle": "Customize all information for your white-label portfolio",
+			"saved": "Changes saved successfully",
+			"your_account": "Your Account",
+			"user": "User",
+			"subdomain": "Subdomain",
+			"email": "Email",
+			"role": "Role",
+			"member_since": "Member since",
+			"subdomain_readonly": "This is your custom subdomain (read-only)",
+			"email_help": "Your email to receive contact messages",
+			"email_updated": "Email updated",
+			"role_admin": "Administrator",
+			"role_user": "User",
+			"tabs": {
+				"personal": "Personal Information",
+				"contact": "Contact",
+				"social": "Social Networks",
+				"branding": "Branding & Appearance",
+				"ai": "AI Assistant"
+			},
+			"no_settings": "No settings available.",
+			"run_seeders": "Run seeders to load initial configuration.",
+			"change": "change",
+			"changes": "unsaved changes",
+			"discard": "Discard"
+		}
+	},
+	"components": {
+		"contact": {
+			"title": "contact.exe",
+			"send_message_to": "Send message to",
+			"name": "Name",
+			"name_placeholder": "Your name",
+			"email": "Email",
+			"email_placeholder": "your@email.com",
+			"subject": "Subject",
+			"subject_placeholder": "Message subject (optional)",
+			"message": "Message",
+			"message_placeholder": "Write your message here...",
+			"errors": {
+				"required_fields": "Please complete all required fields",
+				"invalid_email": "Please enter a valid email",
+				"send_error": "Error sending message",
+				"connection_error": "Connection error. Please try again."
+			},
+			"sending": "Sending...",
+			"send": "Send message",
+			"success": "Message sent successfully!",
+			"note": "Messages are sent directly to"
+		}
+	},
+	"page": {
+		"home": {
+			"index_of": "Index of",
+			"main_directory": "[main directory]",
+			"no_file_selected": "No file selected",
+			"close_file": "Close file",
+			"select_file_details": "Select a file from the left panel to see more details.",
+			"select_file_start": "Select a file to start...",
+			"use_shortcut": "Use",
+			"to_open_console": "to open the console."
+		}
+	}
+}

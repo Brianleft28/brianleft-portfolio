@@ -9,12 +9,16 @@ Sistema de portafolio profesional con terminal interactiva, IA conversacional y 
 - **Multi-tenant** con subdominios personalizados
 - **Sistema de archivos virtual** para proyectos
 - **100% White-Label** - sin datos hardcodeados
+- **i18n** - Soporte multiidioma (Español/Inglés)
 
 ## 📚 Documentación
 
-- [Guía Técnica (Stack y Arquitectura)](docs/TECHNICAL.md)
-- [Guía Multi-Tenant (Subdominios)](docs/MULTI-TENANT.md)
-- [Sistema de Memorias (IA & Contexto)](docs/MEMORIES.md)
+| Documento | Descripción |
+|-----------|-------------|
+| [Guía Técnica](docs/TECHNICAL.md) | Stack, arquitectura y endpoints |
+| [Multi-Tenant](docs/MULTI-TENANT.md) | Subdominios y configuración VPS |
+| [Sistema RAG](docs/RAG-CONTEXT.MD) | IA, memorias y contexto |
+| [Deployment](docs/DEPLOYMENT.md) | Guía de producción y checklist |
 
 ## 🛠️ Instalación
 
@@ -70,7 +74,7 @@ PORTFOLIO_DOMAIN=tudominio.com
 
 ## 📁 Estructura del Proyecto
 
-```
+```bash
 ├── api/                 # Backend NestJS
 │   ├── src/
 │   │   ├── modules/     # Módulos de la aplicación
@@ -91,9 +95,10 @@ PORTFOLIO_DOMAIN=tudominio.com
 │   └── migrations/      # Migraciones
 │
 └── docs/                # Documentación
-    ├── TECHNICAL.md
-    ├── MULTI-TENANT.md
-    └── MEMORIES.md
+    ├── TECHNICAL.md     # Arquitectura y stack
+    ├── MULTI-TENANT.md  # Subdominios y VPS
+    ├── RAG-CONTEXT.MD   # Sistema de IA
+    └── DEPLOYMENT.md    # Guía de producción
 ```
 
 ## 🔄 Flujo White-Label

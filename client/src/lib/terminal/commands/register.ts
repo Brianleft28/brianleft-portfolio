@@ -1,4 +1,5 @@
 import type { Command } from '../types';
+import { t } from '$lib/i18n/helpers';
 
 /**
  * Comando para registrar nuevos usuarios (crear portfolio)
@@ -6,7 +7,7 @@ import type { Command } from '../types';
  */
 export const register: Command = {
 	name: 'register',
-	description: 'Registrar nuevo usuario (crear portfolio)',
+	description: t('terminal.register.description'),
 	usage: 'register -u <username> -e <email> -p <password>',
 
 	execute(args) {
@@ -19,24 +20,24 @@ export const register: Command = {
 
 		if (!parsed.username) {
 			return {
-				output: `<span class="error-text">❌ Username requerido</span>
-Uso: <span class="command-highlight">register -u &lt;username&gt; -e &lt;email&gt; -p &lt;password&gt;</span>`,
+				output: `<span class="error-text">❌ ${t('terminal.register.errors.username_required')}</span>
+${t('common.usage')}: <span class="command-highlight">register -u &lt;username&gt; -e &lt;email&gt; -p &lt;password&gt;</span>`,
 				isHtml: true
 			};
 		}
 
 		if (!parsed.email) {
 			return {
-				output: `<span class="error-text">❌ Email requerido</span>
-Uso: <span class="command-highlight">register -u ${parsed.username} -e &lt;email&gt; -p &lt;password&gt;</span>`,
+				output: `<span class="error-text">❌ ${t('terminal.register.errors.email_required')}</span>
+${t('common.usage')}: <span class="command-highlight">register -u ${parsed.username} -e &lt;email&gt; -p &lt;password&gt;</span>`,
 				isHtml: true
 			};
 		}
 
 		if (!parsed.password) {
 			return {
-				output: `<span class="error-text">❌ Password requerida</span>
-Uso: <span class="command-highlight">register -u ${parsed.username} -e ${parsed.email || '&lt;email&gt;'} -p &lt;password&gt;</span>`,
+				output: `<span class="error-text">❌ ${t('terminal.register.errors.password_required')}</span>
+${t('common.usage')}: <span class="command-highlight">register -u ${parsed.username} -e ${parsed.email || '&lt;email&gt;'} -p &lt;password&gt;</span>`,
 				isHtml: true
 			};
 		}
@@ -44,7 +45,7 @@ Uso: <span class="command-highlight">register -u ${parsed.username} -e ${parsed.
 		// Validar email básico
 		if (!parsed.email.includes('@')) {
 			return {
-				output: `<span class="error-text">❌ Email inválido: ${parsed.email}</span>`,
+				output: `<span class="error-text">❌ ${t('terminal.register.errors.invalid_email')}: ${parsed.email}</span>`,
 				isHtml: true
 			};
 		}
@@ -53,12 +54,12 @@ Uso: <span class="command-highlight">register -u ${parsed.username} -e ${parsed.
 		createUser(parsed);
 
 		return {
-			output: `<span class="ai-info">⏳ Creando usuario <strong>${parsed.username}</strong>...</span>
+			output: `<span class="ai-info">⏳ ${t('terminal.register.creating')} <strong>${parsed.username}</strong>...</span>
 
-<span class="system-hint">Esto creará:
-  • Carpeta ~/projects
-  • Configuración inicial
-  • Subdomain: ${parsed.username}.portfolio.dev</span>`,
+<span class="system-hint">${t('terminal.register.will_create')}
+  • ${t('terminal.register.projects_folder')}
+  • ${t('terminal.register.initial_config')}
+  • ${t('terminal.register.subdomain')}: ${parsed.username}.portfolio.dev</span>`,
 			isHtml: true
 		};
 	}
@@ -68,30 +69,30 @@ Uso: <span class="command-highlight">register -u ${parsed.username} -e ${parsed.
 
 function showHelp() {
 	return {
-		output: `<span class="system-header">👤 REGISTRO DE USUARIO</span>
+		output: `<span class="system-header">👤 ${t('terminal.register.title')}</span>
 
-<span class="category-header">Uso:</span>
-  <span class="command-highlight">register -u &lt;username&gt; -e &lt;email&gt; -p &lt;password&gt; [opciones]</span>
+<span class="category-header">${t('common.usage')}:</span>
+  <span class="command-highlight">register -u &lt;username&gt; -e &lt;email&gt; -p &lt;password&gt; [${t('common.options').toLowerCase()}]</span>
 
-<span class="category-header">Opciones:</span>
-  <span class="command-highlight">-u</span>   Username (requerido)
-  <span class="command-highlight">-e</span>   Email (requerido)
-  <span class="command-highlight">-p</span>   Password (requerido)
-  <span class="command-highlight">-n</span>   Nombre completo (ej: -n "Juan Perez")
-  <span class="command-highlight">-r</span>   Rol profesional (ej: -r "Developer")
-  <span class="command-highlight">-h</span>   Mostrar ayuda
+<span class="category-header">${t('common.options')}:</span>
+  <span class="command-highlight">-u</span>   ${t('terminal.register.options.username')}
+  <span class="command-highlight">-e</span>   ${t('terminal.register.options.email')}
+  <span class="command-highlight">-p</span>   ${t('terminal.register.options.password')}
+  <span class="command-highlight">-n</span>   ${t('terminal.register.options.name')} (ej: -n "Juan Perez")
+  <span class="command-highlight">-r</span>   ${t('terminal.register.options.role')} (ej: -r "Developer")
+  <span class="command-highlight">-h</span>   ${t('terminal.register.options.help')}
 
-<span class="category-header">Ejemplos:</span>
+<span class="category-header">${t('common.examples')}:</span>
   <span class="command-highlight">register -u johndoe -e john@example.com -p 123456</span>
   <span class="command-highlight">register -u janedoe -e jane@dev.io -p 123456 -n "Jane Doe" -r "Full Stack"</span>
 
-<span class="category-header">Qué se crea:</span>
-  • Usuario en la base de datos
-  • Carpeta ~/projects para el portfolio
-  • Configuración inicial del sitio
+<span class="category-header">${t('terminal.register.will_create')}:</span>
+  • ${t('terminal.register.creates.user_db')}
+  • ${t('terminal.register.creates.projects_folder')}
+  • ${t('terminal.register.creates.initial_config')}
   • Subdomain: &lt;username&gt;.portfolio.dev
 
-<span class="ai-warning">⚠️ La contraseña es obligatoria y no se puede recuperar después.</span>`,
+<span class="ai-warning">⚠️ ${t('terminal.register.warning')}</span>`,
 		isHtml: true
 	};
 }

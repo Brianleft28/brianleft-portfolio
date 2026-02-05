@@ -7,6 +7,7 @@
 	import { fileSystemData as staticFileSystem } from '$lib/data/file-system';
 	import { dynamicFilesystem, loadConfig, type FileSystemNode as DynamicFSNode } from '$lib/stores/config';
 	import { onMount } from 'svelte';
+	import { _ } from 'svelte-i18n';
 
 	// Tipos para resúmenes de proyectos
 	interface ProjectSummary {
@@ -214,7 +215,7 @@
 <div class="container-fluid py-2 font-monospace d-flex flex-column" style="height: 100vh; overflow: hidden;">
     <!-- Indice -->
     <header class="row flex-shrink-0">
-        <h3 class="col-12 mb-3">Índice de {currentPathString()}</h3>
+        <h3 class="col-12 mb-3">{$_('page.home.index_of')} {currentPathString()}</h3>
         <hr />
     </header>
 
@@ -237,7 +238,7 @@
 						class="me-2"
 					/>
 					<button class="btn btn-link text-decoration-none p-0" onclick={goToRoot}
-						>[directorio principal]</button
+						>{$_('page.home.main_directory')}</button
 					>
 				</div>
 			{/if}
@@ -274,13 +275,13 @@
 					style="font-size: 0.8rem;"
 				>
 					<span class="text-light"
-						>{activeItem()?.name || 'Sin archivo seleccionado'}</span
+						>{activeItem()?.name || $_('page.home.no_file_selected')}</span
 					>
 					{#if activeItem()}
 						<button
 							class="btn-close-neon"
 							onclick={() => (activeFileId = null)}
-							aria-label="Cerrar archivo"
+							aria-label={$_('page.home.close_file')}
 						>
 							✕
 						</button>
@@ -302,7 +303,7 @@
 							</div>
 							<div class="summary-hint mt-3">
 								<small class="text-muted">
-									Seleccioná un archivo del panel izquierdo para ver más detalles.
+									{$_('page.home.select_file_details')}
 								</small>
 							</div>
 						</div>
@@ -311,9 +312,9 @@
 							class="empty-state h-100 d-flex flex-column justify-content-center align-items-center"
 						>
 							<img src={folderMainIcon} alt="Logo" width="64" />
-							<p class="mt-3 text-muted">Seleccioná un archivo para comenzar...</p>
+							<p class="mt-3 text-muted">{$_('page.home.select_file_start')}</p>
 							<small class="text-muted"
-								>Usá <kbd>Ctrl</kbd> + <kbd>Ñ</kbd> para abrir la consola.</small
+								>{$_('page.home.use_shortcut')} <kbd>Ctrl</kbd> + <kbd>Ñ</kbd> {$_('page.home.to_open_console')}</small
 							>
 						</div>
 					{/if}

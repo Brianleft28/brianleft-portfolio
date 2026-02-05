@@ -1,25 +1,26 @@
 import type { Command, CommandContext } from '../types';
 import { getAllCommands } from './index';
+import { t } from '$lib/i18n/helpers';
 
 export const help: Command = {
 	name: 'help',
-	description: 'Muestra esta ayuda',
+	description: t('terminal.help.description'),
 	usage: 'help [-h] [comando]',
 	execute(args, ctx) {
 		const commands = getAllCommands();
 		const aiCmd = ctx?.aiCommandName || 'ai';
-		const aiName = ctx?.aiDisplayName || 'Asistente AI';
+		const aiName = ctx?.aiDisplayName || 'AI Assistant';
 
 		// Help flag
 		if (args.includes('-h') || args.includes('--help')) {
 			return {
-				output: `<span class="command-highlight">help</span> - Sistema de ayuda
+				output: `<span class="command-highlight">help</span> - ${t('terminal.help.title')}
 
-<span class="system-header">USO:</span>
-  help              Lista todos los comandos
+<span class="system-header">${t('common.usage').toUpperCase()}:</span>
+  help              ${t('terminal.help.commands.help')}
   help &lt;comando&gt;    Info detallada de un comando
 
-<span class="system-header">EJEMPLOS:</span>
+<span class="system-header">${t('common.examples').toUpperCase()}:</span>
   help ls           Ayuda sobre ls
   help ${aiCmd}     Ayuda sobre ${aiName}`,
 				isHtml: true
@@ -36,7 +37,7 @@ export const help: Command = {
 				};
 			}
 			return {
-				output: `<span class="command-highlight">${cmd.name}</span> - ${cmd.description}\n\n<span class="system-header">USO:</span> ${cmd.usage || cmd.name}\n\n<span class="system-hint">Tip: ${cmd.name} -h para más opciones</span>`,
+				output: `<span class="command-highlight">${cmd.name}</span> - ${cmd.description}\n\n<span class="system-header">${t('common.usage').toUpperCase()}:</span> ${cmd.usage || cmd.name}\n\n<span class="system-hint">${t('common.tip')}: ${cmd.name} -h para más opciones</span>`,
 				isHtml: true
 			};
 		}
@@ -44,32 +45,32 @@ export const help: Command = {
 		const lines = [
 			`<span class="system-header">📚 COMANDOS DISPONIBLES</span>`,
 			'',
-			`<span class="category-header">📁 Navegación</span>`,
-			`   <span class="command-highlight">cd</span>        Cambiar directorio`,
-			`   <span class="command-highlight">ls</span>        Listar archivos y carpetas`,
-			`   <span class="command-highlight">pwd</span>       Mostrar directorio actual`,
-			`   <span class="command-highlight">tree</span>      Árbol de directorios`,
+			`<span class="category-header">📁 ${t('terminal.help.categories.navigation')}</span>`,
+			`   <span class="command-highlight">cd</span>        ${t('terminal.help.commands.cd')}`,
+			`   <span class="command-highlight">ls</span>        ${t('terminal.help.commands.ls')}`,
+			`   <span class="command-highlight">pwd</span>       ${t('terminal.help.commands.pwd')}`,
+			`   <span class="command-highlight">tree</span>      ${t('terminal.help.commands.tree')}`,
 			'',
-			`<span class="category-header">📄 Archivos</span>`,
-			`   <span class="command-highlight">cat</span>       Ver contenido de archivo`,
-			`   <span class="command-highlight">cv</span>        Descargar curriculum vitae`,
+			`<span class="category-header">📄 ${t('terminal.help.categories.files')}</span>`,
+			`   <span class="command-highlight">cat</span>       ${t('terminal.help.commands.cat')}`,
+			`   <span class="command-highlight">cv</span>        ${t('terminal.help.commands.cv')}`,
 			'',
-			`<span class="category-header">🤖 Inteligencia Artificial</span>`,
-			`   <span class="command-highlight">${aiCmd}</span>      ${aiName} - Modos especializados`,
-			`   <span class="command-highlight">apikey</span>    Configura tu API key de Gemini`,
+			`<span class="category-header">🤖 ${t('terminal.help.categories.ai')}</span>`,
+			`   <span class="command-highlight">${aiCmd}</span>      ${aiName} - ${t('terminal.help.commands.ai_modes')}`,
+			`   <span class="command-highlight">apikey</span>    ${t('terminal.help.commands.apikey')}`,
 			'',
-			`<span class="category-header">🔐 Cuenta & Admin</span>`,
-			`   <span class="command-highlight">register</span>  Crear cuenta (obtén tu subdominio)`,
-			`   <span class="command-highlight">email</span>     Ver o cambiar tu email (login)`,
-			`   <span class="command-highlight">admin</span>     Abrir panel de administración`,
+			`<span class="category-header">🔐 ${t('terminal.help.categories.account')}</span>`,
+			`   <span class="command-highlight">register</span>  ${t('terminal.help.commands.register')}`,
+			`   <span class="command-highlight">email</span>     ${t('terminal.help.commands.email')}`,
+			`   <span class="command-highlight">admin</span>     ${t('terminal.help.commands.admin')}`,
 			'',
-			`<span class="category-header">🎨 Personalización</span>`,
-			`   <span class="command-highlight">theme</span>     Cambiar tema de colores`,
+			`<span class="category-header">🎨 ${t('terminal.help.categories.customization')}</span>`,
+			`   <span class="command-highlight">theme</span>     ${t('terminal.help.commands.theme')}`,
 			'',
-			`<span class="category-header">⚙️ Terminal</span>`,
-			`   <span class="command-highlight">cls</span>       Limpiar consola (Ctrl+L)`,
-			`   <span class="command-highlight">help</span>      Mostrar esta ayuda`,
-			`   <span class="command-highlight">exit</span>      Cerrar terminal (Ctrl+Ñ)`,
+			`<span class="category-header">⚙️ ${t('terminal.help.categories.terminal')}</span>`,
+			`   <span class="command-highlight">cls</span>       ${t('terminal.help.commands.clear')}`,
+			`   <span class="command-highlight">help</span>      ${t('terminal.help.commands.help')}`,
+			`   <span class="command-highlight">exit</span>      ${t('terminal.help.commands.exit')}`,
 			'',
 			`<span class="system-hint">💡 help &lt;comando&gt; para info detallada</span>`,
 			`<span class="system-hint">💡 &lt;comando&gt; -h para opciones</span>`

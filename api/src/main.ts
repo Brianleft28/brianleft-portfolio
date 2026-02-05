@@ -6,9 +6,33 @@ import { AppModule } from './app.module';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  // Habilitar CORS para el cliente
+  // CORS con soporte para subdominios wildcard
+  const allowedDomain = process.env.PORTFOLIO_DOMAIN || 'localhost';
+  const isProduction = process.env.NODE_ENV === 'production';
+
   app.enableCors({
-    origin: process.env.CLIENT_URL || 'http://localhost:3000',
+    origin: (origin, callback) => {
+      // Permitir requests sin origin (mobile apps, curl, etc)
+      if (!origin) {
+        callback(null, true);
+        return;
+      }
+
+      // En desarrollo, permitir localhost
+      if (!isProduction && (origin.includes('localhost') || origin.includes('127.0.0.1'))) {
+        callback(null, true);
+        return;
+      }
+
+      // En producción, permitir el dominio principal y todos sus subdominios
+      const domainPattern = new RegExp(`^https?://([a-z0-9-]+\\.)?${allowedDomain.replace('.', '\\.')}$`, 'i');
+      if (domainPattern.test(origin)) {
+        callback(null, true);
+        return;
+      }
+
+      callback(new Error('Not allowed by CORS'));
+    },
     credentials: true,
   });
 
@@ -43,7 +67,9 @@ async function bootstrap() {
   await app.listen(port);
 
   console.log(`🚀 API running on: http://localhost:${port}`);
-  console.log(`📚 Swagger docs: http://localhost:${port}/api/docs`);
+  if (process.env.NODE_ENV !== 'production') {
+    console.log(`📚 Swagger docs: http://localhost:${port}/api/docs`);
+  }
 }
 
 bootstrap();

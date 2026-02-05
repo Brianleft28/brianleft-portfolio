@@ -73,15 +73,23 @@ api/
 
 | Comando | Descripción | Opciones |
 |---------|-------------|----------|
-| `help` | Muestra ayuda | `-h` para detalles |
-| `ls` | Lista archivos | `ll` detallado |
-| `cd` | Cambia directorio | `cd ..` subir |
-| `cat` | Muestra contenido | — |
+| `help` | Muestra ayuda categorizada | `-h` para detalles |
+| `ls` | Lista archivos | `-l` detallado, `ll` alias |
+| `cd` | Cambia directorio | `cd ..` subir, `cd ~` home |
+| `cat` | Muestra contenido de archivo | — |
 | `tree` | Árbol de directorios | — |
 | `pwd` | Directorio actual | — |
-| `cls` | Limpia terminal | `Ctrl+L` |
+| `clear` | Limpia terminal | `Ctrl+L`, `cls` alias |
+| `cv` | Descarga CV/currículum | `-d` download, `-i` info |
+| `theme` | Cambia tema visual | `list`, `set <nombre>` |
+| `lang` | Cambia idioma de interfaz | `list`, `set <código>` |
 | `apikey` | Configura API key Gemini | `set`, `show`, `clear` |
-| `admin` | Panel de administración | — |
+| `register` | Crear cuenta de usuario | `-u`, `-e`, `-p` |
+| `login` | Iniciar sesión | `--user`, `--pass` |
+| `logout` | Cerrar sesión | — |
+| `whoami` | Info del usuario actual | — |
+| `verify` | Verificar email | `<código>`, `--resend` |
+| `admin` | Panel de administración | secciones disponibles |
 | `{ai_cmd}` | Chat con IA | `start`, `modes`, `status` |
 
 ## Sistema de API Key de Usuario
@@ -141,9 +149,54 @@ Accesible en `/admin` con autenticación JWT:
 - **Frontend:** Svelte 5 (runes), SvelteKit, TypeScript
 - **Backend:** NestJS, TypeORM, Node.js 20+
 - **Base de datos:** MySQL 8+
-- **IA:** Google Gemini 2.5 API
+- **IA:** Google Gemini 2.5 API (Claude API en desarrollo)
 - **Infraestructura:** Docker (multi-stage build)
-- **Estilos:** Bootstrap 5 + CSS custom
+- **Estilos:** Bootstrap 5 + CSS custom con variables de tema
+- **i18n:** svelte-i18n con soporte ES/EN
+
+## Sistema de Internacionalización (i18n)
+
+El portfolio soporta múltiples idiomas mediante `svelte-i18n`:
+
+### Estructura de archivos
+
+```
+client/src/lib/i18n/
+├── index.ts          # Configuración principal
+├── helpers.ts        # Funciones t(), getCurrentLocale(), setLocale()
+└── locales/
+    ├── es.json       # Español (default)
+    └── en.json       # English
+```
+
+### Uso en componentes Svelte
+
+```svelte
+<script>
+  import { _ } from 'svelte-i18n';
+</script>
+
+<h1>{$_('admin.settings.title')}</h1>
+```
+
+### Uso en archivos TypeScript
+
+```typescript
+import { t } from '$lib/i18n/helpers';
+
+const message = t('terminal.help.description');
+```
+
+### Idiomas disponibles
+
+| Código | Idioma | Flag |
+|--------|--------|------|
+| `es` | Español | 🇪🇸 |
+| `en` | English | 🇬🇧 |
+
+**Comando terminal:** `lang list` / `lang set en` / `lang es`
+
+**Persistencia:** El idioma se guarda en `localStorage` del navegador.
 
 ## Variables de Entorno
 
@@ -161,12 +214,31 @@ GEMINI_API_KEY
 
 ## White Label
 
-Este portfolio está diseñado para ser completamente configurable:
+Este portfolio está diseñado como una **plataforma completamente personalizable** con estilo "backend":
 
 1. **Sin hardcoding:** Todos los textos vienen de la BD
 2. **Modos configurables:** Los modos de IA se definen en `ai_personalities`
 3. **Branding dinámico:** Título, descripción, colores desde settings
 4. **Memorias editables:** El conocimiento de la IA se puede modificar sin código
+5. **Sistema de temas:** CSS variables permiten temas personalizados dinámicos
+6. **Multiidioma:** i18n integrado con soporte para múltiples locales
+7. **Autenticación:** Sistema completo de registro/login/verificación de usuarios
+
+### Variables de tema disponibles
+
+```css
+--theme-bg-primary        /* Fondo principal */
+--theme-bg-secondary      /* Fondo secundario (cards, modales) */
+--theme-text-primary      /* Texto principal */
+--theme-text-secondary    /* Texto secundario */
+--theme-accent            /* Color de acento (bordes, highlights) */
+--theme-accent-glow       /* Glow effect del tema */
+--theme-success           /* Color de éxito */
+--theme-error             /* Color de error */
+--theme-warning           /* Color de advertencia */
+```
+
+Los temas se cambian con el comando `theme set <nombre>` y se persisten en localStorage.
 
 ---
 
@@ -220,3 +292,107 @@ En lugar de usar stores complejos, utilizo el nuevo sistema de reactividad de Sv
 ---
 *System Note: Intuition is the highest form of data compression.*
 *Author: Brian Benegas.*
+
+---
+
+# INSTRUCCIONES PARA AGENTES DE IA
+
+> **Nota:** Esta sección está diseñada para ser leída por agentes de IA (Claude, Gemini, etc.) que interactúen con este proyecto a través de APIs.
+
+## Contexto del proyecto
+
+Eres un asistente de IA integrado en un **portfolio interactivo tipo terminal**. Este no es un proyecto estándar - es una **experiencia técnica completa** que simula un sistema operativo en el navegador.
+
+### Tu rol
+
+Tu personalidad y comportamiento se configuran dinámicamente desde el panel de administración (`/admin`). Tienes dos modos principales:
+
+1. **Modo Arquitecto** - Técnico, directo, para decisiones de diseño y code review
+2. **Modo Asistente** - Amigable, claro, para consultas generales
+
+Ambos usan **ironía rioplatense sutil** - como un senior que tira comentarios ingeniosos sin pasarse.
+
+## Estructura de archivos críticos
+
+Cuando trabajes en este proyecto, estos son los archivos clave:
+
+### Frontend (SvelteKit)
+```
+client/src/lib/
+├── i18n/                    # Sistema de internacionalización
+│   ├── locales/en.json      # Traducciones inglés
+│   └── locales/es.json      # Traducciones español
+├── terminal/commands/       # Comandos de terminal (modular)
+├── components/              # Componentes Svelte 5 (runes)
+└── data/memory/             # Base de conocimiento (este archivo)
+```
+
+### Backend (NestJS)
+```
+api/src/modules/
+├── chat/                    # Integración con Gemini (o Claude)
+├── ai-personalities/        # Configuración de modos
+├── memory/                  # Sistema de memoria/RAG
+└── settings/                # Configuración dinámica
+```
+
+## Comandos esenciales del sistema
+
+Estos comandos son parte de la UX principal, úsalos como referencia:
+
+- `help` - Sistema de ayuda categorizado
+- `lang list/set` - Cambio de idioma (es/en)
+- `theme list/set` - Cambio de tema visual
+- `apikey set/show/clear` - Config de API key del usuario
+- `{ai_cmd}` - Tu nombre de comando (configurable)
+
+## Sistema de memoria (RAG)
+
+El backend implementa un sistema de memoria con búsqueda semántica:
+
+- **META** (este archivo) - Tu autoconciencia
+- **INDEX** - Perfil profesional del owner
+- **DOCS** - Base de conocimiento general
+- **PROJECT** - Detalles de proyectos específicos
+
+El sistema carga dinámicamente solo lo relevante según el contexto.
+
+## White Label & Personalización
+
+**IMPORTANTE:** Este portfolio es 100% personalizable:
+
+- Los textos vienen de la BD (tabla `settings`)
+- Los modos de IA se configuran en `ai_personalities`
+- El sistema de temas usa CSS variables
+- Todo es dinámico - NADA está hardcodeado
+
+### Si modificas el código:
+
+1. **Respeta el i18n:** Todo texto visible debe estar en `locales/*.json`
+2. **Usa variables de tema:** No hardcodees colores, usa `var(--theme-*)`
+3. **Sigue el patrón de comandos:** Mira `commands/theme.ts` o `commands/lang.ts` como referencia
+4. **Mantén la modularidad:** Cada comando es un archivo separado
+
+## Tecnologías clave
+
+- **Svelte 5 Runes** - Sistema de reactividad moderno (`$state`, `$derived`)
+- **svelte-i18n** - Internacionalización (`$_` en Svelte, `t()` en TS)
+- **NestJS + TypeORM** - Backend robusto
+- **Gemini 2.5 API** - Integración de IA (próximamente Claude API)
+
+## Filosofía del proyecto
+
+Este portfolio demuestra el concepto de **"Convergencia Evolutiva"** en arquitectura de software. Fue diseñado por un desarrollador Junior que, sin conocer los patrones de la industria, llegó a las mismas soluciones que empresas como Vercel por pura necesidad lógica.
+
+**El resultado:** Un sistema de "Documentación Ejecutable" que permite que agentes de IA comprendan proyectos complejos sin perderse, usando contexto inyectable estructurado.
+
+## Para handoff entre agentes
+
+Si estás recibiendo este contexto desde otro agente (ej: Claude → Gemini):
+
+1. Lee **primero** este archivo (META.md) para entender el sistema
+2. Consulta **INDEX.md** para conocer al owner
+3. Revisa **RAG-CONTEXT.MD** en `/docs` para arquitectura técnica
+4. Si necesitas modificar código, respeta los patrones existentes
+
+**Recuerda:** No eres "solo un chatbot". Eres parte de una experiencia técnica interactiva. Tu tono debe reflejar eso - profesional pero con personalidad.

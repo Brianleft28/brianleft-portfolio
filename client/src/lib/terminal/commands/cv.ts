@@ -1,53 +1,48 @@
 import type { Command, CommandContext, CommandResult } from '../types';
+import { t } from '$lib/i18n/helpers';
 
 /**
  * Comando cv - Descarga el curriculum vitae
- * 
- * Uso:
- *   cv     - Inicia descarga del CV
- *   cv -i  - Muestra información del CV disponible
- *   cv -h  - Muestra ayuda
  */
 export const cv: Command = {
   name: 'cv',
-  description: 'Descarga el curriculum vitae',
+  description: t('terminal.cv.description'),
   usage: 'cv [-i] [-h]',
 
   execute(args: string[], ctx: CommandContext): CommandResult {
-    // Usamos rutas relativas que funcionan a través del proxy del cliente
     const downloadUrl = '/api/uploads/cv';
     const infoUrl = '/api/uploads/cv/info';
-    
+
     // Opción -h: mostrar ayuda
     if (args.includes('-h')) {
       return {
-        output: `📄 <strong>cv</strong> - Descarga el curriculum vitae
+        output: `📄 <strong>cv</strong> - ${t('terminal.cv.description')}
 
-<strong>Uso:</strong>
-  cv      Descarga el CV activo
-  cv -i   Muestra información del CV
-  cv -h   Muestra esta ayuda
+<strong>${t('common.usage')}:</strong>
+  cv      ${t('terminal.cv.options.download')}
+  cv -i   ${t('terminal.cv.options.info')}
+  cv -h   ${t('terminal.cv.options.help')}
 
 <strong>Notas:</strong>
-  • El CV se puede cargar desde el panel de admin (<code>admin uploads</code>)
-  • Si hay múltiples CVs, se descarga el marcado como activo
-  • Formatos soportados: PDF, DOC, DOCX
+  • ${t('terminal.cv.notes.upload')}
+  • ${t('terminal.cv.notes.multiple')}
+  • ${t('terminal.cv.notes.formats')}
 
-<strong>Alias:</strong> <code>curriculum</code>, <code>resume</code>`,
+<strong>${t('common.alias')}:</strong> <code>curriculum</code>, <code>resume</code>`,
         isHtml: true
       };
     }
-    
+
     // Opción -i: mostrar información sin descargar
     if (args.includes('-i')) {
       return {
-        output: `📄 <strong>Curriculum Vitae</strong>
+        output: `📄 <strong>${t('terminal.cv.title')}</strong>
 
-  <a href="${infoUrl}" target="_blank">Ver información del CV</a>
-  <a href="${downloadUrl}" target="_blank">Descargar CV directamente</a>
+  <a href="${infoUrl}" target="_blank">${t('terminal.cv.examples.info')}</a>
+  <a href="${downloadUrl}" target="_blank">${t('terminal.cv.examples.download')}</a>
 
-<span style="color: #888">Tip: Ejecuta <code>cv</code> sin argumentos para descargar</span>
-<span style="color: #888">     El CV se gestiona desde <code>admin uploads</code></span>`,
+<span style="color: #888">${t('common.tip')}: <code>cv</code> ${t('terminal.cv.tip_download')}</span>
+<span style="color: #888">     ${t('terminal.cv.tip_manage')} <code>admin settings</code></span>`,
         isHtml: true
       };
     }
@@ -64,12 +59,12 @@ export const cv: Command = {
     }
 
     return {
-      output: `✅ <strong>Descargando CV...</strong>
+      output: `✅ <strong>${t('terminal.cv.downloading')}</strong>
 
-Si la descarga no inicia automáticamente:
-<a href="${downloadUrl}" target="_blank">Descargar CV</a>
+${t('terminal.cv.manual_download')}
+<a href="${downloadUrl}" target="_blank">${t('terminal.cv.download_link')}</a>
 
-<span style="color: #888">Tip: Usa <code>cv -i</code> para ver información del CV</span>`,
+<span style="color: #888">${t('common.tip')}: <code>cv -i</code> ${t('terminal.cv.options.info')}</span>`,
       isHtml: true
     };
   },

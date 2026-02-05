@@ -1,17 +1,18 @@
 import type { Command } from '../types';
+import { t } from '$lib/i18n/helpers';
 
 /**
  * Comando logout - cerrar sesión
  */
 export const logout: Command = {
 	name: 'logout',
-	description: 'Cerrar sesión',
+	description: t('terminal.logout.description'),
 	usage: 'logout',
 
 	execute() {
 		doLogout();
 		return {
-			output: `<span class="ai-info">⏳ Cerrando sesión...</span>`,
+			output: `<span class="ai-info">⏳ ${t('terminal.logout.logging_out')}</span>`,
 			isHtml: true
 		};
 	}
@@ -30,20 +31,20 @@ async function doLogout() {
 			window.dispatchEvent(new CustomEvent('auth:change'));
 		}
 
-		showResult(`<span class="ai-success">✅ Sesión cerrada correctamente</span>
+		showResult(`<span class="ai-success">✅ ${t('terminal.logout.success')}</span>
 
-<span class="system-hint">👋 ¡Hasta pronto!</span>
-<span class="system-hint">💡 Para iniciar sesión: <code>login</code></span>`);
+<span class="system-hint">👋 ${t('terminal.logout.goodbye')}</span>
+<span class="system-hint">💡 ${t('terminal.logout.to_login')} <code>login</code></span>`);
 
 	} catch (error) {
 		// Logout siempre "funciona" aunque falle la API
 		if (typeof window !== 'undefined') {
 			window.dispatchEvent(new CustomEvent('auth:change'));
 		}
-		
-		showResult(`<span class="ai-success">✅ Sesión cerrada</span>
 
-<span class="system-hint">👋 ¡Hasta pronto!</span>`);
+		showResult(`<span class="ai-success">✅ ${t('terminal.logout.success')}</span>
+
+<span class="system-hint">👋 ${t('terminal.logout.goodbye')}</span>`);
 	}
 }
 

@@ -3,15 +3,6 @@
 
 	let { children } = $props();
 
-	let activeTab = $derived.by(() => {
-		const path = $page.url.pathname;
-		if (path === '/admin/login') return 'login';
-		if (path.includes('/ai')) return 'ai';
-		if (path.includes('/projects')) return 'projects';
-		if (path.includes('/uploads')) return 'uploads';
-		return 'general';
-	});
-
 	const isLoginPage = $derived($page.url.pathname === '/admin/login');
 </script>
 
@@ -29,21 +20,6 @@
 					<a href="/" class="nav-link">← Volver al sitio</a>
 					<a href="/admin/logout" class="logout-btn">Cerrar sesión</a>
 				</div>
-			</div>
-
-			<div class="admin-nav">
-				<a href="/admin/settings" class="nav-tab" class:active={activeTab === 'general'}>
-					🏠 General
-				</a>
-				<a href="/admin/ai" class="nav-tab" class:active={activeTab === 'ai'}>
-					🤖 IA & Personalidad
-				</a>
-				<a href="/admin/projects" class="nav-tab" class:active={activeTab === 'projects'}>
-					📁 Proyectos
-				</a>
-				<a href="/admin/uploads" class="nav-tab" class:active={activeTab === 'uploads'}>
-					📤 Archivos
-				</a>
 			</div>
 
 			<div class="admin-content">
@@ -140,36 +116,6 @@
 	.logout-btn:hover {
 		background: var(--theme-danger);
 		color: var(--theme-bg-primary);
-	}
-
-	.admin-nav {
-		display: flex;
-		background: var(--theme-bg-secondary);
-		border-bottom: 1px solid var(--theme-border);
-		overflow-x: auto;
-		flex-shrink: 0;
-	}
-
-	.nav-tab {
-		padding: 0.75rem 1.5rem;
-		color: var(--theme-text-muted);
-		text-decoration: none;
-		font-family: 'Courier New', monospace;
-		font-size: 0.9rem;
-		border-bottom: 2px solid transparent;
-		transition: all 0.2s;
-		white-space: nowrap;
-	}
-
-	.nav-tab:hover {
-		color: var(--theme-accent);
-		background: var(--theme-accent-subtle);
-	}
-
-	.nav-tab.active {
-		color: var(--theme-accent);
-		border-bottom-color: var(--theme-accent);
-		background: var(--theme-accent-subtle);
 	}
 
 	.admin-content {

@@ -7,6 +7,7 @@ import { cls } from './cls';
 import { cv } from './cv';
 import email from './email';
 import { help } from './help';
+import { lang } from './lang';
 import { login } from './login';
 import { logout } from './logout';
 import { ls } from './ls';
@@ -18,7 +19,7 @@ import { theme } from './theme';
 import { verify } from './verify';
 import { whoami } from './whoami';
 
-const allCommands: Command[] = [admin, apikey, cat, cd, cls, cv, email, help, login, logout, ls, pwd, register, tree, torvalds, theme, verify, whoami];
+const allCommands: Command[] = [admin, apikey, cat, cd, cls, cv, email, help, lang, login, logout, ls, pwd, register, tree, torvalds, theme, verify, whoami];
 const commandRegistry: Map<string, Command> = new Map();
 
 // Registrar todos los comandos
@@ -74,6 +75,11 @@ commandRegistry.set('resume', cv);
 commandRegistry.set('key', apikey);
 commandRegistry.set('gemini', apikey);
 
+// Aliases para lang
+commandRegistry.set('language', lang);
+commandRegistry.set('idioma', lang);
+commandRegistry.set('locale', lang);
+
 /**
  * Registra un alias dinámico para el comando AI
  * Se usa para que el nombre del comando coincida con la config
@@ -113,4 +119,4 @@ export function generateHelp(): string {
 }
 
 // Re-exportar comandos individuales
-export { apikey, cat, cd, cls, cv, help, ls, pwd, register, tree, torvalds };
+export { apikey, cat, cd, cls, cv, help, lang, ls, pwd, register, tree, torvalds };

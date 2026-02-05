@@ -1,5 +1,6 @@
 <script lang="ts">
     import '../app.css';
+    import '$lib/i18n';
     import { onMount, type Snippet } from 'svelte';
     import { page } from '$app/stores';
     import { isTerminalVisible } from '../lib/stores/ui';
@@ -7,6 +8,7 @@
     import { startInChatMode } from '$lib/stores/terminal';
     import { portfolioConfig, aiPersonality, loadConfig } from '$lib/stores/config';
     import { initializeTheme } from '$lib/terminal/commands/theme';
+    import { t, locale } from 'svelte-i18n';
 
     let { children }: { children: Snippet } = $props();
 
@@ -47,6 +49,13 @@
     function openTerminalWithAI() {
         startInChatMode.set(true);
         isTerminalVisible.set(true);
+    }
+
+    function toggleLocale() {
+        locale.set($locale === 'es' ? 'en' : 'es');
+        if (typeof localStorage !== 'undefined') {
+            localStorage.setItem('portfolio-locale', $locale === 'es' ? 'en' : 'es');
+        }
     }
 </script>
 

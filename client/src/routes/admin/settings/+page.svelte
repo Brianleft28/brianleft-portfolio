@@ -1,6 +1,7 @@
 <script lang="ts">
   import { enhance } from '$app/forms';
   import { onMount } from 'svelte';
+  import { _ } from 'svelte-i18n';
 
   interface Setting {
     id: number;
@@ -112,12 +113,12 @@
     return sorted;
   });
 
-  const categoryLabels: Record<string, { label: string; icon: string }> = {
-    owner: { label: 'Información Personal', icon: '👤' },
-    contact: { label: 'Contacto', icon: '📧' },
-    social: { label: 'Redes Sociales', icon: '🔗' },
-    branding: { label: 'Branding & Apariencia', icon: '🎨' },
-    ai: { label: 'Asistente IA', icon: '🤖' },
+  const categoryLabels: Record<string, { labelKey: string; icon: string }> = {
+    owner: { labelKey: 'admin.settings.tabs.personal', icon: '👤' },
+    contact: { labelKey: 'admin.settings.tabs.contact', icon: '📧' },
+    social: { labelKey: 'admin.settings.tabs.social', icon: '🔗' },
+    branding: { labelKey: 'admin.settings.tabs.branding', icon: '🎨' },
+    ai: { labelKey: 'admin.settings.tabs.ai', icon: '🤖' },
   };
 
   // Settings que se ocultan en la UI (se manejan de otra forma)
@@ -286,8 +287,8 @@
 
 <div class="settings-page">
   <header class="page-header">
-    <h1>⚙️ Configuración del Portfolio</h1>
-    <p class="subtitle">Personaliza toda la información de tu portfolio white-label</p>
+    <h1>⚙️ {$_('admin.settings.title')}</h1>
+    <p class="subtitle">{$_('admin.settings.subtitle')}</p>
   </header>
 
   {#if data.error}
@@ -299,88 +300,88 @@
   {/if}
 
   {#if form?.success}
-    <div class="alert alert-success">✅ Cambios guardados correctamente</div>
+    <div class="alert alert-success">✅ {$_('admin.settings.saved')}</div>
   {/if}
 
   <!-- Account Info Section -->
   {#if user}
     <section class="account-section">
-      <h2>🔐 Tu Cuenta</h2>
+      <h2>🔐 {$_('admin.settings.your_account')}</h2>
       <div class="account-grid">
         <div class="account-field">
-          <span class="field-label">Usuario</span>
+          <span class="field-label">{$_('admin.settings.user')}</span>
           <div class="readonly-value">
             <span>{user.username}</span>
           </div>
         </div>
-        
+
         <div class="account-field">
-          <span class="field-label">Subdominio</span>
+          <span class="field-label">{$_('admin.settings.subdomain')}</span>
           <div class="subdomain-display">
             <span class="subdomain-url">
               <span class="protocol">https://</span>
               <span class="subdomain-name">{user.subdomain || user.username}</span>
               <span class="domain">.{data.portfolioDomain || 'portfolio.dev'}</span>
             </span>
-            <button 
-              type="button" 
-              class="btn-copy" 
+            <button
+              type="button"
+              class="btn-copy"
               onclick={copySubdomain}
               title="Copiar URL"
             >
               {copiedSubdomain ? '✅' : '📋'}
             </button>
           </div>
-          <span class="field-hint">Este es tu subdominio personalizado (solo lectura)</span>
+          <span class="field-hint">{$_('admin.settings.subdomain_readonly')}</span>
         </div>
-        
+
         <div class="account-field">
-          <label for="user_email">Email</label>
+          <label for="user_email">{$_('admin.settings.email')}</label>
           <div class="email-field-wrapper">
-            <input 
+            <input
               id="user_email"
-              type="email" 
+              type="email"
               class="setting-input"
               value={userEmail}
               placeholder="tu@email.com"
               onchange={(e) => userEmail = (e.target as HTMLInputElement).value}
             />
             {#if emailChanged}
-              <button 
-                type="button" 
-                class="btn-save-email" 
+              <button
+                type="button"
+                class="btn-save-email"
                 onclick={saveUserEmail}
                 disabled={savingEmail}
               >
-                {savingEmail ? '⏳' : '💾'} Guardar
+                {savingEmail ? '⏳' : '💾'} {$_('common.save')}
               </button>
             {/if}
           </div>
           {#if emailSaved}
-            <span class="field-hint success">✅ Email actualizado</span>
+            <span class="field-hint success">✅ {$_('admin.settings.email_updated')}</span>
           {:else if emailError}
             <span class="field-hint error">{emailError}</span>
           {:else}
-            <span class="field-hint">Tu email para recibir mensajes de contacto</span>
+            <span class="field-hint">{$_('admin.settings.email_help')}</span>
           {/if}
         </div>
-        
+
         <div class="account-field">
-          <span class="field-label">Rol</span>
+          <span class="field-label">{$_('admin.settings.role')}</span>
           <div class="readonly-value">
             <span class="role-badge" class:admin={user.role === 'admin'}>
-              {user.role === 'admin' ? '👑 Administrador' : '👤 Usuario'}
+              {user.role === 'admin' ? '👑 ' + $_('admin.settings.role_admin') : '👤 ' + $_('admin.settings.role_user')}
             </span>
           </div>
         </div>
-        
+
         <div class="account-field">
-          <span class="field-label">Miembro desde</span>
+          <span class="field-label">{$_('admin.settings.member_since')}</span>
           <div class="readonly-value">
-            <span>{new Date(user.createdAt).toLocaleDateString('es-ES', { 
-              year: 'numeric', 
-              month: 'long', 
-              day: 'numeric' 
+            <span>{new Date(user.createdAt).toLocaleDateString('es-ES', {
+              year: 'numeric',
+              month: 'long',
+              day: 'numeric'
             })}</span>
           </div>
         </div>
@@ -390,11 +391,11 @@
 
   <!-- Settings por categoría -->
   {#each groupedSettings as [category, categorySettings]}
-    {@const catInfo = categoryLabels[category] || { label: category, icon: '📋' }}
+    {@const catInfo = categoryLabels[category] || { labelKey: category, icon: '📋' }}
     {@const visibleSettings = categorySettings.filter(s => !hiddenSettings.includes(s.key))}
     {#if visibleSettings.length > 0}
     <section class="settings-section">
-      <h2>{catInfo.icon} {catInfo.label}</h2>
+      <h2>{catInfo.icon} {catInfo.labelKey ? $_(`${catInfo.labelKey}`) : category}</h2>
       
       <div class="settings-list">
         {#each visibleSettings as setting (setting.id)}
@@ -468,18 +469,18 @@
 
   {#if settings.length === 0}
     <div class="empty-state">
-      <p>No hay configuraciones disponibles.</p>
-      <p class="hint">Ejecuta los seeders para cargar la configuración inicial.</p>
+      <p>{$_('admin.settings.no_settings')}</p>
+      <p class="hint">{$_('admin.settings.run_seeders')}</p>
     </div>
   {/if}
 
   {#if hasChanges()}
     <div class="actions-bar">
       <span class="changes-count">
-        {editedSettings.size} cambio{editedSettings.size > 1 ? 's' : ''} sin guardar
+        {editedSettings.size} {editedSettings.size > 1 ? $_('admin.settings.changes') : $_('admin.settings.change')}
       </span>
-      <form 
-        method="POST" 
+      <form
+        method="POST"
         action="?/save"
         use:enhance={() => {
           saving = true;
@@ -492,10 +493,10 @@
         <input type="hidden" name="updates" value={getUpdatesJson()} />
         <div class="actions">
           <button type="button" class="btn btn-cancel" onclick={discardChanges} disabled={saving}>
-            Descartar
+            {$_('admin.settings.discard')}
           </button>
           <button type="submit" class="btn btn-save" disabled={saving}>
-            {#if saving}Guardando...{:else}💾 Guardar{/if}
+            {#if saving}{$_('common.saving')}{:else}💾 {$_('common.save')}{/if}
           </button>
         </div>
       </form>

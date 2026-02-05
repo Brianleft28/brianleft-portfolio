@@ -1,11 +1,12 @@
 import type { Command } from '../types';
+import { t } from '$lib/i18n/helpers';
 
 /**
  * Comando login - iniciar sesión desde terminal
  */
 export const login: Command = {
 	name: 'login',
-	description: 'Iniciar sesión',
+	description: t('terminal.login.description'),
 	usage: 'login -u <user> -p <pass>',
 
 	execute(args) {
@@ -15,9 +16,9 @@ export const login: Command = {
 				window.open('/admin/login', '_blank');
 			}
 			return {
-				output: `<span class="ai-info">🔐 Abriendo panel de login...</span>
+				output: `<span class="ai-info">🔐 ${t('terminal.login.opening_panel')}</span>
 
-<span class="system-hint">También puedes usar:</span>
+<span class="system-hint">${t('terminal.login.also_use')}</span>
   <span class="command-highlight">login -u &lt;user&gt; -p &lt;pass&gt;</span>`,
 				isHtml: true
 			};
@@ -32,16 +33,16 @@ export const login: Command = {
 
 		if (!parsed.username) {
 			return {
-				output: `<span class="error-text">❌ Username requerido</span>
-Uso: <span class="command-highlight">login -u &lt;user&gt; -p &lt;pass&gt;</span>`,
+				output: `<span class="error-text">❌ ${t('terminal.login.errors.username_required')}</span>
+${t('common.usage')}: <span class="command-highlight">login -u &lt;user&gt; -p &lt;pass&gt;</span>`,
 				isHtml: true
 			};
 		}
 
 		if (!parsed.password) {
 			return {
-				output: `<span class="error-text">❌ Password requerida</span>
-Uso: <span class="command-highlight">login -u ${parsed.username} -p &lt;pass&gt;</span>`,
+				output: `<span class="error-text">❌ ${t('terminal.login.errors.password_required')}</span>
+${t('common.usage')}: <span class="command-highlight">login -u ${parsed.username} -p &lt;pass&gt;</span>`,
 				isHtml: true
 			};
 		}
@@ -50,7 +51,7 @@ Uso: <span class="command-highlight">login -u ${parsed.username} -p &lt;pass&gt;
 		doLogin(parsed.username, parsed.password);
 
 		return {
-			output: `<span class="ai-info">⏳ Iniciando sesión como <strong>${parsed.username}</strong>...</span>`,
+			output: `<span class="ai-info">⏳ ${t('common.loading')} <strong>${parsed.username}</strong>...</span>`,
 			isHtml: true
 		};
 	}
@@ -58,22 +59,22 @@ Uso: <span class="command-highlight">login -u ${parsed.username} -p &lt;pass&gt;
 
 function showHelp() {
 	return {
-		output: `<span class="system-header">🔐 INICIAR SESIÓN</span>
+		output: `<span class="system-header">🔐 ${t('terminal.login.title')}</span>
 
-<span class="category-header">Uso:</span>
-  <span class="command-highlight">login</span>              Abre panel de login
-  <span class="command-highlight">login -u &lt;user&gt; -p &lt;pass&gt;</span>  Login desde terminal
+<span class="category-header">${t('common.usage')}:</span>
+  <span class="command-highlight">login</span>              ${t('terminal.login.examples.panel')}
+  <span class="command-highlight">login -u &lt;user&gt; -p &lt;pass&gt;</span>  ${t('terminal.login.examples.terminal')}
 
-<span class="category-header">Opciones:</span>
-  <span class="command-highlight">-u</span>   Nombre de usuario
-  <span class="command-highlight">-p</span>   Contraseña
-  <span class="command-highlight">-h</span>   Mostrar ayuda
+<span class="category-header">${t('common.options')}:</span>
+  <span class="command-highlight">-u</span>   ${t('terminal.login.options.username')}
+  <span class="command-highlight">-p</span>   ${t('terminal.login.options.password')}
+  <span class="command-highlight">-h</span>   ${t('terminal.login.options.help')}
 
-<span class="category-header">Ejemplos:</span>
+<span class="category-header">${t('common.examples')}:</span>
   <span class="command-highlight">login</span>
   <span class="command-highlight">login -u johndoe -p mypassword</span>
 
-<span class="system-hint">💡 No tienes cuenta? Usa <code>register -h</code></span>`,
+<span class="system-hint">💡 ${t('terminal.login.no_account')} <code>register -h</code></span>`,
 		isHtml: true
 	};
 }
@@ -118,10 +119,10 @@ async function doLogin(username: string, password: string) {
 		const data = await response.json();
 
 		if (!response.ok) {
-			showResult(`<span class="error-text">❌ Error de autenticación</span>
-<span class="ai-warning">${data.message || 'Credenciales inválidas'}</span>
+			showResult(`<span class="error-text">❌ ${t('terminal.login.errors.auth_error')}</span>
+<span class="ai-warning">${data.message || t('terminal.login.errors.invalid_credentials')}</span>
 
-<span class="system-hint">💡 ¿Olvidaste tu contraseña? Contacta al administrador.</span>`);
+<span class="system-hint">💡 ${t('terminal.login.forgot_password')}</span>`);
 			return;
 		}
 
@@ -130,17 +131,17 @@ async function doLogin(username: string, password: string) {
 			window.dispatchEvent(new CustomEvent('auth:change'));
 		}
 
-		showResult(`<span class="ai-success">✅ Sesión iniciada correctamente!</span>
+		showResult(`<span class="ai-success">✅ ${t('terminal.login.success')}</span>
 
-<span class="category-header">Bienvenido, <strong>${data.user?.username || username}</strong></span>
+<span class="category-header">${t('terminal.login.welcome')} <strong>${data.user?.username || username}</strong></span>
 
-<span class="system-hint">💡 Panel de admin: <code>admin</code></span>
-<span class="system-hint">💡 Ver tu info: <code>whoami</code></span>
-<span class="system-hint">💡 Cerrar sesión: <code>logout</code></span>`);
+<span class="system-hint">💡 ${t('terminal.login.admin_panel')} <code>admin</code></span>
+<span class="system-hint">💡 ${t('terminal.login.your_info')} <code>whoami</code></span>
+<span class="system-hint">💡 ${t('terminal.login.logout')} <code>logout</code></span>`);
 
 	} catch (error) {
-		showResult(`<span class="error-text">❌ Error de conexión</span>
-<span class="ai-warning">${error instanceof Error ? error.message : 'Error desconocido'}</span>`);
+		showResult(`<span class="error-text">❌ ${t('terminal.verify.errors.connection_error')}</span>
+<span class="ai-warning">${error instanceof Error ? error.message : 'Error'}</span>`);
 	}
 }
 

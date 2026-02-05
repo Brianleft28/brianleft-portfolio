@@ -1,37 +1,33 @@
 import type { Command, CommandContext, CommandResult } from '../types';
+import { t } from '$lib/i18n/helpers';
 
 const adminCommand: Command = {
 	name: 'admin',
-	description: 'Abrir panel de administración',
+	description: t('terminal.admin.description'),
 	usage: 'admin [sección]',
 
 	execute(args: string[], context: CommandContext): CommandResult {
 		const section = args[0]?.toLowerCase() || '';
-		
+
 		// Mapeo de secciones
 		const sections: Record<string, { url: string; label: string; icon: string }> = {
-			'': { url: '/admin/login', label: 'Panel Admin', icon: '🔐' },
-			'login': { url: '/admin/login', label: 'Login', icon: '🔐' },
-			'settings': { url: '/admin/settings', label: 'Configuración', icon: '⚙️' },
-			'config': { url: '/admin/settings', label: 'Configuración', icon: '⚙️' },
-			'uploads': { url: '/admin/uploads', label: 'Archivos', icon: '📁' },
-			'files': { url: '/admin/uploads', label: 'Archivos', icon: '📁' },
-			'projects': { url: '/admin/projects', label: 'Proyectos', icon: '📂' },
+			'': { url: '/admin/settings', label: t('terminal.admin.panel'), icon: '⚙️' },
+			'login': { url: '/admin/login', label: t('terminal.admin.login'), icon: '🔐' },
+			'settings': { url: '/admin/settings', label: t('terminal.admin.config'), icon: '⚙️' },
+			'config': { url: '/admin/settings', label: t('terminal.admin.config'), icon: '⚙️' },
 		};
 
 		const target = sections[section];
-		
+
 		if (!target) {
 			return {
-				output: `❌ Sección desconocida: "${section}"
+				output: `❌ ${t('terminal.admin.unknown_section')} "${section}"
 
-Secciones disponibles:
-  • <a href="/admin/login" target="_blank">login</a> — Iniciar sesión
-  • <a href="/admin/settings" target="_blank">settings</a> — Configuración del portfolio
-  • <a href="/admin/uploads" target="_blank">uploads</a> — Gestión de archivos
-  • <a href="/admin/projects" target="_blank">projects</a> — Gestión de proyectos
+${t('terminal.admin.available_sections')}
+  • <a href="/admin/login" target="_blank">login</a> — ${t('terminal.admin.login')}
+  • <a href="/admin/settings" target="_blank">settings</a> — ${t('terminal.admin.settings')}
 
-Ejemplo: <code>admin settings</code>`,
+${t('common.examples')}: <code>admin settings</code>`,
 				isHtml: true
 			};
 		}
@@ -42,9 +38,9 @@ Ejemplo: <code>admin settings</code>`,
 		}
 
 		return {
-			output: `${target.icon} Abriendo <a href="${target.url}" target="_blank"><strong>${target.label}</strong></a> en nueva pestaña...
+			output: `${target.icon} ${t('terminal.admin.opening')} <a href="${target.url}" target="_blank"><strong>${target.label}</strong></a> ${t('terminal.admin.new_tab')}
 
-<span style="color: #888">💡 Tip: Usa <code>admin -h</code> para ver todas las secciones disponibles.</span>`,
+<span style="color: #888">💡 ${t('common.tip')}: <code>admin -h</code> ${t('terminal.admin.tip_sections')}</span>`,
 			isHtml: true
 		};
 	},
