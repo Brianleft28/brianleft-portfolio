@@ -13,12 +13,19 @@ import { Memory } from '../entities/memory.entity';
 import { MemoryKeyword } from '../entities/memory-keyword.entity';
 import { Setting } from '../entities/setting.entity';
 import { AiPersonality } from '../entities/ai-personality.entity';
-import { seedMemories, seedFilesystem } from './memory.seeder';
-import { seedSettings } from './settings.seeder';
-import { seedAiPersonalities } from './ai-personality.seeder';
+import { seedMemories } from './memory.seeder';
 
+/**
+ * Seeder para sistema white-label
+ * 
+ * NOTA: En modo white-label, los settings, filesystem y ai-personalities
+ * se crean dinámicamente cuando un usuario se registra via initializeForUser().
+ * 
+ * Este seeder solo carga la memoria base del sistema (meta.md) que contiene
+ * información sobre cómo funciona el portfolio.
+ */
 async function runSeeders() {
-  console.log('🌱 Iniciando seeders...\n');
+  console.log('🌱 Iniciando seeders (white-label mode)...\n');
 
   // Crear conexión
   const dataSource = new DataSource({
@@ -37,28 +44,18 @@ async function runSeeders() {
     await dataSource.initialize();
     console.log('✅ Conexión a base de datos establecida\n');
 
-    // Ejecutar seeders en orden
+    // Solo cargar memoria base del sistema
     console.log('═══════════════════════════════════════');
-    console.log('⚙️  SEEDING SETTINGS');
-    console.log('═══════════════════════════════════════');
-    await seedSettings(dataSource);
-
-    console.log('\n═══════════════════════════════════════');
-    console.log('🤖 SEEDING AI PERSONALITIES');
-    console.log('═══════════════════════════════════════');
-    await seedAiPersonalities(dataSource);
-
-    console.log('\n═══════════════════════════════════════');
-    console.log('📚 SEEDING MEMORIAS');
+    console.log('📚 SEEDING MEMORIA BASE (meta.md)');
     console.log('═══════════════════════════════════════');
     await seedMemories(dataSource);
 
     console.log('\n═══════════════════════════════════════');
-    console.log('📂 SEEDING FILESYSTEM');
+    console.log('ℹ️  NOTA: Settings, Filesystem y AI Personalities');
+    console.log('    se crean al registrar cada usuario.');
     console.log('═══════════════════════════════════════');
-    await seedFilesystem(dataSource);
 
-    console.log('\n✅ Todos los seeders completados exitosamente');
+    console.log('\n✅ Seeder completado exitosamente');
   } catch (error) {
     console.error('❌ Error ejecutando seeders:', error);
     process.exit(1);

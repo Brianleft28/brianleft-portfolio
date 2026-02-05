@@ -7,6 +7,8 @@ import { cls } from './cls';
 import { cv } from './cv';
 import email from './email';
 import { help } from './help';
+import { login } from './login';
+import { logout } from './logout';
 import { ls } from './ls';
 import { pwd } from './pwd';
 import { register } from './register';
@@ -14,8 +16,9 @@ import { tree } from './tree';
 import { torvalds } from './torvalds';
 import { theme } from './theme';
 import { verify } from './verify';
+import { whoami } from './whoami';
 
-const allCommands: Command[] = [admin, apikey, cat, cd, cls, cv, email, help, ls, pwd, register, tree, torvalds, theme, verify];
+const allCommands: Command[] = [admin, apikey, cat, cd, cls, cv, email, help, login, logout, ls, pwd, register, tree, torvalds, theme, verify, whoami];
 const commandRegistry: Map<string, Command> = new Map();
 
 // Registrar todos los comandos
@@ -46,6 +49,11 @@ commandRegistry.set('createuser', register);
 // Aliases para verify
 commandRegistry.set('confirmar', verify);
 commandRegistry.set('verificar', verify);
+
+// Aliases para auth
+commandRegistry.set('signin', login);
+commandRegistry.set('signout', logout);
+commandRegistry.set('salir', logout);
 
 // ll es ls -l (alias especial)
 const llCommand: Command = {

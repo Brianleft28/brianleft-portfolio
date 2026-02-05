@@ -26,13 +26,24 @@
 		})
 	);
 
-	// Configurar renderer para abrir links en nueva pestaña
+	// Configurar renderer para abrir links en nueva pestaña y mejorar listas
 	const renderer = new marked.Renderer();
 	renderer.link = ({ href, title, text }) => {
 		const titleAttr = title ? ` title="${title}"` : '';
 		return `<a href="${href}" target="_blank" rel="noopener noreferrer"${titleAttr}>${text}</a>`;
 	};
-	marked.use({ renderer });
+	
+	// Mejor renderizado de listas
+	renderer.list = (body, ordered) => {
+		const tag = ordered ? 'ol' : 'ul';
+		return `<${tag} class="terminal-list">${body.items.map(item => item.raw).join('')}</${tag}>`;
+	};
+	
+	renderer.listitem = (text) => {
+		return `<li>${text.text}</li>`;
+	};
+	
+	marked.use({ renderer, breaks: true, gfm: true });
 
 	// Función helper para renderizar markdown síncronamente
 	function renderMarkdown(text: string): string {
@@ -706,7 +717,7 @@ Usa <code>admin login</code> para acceder.`);
 
 	let promptIndicator = $derived(
 		isVerificationMode
-			? '🔐 Código> '
+			? 'codigo:\\> '
 			: isChatModeActive
 				? `🤖 ${aiDisplayName} [${$iaMode || 'asistente'}]> `
 				: $currentPath + '> '
@@ -848,43 +859,65 @@ Usa <code>admin login</code> para acceder.`);
 	}
 
 	:global(.ai-markdown ul),
-	:global(.ai-markdown ol) {
+	:global(.ai-markdown ol),
+	:global(.terminal-list) {
 		display: block;
 		clear: both;
-		margin: 0.3rem 0;
+		margin: 0.5rem 0;
 		padding-left: 1.5rem;
-	}
-
-	:global(.ai-markdown li) {
-		margin-bottom: 0.15rem;
+		list-style-position: outside;
 	}
 
 	:global(.ai-markdown ul),
+	:global(.terminal-list) {
+		list-style-type: disc;
+	}
+
 	:global(.ai-markdown ol) {
-		display: block;
-		clear: both;
-		margin: 0.4rem 0;
-		padding-left: 1.5rem;
+		list-style-type: decimal;
 	}
 
-	:global(.ai-markdown li) {
-		margin-bottom: 0.2rem;
+	:global(.ai-markdown li),
+	:global(.terminal-list li) {
+		margin-bottom: 0.25rem;
 		color: var(--theme-text-primary);
+		line-height: 1.5;
 	}
 
-	:global(.ai-markdown li::marker) {
+	:global(.ai-markdown li::marker),
+	:global(.terminal-list li::marker) {
 		color: var(--theme-prompt); /* Verde como el prompt */
 	}
 
-	:global(.ai-markdown li strong) {
+	:global(.ai-markdown li strong),
+	:global(.terminal-list li strong) {
 		color: var(--theme-secondary); /* Color de acento para negritas en listas */
 	}
 
-	:global(.ai-markdown li code) {
+	:global(.ai-markdown li code),
+	:global(.terminal-list li code) {
 		background: var(--theme-bg-secondary);
 		color: var(--theme-warning); /* Naranja para código inline */
 		padding: 0.1rem 0.4rem;
 		border-radius: 3px;
+	}
+
+	/* Highlight.js estilos */
+	:global(.ai-markdown pre code),
+	:global(.hljs) {
+		background: transparent !important;
+		padding: 0 !important;
+	}
+
+	:global(.ai-markdown pre) {
+		display: block;
+		clear: both;
+		background: var(--theme-bg-tertiary);
+		padding: 0.75rem;
+		border-radius: 4px;
+		overflow-x: auto;
+		margin: 0.5rem 0;
+		border: 1px solid var(--theme-border);
 	}
 
 	:global(.ai-markdown table) {

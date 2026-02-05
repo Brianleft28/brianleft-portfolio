@@ -4,29 +4,29 @@ import type { Command, CommandContext, CommandResult } from '../types';
  * Comando cv - Descarga el curriculum vitae
  * 
  * Uso:
- *   cv          - Inicia descarga del CV
- *   cv --info   - Muestra información del CV disponible
- *   cv -h       - Muestra ayuda
+ *   cv     - Inicia descarga del CV
+ *   cv -i  - Muestra información del CV disponible
+ *   cv -h  - Muestra ayuda
  */
 export const cv: Command = {
   name: 'cv',
   description: 'Descarga el curriculum vitae',
-  usage: 'cv [--info] [-h]',
+  usage: 'cv [-i] [-h]',
 
   execute(args: string[], ctx: CommandContext): CommandResult {
     // Usamos rutas relativas que funcionan a través del proxy del cliente
     const downloadUrl = '/api/uploads/cv';
     const infoUrl = '/api/uploads/cv/info';
     
-    // Opción -h/--help: mostrar ayuda
-    if (args.includes('--help') || args.includes('-h')) {
+    // Opción -h: mostrar ayuda
+    if (args.includes('-h')) {
       return {
         output: `📄 <strong>cv</strong> - Descarga el curriculum vitae
 
 <strong>Uso:</strong>
-  cv           Descarga el CV activo
-  cv --info    Muestra información del CV
-  cv -h        Muestra esta ayuda
+  cv      Descarga el CV activo
+  cv -i   Muestra información del CV
+  cv -h   Muestra esta ayuda
 
 <strong>Notas:</strong>
   • El CV se puede cargar desde el panel de admin (<code>admin uploads</code>)
@@ -38,8 +38,8 @@ export const cv: Command = {
       };
     }
     
-    // Opción --info: mostrar información sin descargar
-    if (args.includes('--info') || args.includes('-i')) {
+    // Opción -i: mostrar información sin descargar
+    if (args.includes('-i')) {
       return {
         output: `📄 <strong>Curriculum Vitae</strong>
 
@@ -69,7 +69,7 @@ export const cv: Command = {
 Si la descarga no inicia automáticamente:
 <a href="${downloadUrl}" target="_blank">Descargar CV</a>
 
-<span style="color: #888">Tip: Usa <code>cv --info</code> para ver información del CV</span>`,
+<span style="color: #888">Tip: Usa <code>cv -i</code> para ver información del CV</span>`,
       isHtml: true
     };
   },

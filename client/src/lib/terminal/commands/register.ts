@@ -7,7 +7,7 @@ import type { Command } from '../types';
 export const register: Command = {
 	name: 'register',
 	description: 'Registrar nuevo usuario (crear portfolio)',
-	usage: 'register --username <username> --email <email> --password <password> [--name "Nombre Apellido"] [--role "Developer"]',
+	usage: 'register -u <username> -e <email> -p <password>',
 
 	execute(args) {
 		if (!args.length || args[0] === 'help' || args[0] === '-h') {
@@ -20,7 +20,7 @@ export const register: Command = {
 		if (!parsed.username) {
 			return {
 				output: `<span class="error-text">❌ Username requerido</span>
-Uso: <span class="command-highlight">register --username &lt;username&gt; --email &lt;email&gt; --password &lt;password&gt;</span>`,
+Uso: <span class="command-highlight">register -u &lt;username&gt; -e &lt;email&gt; -p &lt;password&gt;</span>`,
 				isHtml: true
 			};
 		}
@@ -28,7 +28,7 @@ Uso: <span class="command-highlight">register --username &lt;username&gt; --emai
 		if (!parsed.email) {
 			return {
 				output: `<span class="error-text">❌ Email requerido</span>
-Uso: <span class="command-highlight">register --username ${parsed.username} --email &lt;email&gt; --password &lt;password&gt;</span>`,
+Uso: <span class="command-highlight">register -u ${parsed.username} -e &lt;email&gt; -p &lt;password&gt;</span>`,
 				isHtml: true
 			};
 		}
@@ -36,7 +36,7 @@ Uso: <span class="command-highlight">register --username ${parsed.username} --em
 		if (!parsed.password) {
 			return {
 				output: `<span class="error-text">❌ Password requerida</span>
-Uso: <span class="command-highlight">register --username ${parsed.username} --email ${parsed.email || '&lt;email&gt;'} --password &lt;password&gt;</span>`,
+Uso: <span class="command-highlight">register -u ${parsed.username} -e ${parsed.email || '&lt;email&gt;'} -p &lt;password&gt;</span>`,
 				isHtml: true
 			};
 		}
@@ -71,15 +71,19 @@ function showHelp() {
 		output: `<span class="system-header">👤 REGISTRO DE USUARIO</span>
 
 <span class="category-header">Uso:</span>
-  <span class="command-highlight">register --username &lt;username&gt; --email &lt;email&gt; --password &lt;password&gt; [opciones]</span>
+  <span class="command-highlight">register -u &lt;username&gt; -e &lt;email&gt; -p &lt;password&gt; [opciones]</span>
 
 <span class="category-header">Opciones:</span>
-  <span class="command-highlight">--name "Nombre Apellido"</span>   Nombre completo
-  <span class="command-highlight">--role "Developer"</span>        Rol profesional
+  <span class="command-highlight">-u</span>   Username (requerido)
+  <span class="command-highlight">-e</span>   Email (requerido)
+  <span class="command-highlight">-p</span>   Password (requerido)
+  <span class="command-highlight">-n</span>   Nombre completo (ej: -n "Juan Perez")
+  <span class="command-highlight">-r</span>   Rol profesional (ej: -r "Developer")
+  <span class="command-highlight">-h</span>   Mostrar ayuda
 
-<span class="category-header">Ejemplo:</span>
-  <span class="command-highlight">register --username johndoe --email john@example.com --password 123456</span>
-  <span class="command-highlight">register --username janedoe --email jane@dev.io --password 123456 --name "Jane Doe" --role "Full Stack Developer"</span>
+<span class="category-header">Ejemplos:</span>
+  <span class="command-highlight">register -u johndoe -e john@example.com -p 123456</span>
+  <span class="command-highlight">register -u janedoe -e jane@dev.io -p 123456 -n "Jane Doe" -r "Full Stack"</span>
 
 <span class="category-header">Qué se crea:</span>
   • Usuario en la base de datos
@@ -111,22 +115,22 @@ function parseArgs(args: string[]): RegisterParams {
 
 	for (let i = 0; i < args.length; i++) {
 		const arg = args[i];
-		if ((arg === '--username' || arg === '-u') && args[i + 1]) {
+		if (arg === '-u' && args[i + 1]) {
 			result.username = args[i + 1];
 			i++;
-		} else if ((arg === '--email' || arg === '-e') && args[i + 1]) {
+		} else if (arg === '-e' && args[i + 1]) {
 			result.email = args[i + 1];
 			i++;
-		} else if ((arg === '--password' || arg === '-p') && args[i + 1]) {
+		} else if (arg === '-p' && args[i + 1]) {
 			result.password = args[i + 1];
 			i++;
-		} else if (arg === '--name' && args[i + 1]) {
+		} else if (arg === '-n' && args[i + 1]) {
 			const name = args[i + 1];
 			const parts = name.split(' ');
 			result.firstName = parts[0];
 			result.lastName = parts.slice(1).join(' ') || undefined;
 			i++;
-		} else if (arg === '--role' && args[i + 1]) {
+		} else if (arg === '-r' && args[i + 1]) {
 			result.role = args[i + 1];
 			i++;
 		}

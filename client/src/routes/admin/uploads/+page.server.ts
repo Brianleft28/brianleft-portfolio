@@ -1,49 +1,25 @@
 import type { PageServerLoad, Actions } from './$types';
 import { fail } from '@sveltejs/kit';
-import { env } from '$env/dynamic/private';
+import { PUBLIC_API_URL } from '$env/static/public';
 
-const API_URL = env.PUBLIC_API_URL || 'http://api:4000';
-
-// Cache del token JWT
-let cachedToken: { token: string; expires: number } | null = null;
-
-async function getApiToken(): Promise<string> {
-  if (cachedToken && Date.now() < cachedToken.expires) {
-    return cachedToken.token;
-  }
-
-  const response = await fetch(`${API_URL}/auth/login`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      username: env.ADMIN_USERNAME,
-      password: env.ADMIN_PASSWORD
-    })
-  });
-
-  if (!response.ok) {
-    throw new Error('No se pudo autenticar con la API');
-  }
-
-  const data = await response.json();
-  cachedToken = {
-    token: data.accessToken,
-    expires: Date.now() + 50 * 60 * 1000
-  };
-
-  return data.accessToken;
-}
+const API_URL = PUBLIC_API_URL || 'http://api:4000';
 
 export const load: PageServerLoad = async ({ locals }) => {
-  if (!locals.user?.authenticated) {
+  if (!locals.user?.authenticated || !locals.user.token) {
     return { cvInfo: null, images: [], error: 'No autenticado' };
   }
+
+  const token = locals.user.token;
 
   try {
     // Cargar info de CV e imágenes en paralelo
     const [cvResponse, imagesResponse] = await Promise.all([
-      fetch(`${API_URL}/uploads/cv/info`),
-      fetch(`${API_URL}/uploads/images`)
+      fetch(`${API_URL}/uploads/cv/info`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      }),
+      fetch(`${API_URL}/uploads/images`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      })
     ]);
 
     const cvInfo = await cvResponse.json();
@@ -65,10 +41,11 @@ export const load: PageServerLoad = async ({ locals }) => {
 
 export const actions: Actions = {
   uploadCv: async ({ request, locals }) => {
-    if (!locals.user?.authenticated) {
+    if (!locals.user?.authenticated || !locals.user.token) {
       return fail(401, { error: 'No autenticado' });
     }
 
+    const token = locals.user.token;
     const formData = await request.formData();
     const file = formData.get('file') as File;
 
@@ -85,8 +62,6 @@ export const actions: Actions = {
     }
 
     try {
-      const token = await getApiToken();
-      
       const apiFormData = new FormData();
       apiFormData.append('file', file);
 
@@ -108,10 +83,11 @@ export const actions: Actions = {
   },
 
   uploadImage: async ({ request, locals }) => {
-    if (!locals.user?.authenticated) {
+    if (!locals.user?.authenticated || !locals.user.token) {
       return fail(401, { error: 'No autenticado' });
     }
 
+    const token = locals.user.token;
     const formData = await request.formData();
     const file = formData.get('file') as File;
     const type = formData.get('type') as string;
@@ -139,8 +115,6 @@ export const actions: Actions = {
     }
 
     try {
-      const token = await getApiToken();
-      
       const apiFormData = new FormData();
       apiFormData.append('file', file);
 
@@ -162,10 +136,11 @@ export const actions: Actions = {
   },
 
   deleteImage: async ({ request, locals }) => {
-    if (!locals.user?.authenticated) {
+    if (!locals.user?.authenticated || !locals.user.token) {
       return fail(401, { error: 'No autenticado' });
     }
 
+    const token = locals.user.token;
     const formData = await request.formData();
     const type = formData.get('type') as string;
 
@@ -174,8 +149,6 @@ export const actions: Actions = {
     }
 
     try {
-      const token = await getApiToken();
-      
       const response = await fetch(`${API_URL}/uploads/images/${type}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }

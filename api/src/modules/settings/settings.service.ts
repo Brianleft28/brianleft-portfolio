@@ -215,6 +215,7 @@ export class SettingsService {
     email: string;
   }): Promise<void> {
     // Settings completos para el nuevo usuario
+    // Las claves deben coincidir con las que usa chat.service.ts para reemplazar placeholders
     const defaultSettings: Array<{
       key: string;
       value: string;
@@ -222,26 +223,47 @@ export class SettingsService {
       type?: 'string' | 'number' | 'boolean' | 'json';
       description: string;
     }> = [
-      // Owner info
+      // ═══════════════════════════════════════════════════════════════
+      // Owner Info
+      // ═══════════════════════════════════════════════════════════════
       { key: 'owner_name', value: data.ownerName, category: 'owner', type: 'string', description: 'Nombre completo' },
       { key: 'owner_first_name', value: data.ownerFirstName, category: 'owner', type: 'string', description: 'Nombre' },
       { key: 'owner_last_name', value: data.ownerLastName, category: 'owner', type: 'string', description: 'Apellido' },
       { key: 'owner_role', value: data.ownerRole, category: 'owner', type: 'string', description: 'Rol/Título profesional' },
+      { key: 'owner_role_short', value: 'Developer', category: 'owner', type: 'string', description: 'Rol corto (para placeholders)' },
+      { key: 'owner_location', value: '', category: 'owner', type: 'string', description: 'Ubicación geográfica' },
+      { key: 'owner_philosophy', value: '', category: 'owner', type: 'string', description: 'Filosofía profesional' },
       { key: 'owner_bio', value: JSON.stringify({ short: 'Bienvenido a mi portfolio', long: '' }), category: 'owner', type: 'json', description: 'Biografía corta y larga' },
+      { key: 'owner_email', value: data.email, category: 'owner', type: 'string', description: 'Email del dueño (para placeholders)' },
+      
+      // ═══════════════════════════════════════════════════════════════
       // Contact
-      { key: 'contact_email', value: data.email, category: 'contact', type: 'string', description: 'Email de contacto' },
-      { key: 'contact_location', value: '', category: 'contact', type: 'string', description: 'Ubicación' },
+      // ═══════════════════════════════════════════════════════════════
+      { key: 'contact_email_primary', value: data.email, category: 'contact', type: 'string', description: 'Email principal de contacto' },
+      { key: 'contact_availability', value: 'Disponible para nuevos proyectos', category: 'contact', type: 'string', description: 'Estado de disponibilidad' },
+      { key: 'contact_cta', value: 'Si mi perfil te interesa, no dudes en contactarme.', category: 'contact', type: 'string', description: 'Call to action' },
+      
+      // ═══════════════════════════════════════════════════════════════
       // Social (vacío por defecto)
+      // ═══════════════════════════════════════════════════════════════
       { key: 'social_github', value: '', category: 'social', type: 'string', description: 'URL de GitHub' },
+      { key: 'github_username', value: '', category: 'social', type: 'string', description: 'Username de GitHub' },
       { key: 'social_linkedin', value: '', category: 'social', type: 'string', description: 'URL de LinkedIn' },
-      { key: 'social_twitter', value: '', category: 'social', type: 'string', description: 'URL de Twitter/X' },
+      { key: 'social_website', value: '', category: 'social', type: 'string', description: 'URL del sitio web personal' },
+      
+      // ═══════════════════════════════════════════════════════════════
       // Branding
-      { key: 'branding_theme_color', value: '#00ff00', category: 'branding', type: 'string', description: 'Color principal (hex)' },
+      // ═══════════════════════════════════════════════════════════════
+      { key: 'branding_site_title', value: 'Portfolio Interactivo', category: 'branding', type: 'string', description: 'Título del sitio' },
+      { key: 'branding_site_description', value: 'Portfolio interactivo con terminal y asistente IA', category: 'branding', type: 'string', description: 'Descripción del sitio (SEO)' },
       { key: 'branding_terminal_prompt', value: 'C:\\>', category: 'branding', type: 'string', description: 'Prompt de terminal' },
-      { key: 'branding_ascii_banner', value: '', category: 'branding', type: 'string', description: 'Banner ASCII (se genera automáticamente)' },
-      // AI
-      { key: 'ai_personality_name', value: 'TorvaldsAI', category: 'ai', type: 'string', description: 'Nombre del asistente IA' },
-      { key: 'ai_personality_style', value: 'técnico y directo', category: 'ai', type: 'string', description: 'Estilo de comunicación' },
+      
+      // ═══════════════════════════════════════════════════════════════
+      // AI Configuration
+      // ═══════════════════════════════════════════════════════════════
+      { key: 'ai_name', value: 'Asistente IA', category: 'ai', type: 'string', description: 'Nombre del asistente IA' },
+      { key: 'ai_command', value: 'ask', category: 'ai', type: 'string', description: 'Comando para invocar al asistente' },
+      { key: 'ai_greeting', value: '¡Hola! Soy el asistente IA de este portfolio. Pregúntame sobre proyectos y experiencia.', category: 'ai', type: 'string', description: 'Mensaje de bienvenida' },
     ];
 
     for (const setting of defaultSettings) {

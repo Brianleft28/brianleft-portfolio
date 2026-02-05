@@ -84,7 +84,8 @@
   
   function copySubdomain() {
     if (user?.subdomain) {
-      const fullUrl = `https://${user.subdomain}.pidgeonsolutions.com`;
+      const domain = data.portfolioDomain || 'portfolio.dev';
+      const fullUrl = `https://${user.subdomain}.${domain}`;
       navigator.clipboard.writeText(fullUrl);
       copiedSubdomain = true;
       setTimeout(() => copiedSubdomain = false, 2000);
@@ -319,7 +320,7 @@
             <span class="subdomain-url">
               <span class="protocol">https://</span>
               <span class="subdomain-name">{user.subdomain || user.username}</span>
-              <span class="domain">.pidgeonsolutions.com</span>
+              <span class="domain">.{data.portfolioDomain || 'portfolio.dev'}</span>
             </span>
             <button 
               type="button" 

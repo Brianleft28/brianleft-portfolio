@@ -6,6 +6,8 @@ import * as nodemailer from 'nodemailer';
 import { UsersService, CreateUserDto } from '../users/users.service';
 import { SettingsService } from '../settings/settings.service';
 import { FilesystemService } from '../filesystem/filesystem.service';
+import { AiPersonalitiesService } from '../ai-personalities/ai-personalities.service';
+import { MemoryService } from '../memory/memory.service';
 import { LoginDto } from './dto/login.dto';
 import { TokensDto } from './dto/tokens.dto';
 import { User, UserRole } from '../../entities/user.entity';
@@ -35,6 +37,8 @@ export class AuthService {
     private usersService: UsersService,
     private settingsService: SettingsService,
     private filesystemService: FilesystemService,
+    private aiPersonalitiesService: AiPersonalitiesService,
+    private memoryService: MemoryService,
     private jwtService: JwtService,
     private configService: ConfigService,
   ) {
@@ -42,17 +46,40 @@ export class AuthService {
     const smtpHost = this.configService.get('SMTP_HOST');
     const smtpUser = this.configService.get('SMTP_USER');
     const smtpPass = this.configService.get('SMTP_PASS');
+    const smtpPort = parseInt(this.configService.get('SMTP_PORT') || '587', 10);
+    const smtpSecure = this.configService.get('SMTP_SECURE');
+    // SMTP_SECURE puede venir como string 'true'/'false' o boolean
+    const isSecure = smtpSecure === 'true' || smtpSecure === true || smtpPort === 465;
+
+    console.log('[AuthService] SMTP Config:', { 
+      host: smtpHost, 
+      port: smtpPort, 
+      secure: isSecure,
+      user: smtpUser ? '***' : 'NOT SET',
+      pass: smtpPass ? '***' : 'NOT SET'
+    });
 
     if (smtpHost && smtpUser && smtpPass) {
       this.transporter = nodemailer.createTransport({
         host: smtpHost,
-        port: this.configService.get('SMTP_PORT') || 587,
-        secure: this.configService.get('SMTP_SECURE') === 'true',
+        port: smtpPort,
+        secure: isSecure,
         auth: {
           user: smtpUser,
           pass: smtpPass,
         },
       });
+      
+      // Verificar conexión SMTP al iniciar
+      this.transporter.verify((error, success) => {
+        if (error) {
+          console.error('[AuthService] SMTP connection failed:', error.message);
+        } else {
+          console.log('[AuthService] SMTP server is ready to send emails');
+        }
+      });
+    } else {
+      console.warn('[AuthService] SMTP not configured - emails will be logged to console');
     }
   }
 
@@ -116,16 +143,11 @@ export class AuthService {
     console.log('DTO recibido en register:', dto);
     const firstName = dto.firstName || dto.username;
     const lastName = dto.lastName || '';
-    // Truco del Dueño
-    const ownerEmail = this.configService.get<string>('OWNER_EMAIL');
-    const isOwner = dto.email === ownerEmail;
-    const displayName = isOwner ? 'Brian Benegas' : `${firstName} ${lastName}`.trim();
+    const displayName = `${firstName} ${lastName}`.trim() || dto.username;
 
-
-    const role: UserRole = isOwner
-      ? UserRole.ADMIN
-      : (Object.values(UserRole).includes(dto.role as UserRole) ? dto.role as UserRole : UserRole.VIEWER);
-    const subdomain = isOwner ? 'brianleft' : dto.username.toLowerCase();
+    // Todos los usuarios que se registran son ADMIN de su propio portfolio
+    const role: UserRole = UserRole.ADMIN;
+    const subdomain = dto.username.toLowerCase().replace(/[^a-z0-9]/g, '');
 
 
     // Crear usuario
@@ -146,23 +168,24 @@ export class AuthService {
       ownerName: displayName,
       ownerFirstName: firstName,
       ownerLastName: lastName,
-      ownerRole: role,
+      ownerRole: dto.role || 'Developer',
       email: dto.email,
     });
 
-    // Si no es owner, enviar código de verificación
+    // Crear AI personalities por defecto
+    await this.aiPersonalitiesService.initializeForUser(user.id, displayName);
+
+    // Crear memorias base (INDEX y DOCS)
+    await this.memoryService.initializeForUser(user.id, displayName);
+
+    // Enviar código de verificación por email
     let requiresVerification = true;
     let message = '';
-    if (!isOwner) {
-      const verificationCode = await this.usersService.setVerificationCode(user.id);
-      const emailSent = await this.sendVerificationEmail(dto.email, verificationCode, firstName);
-      message = emailSent
-        ? `Usuario creado. Se envió un código de verificación a ${dto.email}`
-        : `Usuario creado. Tu portfolio estará disponible en: ${user.subdomain}.tudominio.com`;
-    } else {
-      requiresVerification = false;
-      message = '¡Bienvenido, dueño! Tu cuenta ya está verificada y tienes acceso total.';
-    }
+    const verificationCode = await this.usersService.setVerificationCode(user.id);
+    const emailSent = await this.sendVerificationEmail(dto.email, verificationCode, firstName);
+    message = emailSent
+      ? `Usuario creado. Se envió un código de verificación a ${dto.email}`
+      : `Usuario creado. Tu portfolio estará disponible en: ${user.subdomain}.portfolio.dev`;
 
     return {
       user,

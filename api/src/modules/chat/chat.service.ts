@@ -200,19 +200,24 @@ RESUMEN:`;
     const settingsMap = new Map(settings.map((s) => [s.key, s.value]));
 
     // Variables del owner
-    const ownerFirstName = settingsMap.get('owner_first_name') || 'Brian';
+    const ownerFirstName = settingsMap.get('owner_first_name') || '';
     const ownerLastName = settingsMap.get('owner_last_name') || '';
-    const ownerName = settingsMap.get('owner_name') || `${ownerFirstName} ${ownerLastName}`.trim();
+    const ownerName = settingsMap.get('owner_name') || `${ownerFirstName} ${ownerLastName}`.trim() || 'Usuario';
     const ownerRole = settingsMap.get('owner_role') || 'Developer';
     const ownerRoleShort = settingsMap.get('owner_role_short') || 'Dev';
     const ownerLocation = settingsMap.get('owner_location') || '';
     const ownerEmail = settingsMap.get('owner_email') || '';
     const ownerBio = settingsMap.get('owner_bio') || '';
     const ownerPhilosophy = settingsMap.get('owner_philosophy') || '';
+    const contactAvailability = settingsMap.get('contact_availability') || 'Disponible para nuevos proyectos';
+    
+    // Social links
+    const socialGithub = settingsMap.get('social_github') || '';
+    const socialLinkedin = settingsMap.get('social_linkedin') || '';
     
     // Variables del AI
-    const aiName = settingsMap.get('ai_name') || 'TorvaldsAI';
-    const aiCommand = settingsMap.get('ai_command') || 'torvalds';
+    const aiName = settingsMap.get('ai_name') || 'Asistente IA';
+    const aiCommand = settingsMap.get('ai_command') || 'ask';
     const aiGreeting = settingsMap.get('ai_greeting') || '';
     
     // Variables del sitio
@@ -228,23 +233,26 @@ RESUMEN:`;
       personality = await this.aiPersonalitiesService.findActive(userId);
     }
 
-    // Usar el system prompt de la personalidad o un fallback MUY RESTRICTIVO
+    // Usar el system prompt de la personalidad o un fallback razonable
     let baseSystemPrompt =
       personality?.systemPrompt ||
-      `IDENTIDAD
+      `## IDENTIDAD
 
-Sos un asistente del portfolio de ${ownerName}. SOLO respondés preguntas sobre ${ownerName} y sus proyectos.
+Sos un asistente del portfolio de ${ownerName}. 
 
-PROHIBICIONES ABSOLUTAS
-- NO des tutoriales de código
-- NO escribas funciones o clases
-- NO respondas preguntas genéricas de programación
-- Si piden código, respondé: "No soy un asistente de programación. ¿Querés saber sobre los proyectos de ${ownerName}?"
+## ROL
 
-REGLAS
-1. Respondé en español
-2. SOLO hablás de ${ownerName} y su portfolio
-3. Rechazá cualquier pedido de código`;
+Tu propósito es ayudar a los visitantes a conocer:
+- La experiencia y habilidades de ${ownerName}
+- Los proyectos documentados en el portfolio
+- Cómo contactar a ${ownerName}
+
+## LINEAMIENTOS
+
+1. Respondé en español argentino
+2. Sé profesional y accesible
+3. Priorizá hablar del portfolio y proyectos
+4. Si no tenés información sobre algo, indicalo amablemente`;
 
     // Reemplazar TODOS los placeholders disponibles en system prompt
     baseSystemPrompt = baseSystemPrompt
@@ -258,6 +266,10 @@ REGLAS
       .replace(/\{\{owner_email\}\}/g, ownerEmail)
       .replace(/\{\{owner_bio\}\}/g, ownerBio)
       .replace(/\{\{owner_philosophy\}\}/g, ownerPhilosophy)
+      .replace(/\{\{contact_availability\}\}/g, contactAvailability)
+      // Social
+      .replace(/\{\{social_github\}\}/g, socialGithub)
+      .replace(/\{\{social_linkedin\}\}/g, socialLinkedin)
       // AI
       .replace(/\{\{ai_name\}\}/g, aiName)
       .replace(/\{\{ai_command\}\}/g, aiCommand)

@@ -9,12 +9,16 @@ import { JwtRefreshStrategy } from './strategies/jwt-refresh.strategy';
 import { UsersModule } from '../users/users.module';
 import { SettingsModule } from '../settings/settings.module';
 import { FilesystemModule } from '../filesystem/filesystem.module';
+import { AiPersonalitiesModule } from '../ai-personalities/ai-personalities.module';
+import { MemoryModule } from '../memory/memory.module';
 
 @Module({
   imports: [
     UsersModule,
     SettingsModule,
     FilesystemModule,
+    AiPersonalitiesModule,
+    MemoryModule,
     PassportModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],

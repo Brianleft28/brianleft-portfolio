@@ -1,6 +1,6 @@
-import { Module, OnModuleInit } from '@nestjs/common';
+import { Module, OnModuleInit, Logger } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { User } from '../../entities/user.entity';
 import { UsersService } from './users.service';
 import { UsersController } from './users.controller';
@@ -12,10 +12,22 @@ import { UsersController } from './users.controller';
   exports: [UsersService],
 })
 export class UsersModule implements OnModuleInit {
-  constructor(private usersService: UsersService) {}
+  private readonly logger = new Logger(UsersModule.name);
+
+  constructor(
+    private usersService: UsersService,
+    private configService: ConfigService,
+  ) {}
 
   async onModuleInit() {
-    // Crear usuario admin inicial si no existe
-    await this.usersService.createAdminIfNotExists();
+    // En modo white-label, NO crear admin automáticamente
+    // El admin se crea solo si CREATE_ADMIN_ON_STARTUP=true en el .env
+    const createAdmin = this.configService.get('CREATE_ADMIN_ON_STARTUP') === 'true';
+    
+    if (createAdmin) {
+      await this.usersService.createAdminIfNotExists();
+    } else {
+      this.logger.log('Modo white-label: Los usuarios se crean via /auth/register');
+    }
   }
 }

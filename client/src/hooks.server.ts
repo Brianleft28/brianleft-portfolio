@@ -1,6 +1,8 @@
-import type { Handle } from '@sveltejs/kit';
-import { validateSessionToken, SESSION_COOKIE_NAME, getUserIdFromToken } from '$lib/server/auth';
+import type { Handle, HandleFetch } from '@sveltejs/kit';
+import { SESSION_COOKIE_NAME } from '$lib/server/auth';
 import { PUBLIC_API_URL } from '$env/static/public';
+
+const API_URL = PUBLIC_API_URL || 'http://api:4000';
 
 /**
  * Este hook se ejecuta en cada petición al servidor.
@@ -20,7 +22,50 @@ export const handleFetch: HandleFetch = async ({ request, fetch }) => {
  * Intercepta las peticiones que llegan al servidor de SvelteKit
  */
 export const handle: Handle = async ({ event, resolve }) => {
-	const { url, fetch } = event;
+	const { url, cookies, fetch } = event;
+
+	// Verificar autenticación para rutas de admin
+	const sessionToken = cookies.get(SESSION_COOKIE_NAME);
+	
+	if (sessionToken) {
+		try {
+			// Validar token contra la API
+			const response = await fetch(`${API_URL}/users/me`, {
+				headers: {
+					'Authorization': `Bearer ${sessionToken}`
+				}
+			});
+
+			if (response.ok) {
+				const user = await response.json();
+				event.locals.user = {
+					authenticated: true,
+					userId: user.id,
+					username: user.username,
+					role: user.role,
+					token: sessionToken
+				};
+			} else {
+				// Token inválido, limpiar cookie y marcar como no autenticado
+				cookies.delete(SESSION_COOKIE_NAME, { path: '/' });
+				event.locals.user = { authenticated: false };
+				
+				// Si está intentando acceder a una ruta protegida de admin, redirigir
+				if (url.pathname.startsWith('/admin') && url.pathname !== '/admin/login' && url.pathname !== '/admin/logout') {
+					return new Response(null, {
+						status: 302,
+						headers: { Location: '/admin/login' }
+					});
+				}
+			}
+		} catch (error) {
+			console.error('[Auth Hook] Error validating token:', error);
+			cookies.delete(SESSION_COOKIE_NAME, { path: '/' });
+			event.locals.user = { authenticated: false };
+		}
+	} else {
+		event.locals.user = { authenticated: false };
+	}
 
 	// Proxy para todas las rutas /api/*
 	if (url.pathname.startsWith('/api')) {
@@ -31,6 +76,11 @@ export const handle: Handle = async ({ event, resolve }) => {
 		// Copiar headers y body originales
 		const headers = new Headers(event.request.headers);
 		headers.delete('host'); // El host lo pone el fetch en base a la URL
+		
+		// Si hay token, agregarlo
+		if (event.locals.user?.token) {
+			headers.set('Authorization', `Bearer ${event.locals.user.token}`);
+		}
 
 		try {
 			const response = await fetch(proxiedUrl, {

@@ -1,48 +1,17 @@
 import type { PageServerLoad, Actions } from './$types';
 import { fail } from '@sveltejs/kit';
-import { env } from '$env/dynamic/private';
+import { PUBLIC_API_URL } from '$env/static/public';
 
-const API_URL = env.PUBLIC_API_URL || 'http://api:4000';
-
-// Cache simple del token JWT
-let cachedToken: { token: string; expires: number } | null = null;
-
-async function getApiToken(): Promise<string> {
-	if (cachedToken && Date.now() < cachedToken.expires) {
-		return cachedToken.token;
-	}
-
-	const response = await fetch(`${API_URL}/auth/login`, {
-		method: 'POST',
-		headers: { 'Content-Type': 'application/json' },
-		body: JSON.stringify({
-			username: env.ADMIN_USERNAME,
-			password: env.ADMIN_PASSWORD
-		})
-	});
-
-	if (!response.ok) {
-		throw new Error('No se pudo autenticar con la API');
-	}
-
-	const data = await response.json();
-
-	cachedToken = {
-		token: data.accessToken,
-		expires: Date.now() + 50 * 60 * 1000
-	};
-
-	return data.accessToken;
-}
+const API_URL = PUBLIC_API_URL || 'http://api:4000';
 
 export const load = (async ({ locals }) => {
-	if (!locals.user?.authenticated) {
+	if (!locals.user?.authenticated || !locals.user.token) {
 		return { projects: [], filesystem: [], folders: [], error: 'No autenticado' };
 	}
 
-	try {
-		const token = await getApiToken();
+	const token = locals.user.token;
 
+	try {
 		// Cargar proyectos, filesystem y carpetas en paralelo
 		const [projectsRes, filesystemRes, foldersRes] = await Promise.all([
 			fetch(`${API_URL}/projects`, {
@@ -73,10 +42,11 @@ export const load = (async ({ locals }) => {
 
 export const actions = {
 	createProject: async ({ request, locals }) => {
-		if (!locals.user?.authenticated) {
+		if (!locals.user?.authenticated || !locals.user.token) {
 			return fail(401, { error: 'No autenticado' });
 		}
 
+		const token = locals.user.token;
 		const formData = await request.formData();
 		const name = formData.get('name')?.toString();
 		const slug = formData.get('slug')?.toString();
@@ -89,7 +59,6 @@ export const actions = {
 		}
 
 		try {
-			const token = await getApiToken();
 
 			const response = await fetch(`${API_URL}/projects`, {
 				method: 'POST',
@@ -118,10 +87,11 @@ export const actions = {
 	},
 
 	deleteProject: async ({ request, locals }) => {
-		if (!locals.user?.authenticated) {
+		if (!locals.user?.authenticated || !locals.user.token) {
 			return fail(401, { error: 'No autenticado' });
 		}
 
+		const token = locals.user.token;
 		const formData = await request.formData();
 		const projectId = formData.get('projectId')?.toString();
 
@@ -130,7 +100,6 @@ export const actions = {
 		}
 
 		try {
-			const token = await getApiToken();
 
 			// TODO: Implementar delete en el backend si no existe
 			// Por ahora solo podemos borrar archivos del filesystem
@@ -142,10 +111,11 @@ export const actions = {
 	},
 
 	deleteFolder: async ({ request, locals }) => {
-		if (!locals.user?.authenticated) {
+		if (!locals.user?.authenticated || !locals.user.token) {
 			return fail(401, { error: 'No autenticado' });
 		}
 
+		const token = locals.user.token;
 		const formData = await request.formData();
 		const folderId = formData.get('folderId')?.toString();
 
@@ -154,7 +124,6 @@ export const actions = {
 		}
 
 		try {
-			const token = await getApiToken();
 
 			const response = await fetch(`${API_URL}/filesystem/folder/${folderId}`, {
 				method: 'DELETE',
@@ -178,10 +147,11 @@ export const actions = {
 	},
 
 	deleteFile: async ({ request, locals }) => {
-		if (!locals.user?.authenticated) {
+		if (!locals.user?.authenticated || !locals.user.token) {
 			return fail(401, { error: 'No autenticado' });
 		}
 
+		const token = locals.user.token;
 		const formData = await request.formData();
 		const fileId = formData.get('fileId')?.toString();
 
@@ -190,7 +160,6 @@ export const actions = {
 		}
 
 		try {
-			const token = await getApiToken();
 
 			const response = await fetch(`${API_URL}/filesystem/file/${fileId}`, {
 				method: 'DELETE',
@@ -214,10 +183,11 @@ export const actions = {
 	},
 
 	createFolder: async ({ request, locals }) => {
-		if (!locals.user?.authenticated) {
+		if (!locals.user?.authenticated || !locals.user.token) {
 			return fail(401, { error: 'No autenticado' });
 		}
 
+		const token = locals.user.token;
 		const formData = await request.formData();
 		const name = formData.get('name')?.toString();
 		const parentId = formData.get('parentId')?.toString();
@@ -227,7 +197,6 @@ export const actions = {
 		}
 
 		try {
-			const token = await getApiToken();
 
 			const response = await fetch(`${API_URL}/filesystem/folder`, {
 				method: 'POST',

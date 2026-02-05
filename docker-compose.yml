@@ -12,6 +12,7 @@ services:
       - GEMINI_API_KEY=${GEMINI_API_KEY}
       - ADMIN_USERNAME=${ADMIN_USERNAME}
       - ADMIN_PASSWORD=${ADMIN_PASSWORD}
+      - PORTFOLIO_DOMAIN=${PORTFOLIO_DOMAIN:-portfolio.dev}
     depends_on:
       - api
     networks:
@@ -44,6 +45,7 @@ services:
       - SMTP_PASS=${SMTP_PASS:-}
       - SMTP_SECURE=${SMTP_SECURE:-false}
       - SMTP_FROM=${SMTP_FROM:-}
+      - OWNER_EMAIL=${OWNER_EMAIL:-}
     volumes:
       - ./api/uploads:/app/uploads
       - ./client/src/lib/data/memory:/app/data/memory:ro  # Memorias (read-only)

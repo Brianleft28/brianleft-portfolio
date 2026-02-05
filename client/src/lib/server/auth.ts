@@ -78,8 +78,8 @@ export const sessionCookieOptions = {
 	maxAge: SESSION_MAX_AGE,
 	path: '/',
 	httpOnly: true,
-	secure: true,
-	sameSite: 'strict' as const
+	secure: process.env.NODE_ENV === 'production',
+	sameSite: 'lax' as const
 };
 
 /**

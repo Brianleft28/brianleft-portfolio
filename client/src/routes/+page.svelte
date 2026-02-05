@@ -33,15 +33,24 @@
 			// Cuando se carga el filesystem por primera vez, auto-seleccionar LEEME.md
 			if (value && value.length > 0 && !initialLoadDone) {
 				initialLoadDone = true;
-				// Esperar un poco más para evitar parpadeo durante el render inicial
-				setTimeout(() => {
-					const root = fileSystemData();
-					if (root && root.children && !activeFileId) {
-						autoSelectReadme(root);
-					}
-				}, 100);
+				// Auto-seleccionar LEEME.md inmediatamente
+				const root = fileSystemData();
+				if (root && root.children && !activeFileId) {
+					autoSelectReadme(root);
+				}
 			}
 		});
+		
+		// También intentar seleccionar inmediatamente con datos estáticos
+		// si el filesystem dinámico no carga
+		setTimeout(() => {
+			if (!activeFileId && !initialLoadDone) {
+				const root = fileSystemData();
+				if (root && root.children) {
+					autoSelectReadme(root);
+				}
+			}
+		}, 50);
 		
 		return unsubscribe;
 	});

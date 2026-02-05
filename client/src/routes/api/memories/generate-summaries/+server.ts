@@ -1,7 +1,8 @@
 import type { RequestHandler } from './$types';
-import { env } from '$env/dynamic/private';
+import { PUBLIC_API_URL } from '$env/static/public';
+import { SESSION_COOKIE_NAME } from '$lib/server/auth';
 
-const API_URL = env.PUBLIC_API_URL || 'http://api:4000';
+const API_URL = PUBLIC_API_URL || 'http://api:4000';
 
 /**
  * POST /api/memories/generate-summaries - Genera resúmenes con IA para proyectos sin resumen
@@ -9,15 +10,19 @@ const API_URL = env.PUBLIC_API_URL || 'http://api:4000';
 export const POST: RequestHandler = async ({ cookies }) => {
 	try {
 		// Obtener token de autenticación
-		const accessToken = cookies.get('access_token');
+		const accessToken = cookies.get(SESSION_COOKIE_NAME);
+		
+		if (!accessToken) {
+			return new Response(
+				JSON.stringify({ success: false, error: 'No autenticado' }),
+				{ status: 401, headers: { 'Content-Type': 'application/json' } }
+			);
+		}
 		
 		const headers: HeadersInit = {
-			'Content-Type': 'application/json'
+			'Content-Type': 'application/json',
+			'Authorization': `Bearer ${accessToken}`
 		};
-		
-		if (accessToken) {
-			headers['Authorization'] = `Bearer ${accessToken}`;
-		}
 
 		const response = await fetch(`${API_URL}/memories/generate-summaries`, {
 			method: 'POST',

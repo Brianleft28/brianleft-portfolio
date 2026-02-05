@@ -160,16 +160,39 @@ export class ProjectsService {
 
   /**
    * Actualiza memory.md agregando el nuevo proyecto a la sección de proyectos
+   * Si no existe, lo crea
    */
   private async updateMemoryMd(
     projectName: string,
     summary: ProjectSummaryForMemory,
     userId: number,
   ): Promise<void> {
-    const memoryDoc = await this.memoryRepository.findOne({ where: { slug: 'memory', userId } });
+    let memoryDoc = await this.memoryRepository.findOne({ where: { slug: 'memory', userId } });
+    
+    // Si no existe, crear memoria DOCS base
     if (!memoryDoc) {
-      this.logger.warn('memory.md no encontrado en BD, no se puede actualizar');
-      return;
+      this.logger.log('memory.md no existe, creando...');
+      memoryDoc = this.memoryRepository.create({
+        type: MemoryType.DOCS,
+        slug: 'memory',
+        title: 'Base de Conocimiento',
+        content: `# Base de Conocimiento
+
+## Proyectos
+
+---
+
+## [DATOS DE CONTACTO]
+
+- Email: {{owner_email}}
+- GitHub: {{social_github}}
+- LinkedIn: {{social_linkedin}}
+`,
+        summary: 'Índice de proyectos y conocimiento',
+        priority: 5,
+        userId,
+      });
+      await this.memoryRepository.save(memoryDoc);
     }
 
     // Formato del nuevo proyecto para memory.md
@@ -205,6 +228,7 @@ ${summary.keyFeatures.length > 0 ? '- **Características:**\n' + summary.keyFeat
 
   /**
    * Actualiza index.md con nuevas tecnologías y el proyecto
+   * Si no existe, lo crea
    */
   private async updateIndexMd(
     projectName: string,
@@ -212,10 +236,47 @@ ${summary.keyFeatures.length > 0 ? '- **Características:**\n' + summary.keyFeat
     newTech: string[],
     userId: number,
   ): Promise<void> {
-    const indexDoc = await this.memoryRepository.findOne({ where: { slug: 'index', userId } });
+    let indexDoc = await this.memoryRepository.findOne({ where: { slug: 'index', userId } });
+    
+    // Si no existe, crear memoria INDEX base
     if (!indexDoc) {
-      this.logger.warn('index.md no encontrado en BD, no se puede actualizar');
-      return;
+      this.logger.log('index.md no existe, creando...');
+      indexDoc = this.memoryRepository.create({
+        type: MemoryType.INDEX,
+        slug: 'index',
+        title: 'Perfil Profesional',
+        content: `# PERFIL PROFESIONAL — {{owner_name}}
+
+## Identidad
+
+- **Nombre:** {{owner_name}}
+- **Rol:** {{owner_role}}
+- **Ubicación:** {{owner_location}}
+
+## Stack Tecnológico
+
+Configurable desde /admin/settings
+
+## Enlaces
+
+- GitHub: {{social_github}}
+- LinkedIn: {{social_linkedin}}
+- Email: {{owner_email}}
+
+## Disponibilidad
+
+{{contact_availability}}
+
+---
+
+## Proyectos Destacados
+
+`,
+        summary: 'Perfil profesional',
+        priority: 8,
+        userId,
+      });
+      await this.memoryRepository.save(indexDoc);
     }
 
     let updatedContent = indexDoc.content;

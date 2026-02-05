@@ -50,12 +50,12 @@ export class Memory {
   @Column({ default: true })
   active: boolean;
 
-  @Column({ name: 'user_id' })
-  userId: number;
+  @Column({ name: 'user_id', nullable: true })
+  userId: number | null;
 
-  @ManyToOne(() => User, (user) => user.memories, { onDelete: 'CASCADE' })
+  @ManyToOne(() => User, (user) => user.memories, { onDelete: 'CASCADE', nullable: true })
   @JoinColumn({ name: 'user_id' })
-  user: User;
+  user: User | null;
 
   @OneToMany(() => MemoryKeyword, (keyword) => keyword.memory, {
     cascade: true,

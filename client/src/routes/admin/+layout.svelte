@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { page } from '$app/stores';
-	import { goto } from '$app/navigation';
 
 	let { children } = $props();
 
@@ -14,15 +13,6 @@
 	});
 
 	const isLoginPage = $derived($page.url.pathname === '/admin/login');
-
-	async function handleLogout() {
-		try {
-			await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
-		} catch (e) {
-			// Ignorar errores de logout
-		}
-		goto('/admin/login');
-	}
 </script>
 
 {#if isLoginPage}
@@ -37,7 +27,7 @@
 				</div>
 				<div class="header-actions">
 					<a href="/" class="nav-link">← Volver al sitio</a>
-					<button class="logout-btn" onclick={handleLogout}>Cerrar sesión</button>
+					<a href="/admin/logout" class="logout-btn">Cerrar sesión</a>
 				</div>
 			</div>
 

@@ -102,12 +102,23 @@
 				credentials: 'include'
 			});
 			const result = await res.json();
+			
+			const messages: string[] = [];
+			
 			if (result.updated?.length > 0) {
-				syncMessage = `✅ Resúmenes generados: ${result.updated.join(', ')}`;
-			} else if (result.failed?.length > 0) {
-				syncMessage = `⚠️ Algunos fallaron: ${result.failed.join(', ')}`;
+				messages.push(`📝 Resúmenes: ${result.updated.join(', ')}`);
+			}
+			if (result.keywordsGenerated?.length > 0) {
+				messages.push(`🏷️ Keywords: ${result.keywordsGenerated.join(', ')}`);
+			}
+			if (result.failed?.length > 0) {
+				messages.push(`⚠️ Fallaron: ${result.failed.join(', ')}`);
+			}
+			
+			if (messages.length > 0) {
+				syncMessage = `✅ ${messages.join(' | ')}`;
 			} else {
-				syncMessage = '✅ Todos los proyectos ya tienen resumen';
+				syncMessage = '✅ Todos los proyectos ya tienen resumen y keywords';
 			}
 			await invalidateAll();
 		} catch (e) {

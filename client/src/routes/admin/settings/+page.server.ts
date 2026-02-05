@@ -1,53 +1,18 @@
 import type { PageServerLoad, Actions } from './$types';
 import { fail } from '@sveltejs/kit';
 import { env } from '$env/dynamic/private';
+import { PUBLIC_API_URL } from '$env/static/public';
 
-const API_URL = env.PUBLIC_API_URL || 'http://api:4000';
-
-
-// Cache simple del token JWT
-
-let cachedToken: { token: string; expires: number } | null = null;
-
-async function getApiToken(): Promise<string> {
-  // Si hay token válido en cache, usarlo
-  if (cachedToken && Date.now() < cachedToken.expires) {
-    return cachedToken.token;
-  }
-
-  // Login contra la API
-  const response = await fetch(`${API_URL}/auth/login`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      username: env.ADMIN_USERNAME,
-      password: env.ADMIN_PASSWORD
-    })
-  });
-
-  if (!response.ok) {
-    throw new Error('No se pudo autenticar con la API');
-  }
-
-  const data = await response.json();
-  
-  // Cachear por 50 minutos (el token dura 1 hora)
-  cachedToken = {
-    token: data.accessToken,
-    expires: Date.now() + 50 * 60 * 1000
-  };
-
-  return data.accessToken;
-}
+const API_URL = PUBLIC_API_URL || 'http://api:4000';
 
 export const load: PageServerLoad = async ({ locals, fetch }) => {
-  if (!locals.user?.authenticated) {
-    return { settings: [], user: null, error: 'No autenticado' };
+  if (!locals.user?.authenticated || !locals.user.token) {
+    return { settings: [], user: null, error: 'No autenticado', portfolioDomain: 'portfolio.dev' };
   }
 
+  const token = locals.user.token;
+
   try {
-    const token = await getApiToken();
-    
     // Cargar settings y datos del usuario en paralelo
     const [settingsResponse, userResponse] = await Promise.all([
       fetch(`${API_URL}/settings`, {
@@ -66,18 +31,22 @@ export const load: PageServerLoad = async ({ locals, fetch }) => {
     const settings = await settingsResponse.json();
     const user = userResponse.ok ? await userResponse.json() : null;
     
-    return { settings, user, error: null };
+    // Dominio configurable desde env
+    const portfolioDomain = env.PORTFOLIO_DOMAIN || 'portfolio.dev';
+    
+    return { settings, user, error: null, portfolioDomain };
   } catch (e) {
-    return { settings: [], user: null, error: e instanceof Error ? e.message : 'Error desconocido' };
+    return { settings: [], user: null, error: e instanceof Error ? e.message : 'Error desconocido', portfolioDomain: 'portfolio.dev' };
   }
 };
 
 export const actions: Actions = {
   save: async ({ request, locals, fetch }) => {
-    if (!locals.user?.authenticated) {
+    if (!locals.user?.authenticated || !locals.user.token) {
       return fail(401, { error: 'No autenticado' });
     }
 
+    const token = locals.user.token;
     const formData = await request.formData();
 
     const updates = JSON.parse(formData.get('updates')?.toString() || '[]');
@@ -87,8 +56,6 @@ export const actions: Actions = {
     }
 
     try {
-      const token = await getApiToken();
-
       for (const update of updates) {
         const response = await fetch(`${API_URL}/settings/${update.id}`, {
           method: 'PATCH',

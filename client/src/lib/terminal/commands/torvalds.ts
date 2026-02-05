@@ -1,18 +1,19 @@
 import type { Command, CommandContext, AiMode } from '../types';
 
 // Modos por defecto - se pueden sobrescribir desde config
+// White Label: sin referencias a "torvalds"
 export const DEFAULT_AI_MODES: Record<string, AiMode> = {
 	arquitecto: {
 		name: 'arquitecto',
 		description: 'Diseño de sistemas y arquitectura de software',
 		systemPrompt:
-			'Sos un arquitecto de software. Analizás proyectos con ojo crítico y mentalidad de escalabilidad. Hablás en español de forma técnica y directa.'
+			'Sos un arquitecto de software senior. Analizás proyectos con mentalidad de escalabilidad y buenas prácticas. Hablás en español de forma técnica pero accesible.'
 	},
 	asistente: {
 		name: 'asistente',
-		description: 'Asistente general para consultas técnicas',
+		description: 'Asistente general para consultas sobre el portfolio',
 		systemPrompt:
-			'Sos un asistente técnico amigable. Respondés consultas generales de forma clara y concisa. Hablás en español argentino.'
+			'Sos un asistente profesional del portfolio. Respondés consultas sobre proyectos y experiencia de forma clara y directa. Hablás en español argentino.'
 	}
 };
 
@@ -37,7 +38,7 @@ export const torvalds: Command = {
 		const aiName = ctx?.aiDisplayName || 'AI Assistant';
 		const aiCmd = ctx?.aiCommandName || 'ai';
 
-		// Si no hay argumentos, iniciar en modo asistente directamente
+		// Si no hay argumentos, iniciar en modo arquitecto directamente
 		if (!subcommand) {
 			return startAi(undefined, ctx, aiName, aiCmd);
 		}
@@ -66,7 +67,7 @@ export const torvalds: Command = {
 
 		// Si no es un subcomando válido, asumir que es una pregunta directa
 		// Activar el modo y devolver señal para procesar la pregunta
-		ctx.setAiMode(ctx.aiMode || 'asistente');
+		ctx.setAiMode(ctx.aiMode || 'arquitecto');
 		return {
 			output: '',
 			startChatWith: args.join(' ') // Señal especial para el Terminal
@@ -106,7 +107,7 @@ function startAi(
 	aiName: string,
 	aiCmd: string
 ) {
-	const selectedMode = mode || 'asistente';
+	const selectedMode = mode || 'arquitecto';
 
 	if (!AI_MODES[selectedMode]) {
 		return {

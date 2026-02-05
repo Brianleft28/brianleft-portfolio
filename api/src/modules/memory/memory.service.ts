@@ -122,8 +122,13 @@ export class MemoryService {
       throw new NotFoundException(`Memoria con ID ${id} no encontrada`);
     }
 
-    await this.loadSettingsCache(memory.userId);
-    return this.hydrateMemory(memory, memory.userId);
+    // Solo cargar settings si hay userId (no para memorias globales)
+    if (memory.userId) {
+      await this.loadSettingsCache(memory.userId);
+      return this.hydrateMemory(memory, memory.userId);
+    }
+    
+    return memory;
   }
 
   /**
@@ -246,33 +251,40 @@ export class MemoryService {
   }
 
   /**
-   * Genera resúmenes para todos los proyectos de un usuario que no tengan
+   * Genera resúmenes y keywords para todos los proyectos de un usuario que les falten
    */
-  async generateMissingSummaries(userId: number): Promise<{ updated: string[]; failed: string[] }> {
+  async generateMissingSummaries(userId: number): Promise<{ updated: string[]; failed: string[]; keywordsGenerated: string[] }> {
     const updated: string[] = [];
     const failed: string[] = [];
+    const keywordsGenerated: string[] = [];
 
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) {
       console.warn('GEMINI_API_KEY no configurada');
-      return { updated, failed: ['No API key configured'] };
+      return { updated, failed: ['No API key configured'], keywordsGenerated };
     }
 
     const genAI = new GoogleGenerativeAI(apiKey);
     const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
 
-    // Obtener proyectos sin summary del usuario
+    // Obtener proyectos del usuario
     const projects = await this.memoriesRepository.find({
       where: { type: MemoryType.PROJECT, active: true, userId },
+      relations: ['keywords'],
     });
 
     for (const project of projects) {
-      if (project.summary) {
-        continue; // Ya tiene resumen
+      const needsSummary = !project.summary;
+      const needsKeywords = !project.keywords || project.keywords.length < 5;
+      
+      if (!needsSummary && !needsKeywords) {
+        continue; // Ya tiene todo
       }
 
       try {
-        const prompt = `Dado el siguiente proyecto de software, generá un resumen CONCISO en español (máximo 3 oraciones) que describa:
+        // Generar resumen si falta
+        if (needsSummary) {
+          const summaryPrompt = `Dado el siguiente proyecto de software, generá un resumen CONCISO en español (máximo 3 oraciones) que describa:
 1. Qué hace el proyecto
 2. Las tecnologías principales usadas
 3. El valor o impacto del proyecto
@@ -284,26 +296,57 @@ ${project.content?.slice(0, 3000) || 'Sin contenido'}
 
 Respondé SOLO con el resumen, sin introducción ni formato markdown.`;
 
-        const result = await model.generateContent(prompt);
-        const summary = result.response.text().trim();
+          const result = await model.generateContent(summaryPrompt);
+          const summary = result.response.text().trim();
 
-        if (summary && summary.length > 20) {
-          project.summary = summary;
-          await this.memoriesRepository.save(project);
-          updated.push(project.slug);
-        } else {
-          failed.push(project.slug);
+          if (summary && summary.length > 20) {
+            project.summary = summary;
+            await this.memoriesRepository.save(project);
+            updated.push(project.slug);
+          } else {
+            failed.push(project.slug);
+          }
+
+          // Rate limiting
+          await new Promise(resolve => setTimeout(resolve, 300));
         }
 
-        // Rate limiting básico
-        await new Promise(resolve => setTimeout(resolve, 500));
+        // Generar keywords si faltan o son muy pocas
+        if (needsKeywords) {
+          // Eliminar keywords existentes
+          if (project.keywords && project.keywords.length > 0) {
+            await this.keywordsRepository.remove(project.keywords);
+          }
+
+          const keywords = await this.generateKeywords(project.title, project.content);
+          
+          if (keywords.length >= 5) {
+            // Crear nuevas keywords
+            const keywordEntities = keywords.map(keyword => 
+              this.keywordsRepository.create({ memory: project, keyword })
+            );
+            await this.keywordsRepository.save(keywordEntities);
+            keywordsGenerated.push(project.slug);
+          }
+
+          // Rate limiting
+          await new Promise(resolve => setTimeout(resolve, 300));
+        }
+
+        // Actualizar memoria DOCS (memory.md) con el proyecto
+        if (needsSummary && project.summary && project.userId) {
+          await this.updateDocsMemory(project.title, project.slug, project.summary, project.userId);
+          await this.updateIndexWithProject(project, project.userId);
+        }
       } catch (error) {
-        console.error(`Error generando summary para ${project.slug}:`, error);
-        failed.push(project.slug);
+        console.error(`Error generando contenido para ${project.slug}:`, error);
+        if (!failed.includes(project.slug)) {
+          failed.push(project.slug);
+        }
       }
     }
 
-    return { updated, failed };
+    return { updated, failed, keywordsGenerated };
   }
 
   /**
@@ -505,6 +548,170 @@ ${summary || 'Proyecto sin resumen'}
       await this.memoriesRepository.save(docsMemory);
     } catch (error) {
       console.error('Error actualizando memoria DOCS:', error);
+    }
+  }
+
+  /**
+   * Inicializa las memorias base para un nuevo usuario:
+   * - INDEX: Perfil profesional con placeholders
+   * - DOCS (memory): Base de conocimiento para proyectos
+   */
+  async initializeForUser(userId: number, displayName: string): Promise<void> {
+    console.log(`[MemoryService] Inicializando memorias para usuario ${userId}`);
+
+    // 1. Crear memoria INDEX (perfil profesional)
+    const existingIndex = await this.memoriesRepository.findOne({
+      where: { slug: 'index', userId },
+    });
+
+    if (!existingIndex) {
+      const indexContent = `# PERFIL PROFESIONAL — {{owner_name}}
+
+## Identidad
+
+- **Nombre:** {{owner_name}}
+- **Rol:** {{owner_role}}
+- **Ubicación:** {{owner_location}}
+- **Filosofía:** "{{owner_philosophy}}"
+
+## Especialización
+
+Completa tu perfil desde el panel de administración en \`/admin/settings\`.
+
+## Stack Tecnológico
+
+Configura tu stack tecnológico desde el panel de administración.
+
+## Enlaces
+
+- GitHub: {{social_github}}
+- LinkedIn: {{social_linkedin}}
+- Email: {{owner_email}}
+
+## Disponibilidad
+
+{{contact_availability}}
+
+---
+
+## Proyectos Destacados
+
+Los proyectos agregados aparecerán aquí automáticamente.
+
+---
+
+Documento optimizado para consumo por IA. Los placeholders {{variable}} se reemplazan dinámicamente.
+`;
+
+      const indexMemory = this.memoriesRepository.create({
+        type: MemoryType.INDEX,
+        slug: 'index',
+        title: `Perfil de ${displayName}`,
+        content: indexContent,
+        summary: `Perfil profesional de ${displayName}`,
+        priority: 8,
+        userId,
+      });
+      await this.memoriesRepository.save(indexMemory);
+      console.log(`[MemoryService] Memoria INDEX creada para usuario ${userId}`);
+    }
+
+    // 2. Crear memoria DOCS (base de conocimiento / memory.md)
+    const existingDocs = await this.memoriesRepository.findOne({
+      where: { type: MemoryType.DOCS, userId },
+    });
+
+    if (!existingDocs) {
+      const docsContent = `# Base de Conocimiento — {{owner_name}}
+
+## Acerca de este documento
+
+Este documento sirve como índice de proyectos y conocimiento para la IA del portfolio.
+Los proyectos se agregan automáticamente cuando los creas desde el panel de administración.
+
+---
+
+## Proyectos
+
+_Aún no hay proyectos registrados. Crea tu primer proyecto desde /admin/projects._
+
+---
+
+## [DATOS DE CONTACTO]
+
+- Email: {{owner_email}}
+- GitHub: {{social_github}}
+- LinkedIn: {{social_linkedin}}
+`;
+
+      const docsMemory = this.memoriesRepository.create({
+        type: MemoryType.DOCS,
+        slug: 'memory',
+        title: `Base de Conocimiento`,
+        content: docsContent,
+        summary: `Índice de proyectos y conocimiento de ${displayName}`,
+        priority: 5,
+        userId,
+      });
+      await this.memoriesRepository.save(docsMemory);
+      console.log(`[MemoryService] Memoria DOCS creada para usuario ${userId}`);
+    }
+
+    console.log(`[MemoryService] Memorias inicializadas para usuario ${userId}`);
+  }
+
+  /**
+   * Actualiza la memoria INDEX con información de un proyecto
+   */
+  private async updateIndexWithProject(project: Memory, userId: number): Promise<void> {
+    try {
+      const indexMemory = await this.memoriesRepository.findOne({
+        where: { slug: 'index', userId },
+      });
+
+      if (!indexMemory) {
+        console.warn(`[MemoryService] No se encontró memoria INDEX para usuario ${userId}`);
+        return;
+      }
+
+      // Verificar si el proyecto ya está en el index
+      if (indexMemory.content.includes(`### ${this.formatProjectTitle(project.title)}`)) {
+        console.log(`[MemoryService] Proyecto ${project.slug} ya existe en INDEX`);
+        return;
+      }
+
+      // Extraer tecnologías del contenido del proyecto
+      const techMatches = project.content?.match(/\*\*(?:Stack|Tecnolog[íi]as?):\*\*\s*([^\n]+)/i);
+      const techStack = techMatches ? techMatches[1].trim() : 'Varias tecnologías';
+
+      // Crear entrada del proyecto
+      const projectEntry = `
+
+### ${this.formatProjectTitle(project.title)}
+
+${project.summary || 'Proyecto sin descripción'}
+
+- **Stack:** ${techStack}
+- **Comando:** \`cat projects/${project.slug}.md\`
+`;
+
+      // Insertar antes de la línea de separación final
+      const insertPoint = indexMemory.content.lastIndexOf('---\n\nDocumento');
+      if (insertPoint !== -1) {
+        indexMemory.content = 
+          indexMemory.content.slice(0, insertPoint) + 
+          projectEntry + 
+          '\n' + 
+          indexMemory.content.slice(insertPoint);
+      } else {
+        // Agregar al final si no encuentra el patrón
+        indexMemory.content += projectEntry;
+      }
+
+      await this.memoriesRepository.save(indexMemory);
+      console.log(`[MemoryService] INDEX actualizado con proyecto ${project.slug}`);
+    } catch (error) {
+      console.error(`[MemoryService] Error actualizando INDEX:`, error);
     }
   }
 }
