@@ -1,119 +1,98 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
+	/**
+	 * Carga un proyecto desde un archivo Markdown.
+	 *
+	 * Lee el `.md`, propone título y slug, deja elegir la carpeta destino del
+	 * filesystem virtual y lo manda a `POST /api/projects`. El backend crea la
+	 * memoria, genera las keywords con IA si no se especifican, y regenera las
+	 * secciones de proyectos del perfil.
+	 */
+	type Folder = { id: number; name: string; path: string };
 
-	// Tipos locales para evitar hot-reload
-	type FileSystemNode = {
-		id: string;
-		name: string;
-		type: 'folder' | 'markdown' | 'text' | 'code';
-		children?: FileSystemNode[];
-	};
+	let {
+		folders = [],
+		onCreated
+	}: {
+		folders?: Folder[];
+		onCreated?: () => void;
+	} = $props();
 
 	let title = $state('');
+	let slug = $state('');
 	let content = $state('');
-	let readmeContent = $state('');
-	
-	// Ubicación en el FS
-	let selectedPath = $state<string[]>(['proyectos']);
-	let createNewFolder = $state(false);
-	let newFolderName = $state('');
-	
+	let keywords = $state('');
+	let folderId = $state<string>('');
+	let fileName = $state('');
+
 	let loading = $state(false);
-	let result = $state<{ 
-		success?: boolean; 
-		error?: string; 
-		message?: string; 
-		details?: {
-			projectFile: string;
-			memoryUpdated: boolean;
-			fileSystemUpdated: boolean;
-			aiSummary?: string;
-		}
-	} | null>(null);
+	let result = $state<{ success?: boolean; error?: string; message?: string } | null>(null);
 	let fileInput: HTMLInputElement;
 
-	// Carpetas cargadas una sola vez (evita hot-reload)
-	let availableFolders = $state<{ path: string[]; label: string; depth: number }[]>([]);
-
-	// Obtener carpetas disponibles del FS (recursivo)
-	function getFolders(node: FileSystemNode, path: string[] = []): { path: string[]; label: string; depth: number }[] {
-		const folders: { path: string[]; label: string; depth: number }[] = [];
-		
-		if (node.type === 'folder') {
-			const currentPath = [...path, node.id];
-			folders.push({ 
-				path: currentPath, 
-				label: node.name,
-				depth: path.length
-			});
-			
-			if (node.children) {
-				for (const child of node.children) {
-					if (child.type === 'folder') {
-						folders.push(...getFolders(child, currentPath));
-					}
-				}
-			}
-		}
-		
-		return folders;
-	}
-
-	// Cargar carpetas una sola vez al montar
-	onMount(async () => {
-		const { fileSystemData } = await import('$lib/data/file-system');
-		availableFolders = getFolders(fileSystemData as FileSystemNode);
-	});
-
-	const generatedId = $derived(
-		title ? title.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '') : ''
+	const suggestedSlug = $derived(
+		title
+			.toLowerCase()
+			.normalize('NFD')
+			.replace(/[\u0300-\u036f]/g, '')
+			.replace(/\s+/g, '-')
+			.replace(/[^a-z0-9-]/g, '')
 	);
 
-	const finalPath = $derived(
-		createNewFolder && newFolderName 
-			? [...selectedPath, newFolderName.toLowerCase().replace(/\s+/g, '-')]
-			: selectedPath
-	);
-
-	const pathDisplay = $derived(finalPath.join(' / '));
+	const effectiveSlug = $derived(slug.trim() || suggestedSlug);
 
 	function handleFileLoad(event: Event) {
 		const input = event.target as HTMLInputElement;
 		const file = input.files?.[0];
-		
-		if (file) {
-			if (!file.name.endsWith('.md') && !file.name.endsWith('.markdown') && !file.name.endsWith('.txt')) {
-				result = { error: 'Solo se permiten archivos .md, .markdown o .txt' };
-				return;
-			}
+		if (!file) return;
 
-			const reader = new FileReader();
-			reader.onload = (e) => {
-				content = e.target?.result as string;
-				
-				if (!title) {
-					const titleMatch = content.match(/^#\s+(.+)$/m);
-					if (titleMatch) {
-						title = titleMatch[1];
-					}
-				}
-				
-				if (!readmeContent) {
-					readmeContent = content.slice(0, 800);
-				}
-			};
-			reader.readAsText(file);
-		}
-	}
-
-	async function handleSubmit() {
-		if (!title || !content) {
-			result = { error: 'Completa título y contenido' };
+		if (!/\.(md|markdown|txt)$/i.test(file.name)) {
+			result = { error: 'Solo se permiten archivos .md, .markdown o .txt' };
 			return;
 		}
 
-		if (createNewFolder && !newFolderName) {
-			result = { error: 'Ingresa el nombre de la nueva carpeta' };
+		const reader = new FileReader();
+		reader.onload = (e) => {
+			const raw = (e.target?.result as string) || '';
+			// El frontmatter es para el seeder; acá lo sacamos y usamos sus valores.
+			const { data, body } = parseFrontmatter(raw);
+
+			content = body;
+			fileName = file.name;
+			result = null;
+
+			title = data.title || title || body.match(/^#\s+(.+)$/m)?.[1]?.trim() || '';
+			if (data.slug) slug = data.slug;
+			if (data.keywords) keywords = data.keywords;
+		};
+		reader.readAsText(file);
+	}
+
+	/** Parser mínimo, sólo para las claves que usamos: title, slug, keywords. */
+	function parseFrontmatter(raw: string): { data: Record<string, string>; body: string } {
+		const match = raw.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n?/);
+		if (!match) return { data: {}, body: raw.trim() };
+
+		const data: Record<string, string> = {};
+		for (const line of match[1].split(/\r?\n/)) {
+			const separator = line.indexOf(':');
+			if (separator === -1) continue;
+
+			const key = line.slice(0, separator).trim();
+			let value = line.slice(separator + 1).trim();
+			if (value.startsWith('[') && value.endsWith(']')) value = value.slice(1, -1);
+			value = value.replace(/^["']|["']$/g, '');
+			if (key && value) data[key] = value;
+		}
+
+		return { data, body: raw.slice(match[0].length).trim() };
+	}
+
+	async function handleSubmit() {
+		if (!title.trim() || !content.trim()) {
+			result = { error: 'Falta el título o el contenido' };
+			return;
+		}
+		if (!effectiveSlug) {
+			result = { error: 'No se pudo generar un slug a partir del título' };
 			return;
 		}
 
@@ -124,25 +103,30 @@
 			const response = await fetch('/api/projects', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
+				credentials: 'include',
 				body: JSON.stringify({
-					id: generatedId,
-					title,
-					filename: `${generatedId}.md`,
+					name: title.trim(),
+					slug: effectiveSlug,
 					content,
-					targetPath: finalPath,
-					createFolder: createNewFolder,
-					newFolderName: createNewFolder ? newFolderName : null,
-					fsEntry: {
-						folderName: createNewFolder ? newFolderName.toLowerCase().replace(/\s+/g, '-') : null,
-						readmeName: 'README.md',
-						readmeContent: readmeContent || content.slice(0, 500)
-					}
+					keywords: keywords
+						.split(',')
+						.map((k) => k.trim())
+						.filter(Boolean),
+					folderId: folderId ? parseInt(folderId, 10) : undefined
 				})
 			});
 
-			result = await response.json();
-		} catch (error) {
-			result = { error: 'Error de conexión' };
+			if (!response.ok) {
+				const error = await response.json().catch(() => ({}));
+				result = { error: error.message || `Error ${response.status} creando el proyecto` };
+				return;
+			}
+
+			result = { success: true, message: `Proyecto "${effectiveSlug}" cargado` };
+			resetForm();
+			onCreated?.();
+		} catch {
+			result = { error: 'Error de conexión con el servidor' };
 		} finally {
 			loading = false;
 		}
@@ -150,265 +134,206 @@
 
 	function resetForm() {
 		title = '';
+		slug = '';
 		content = '';
-		readmeContent = '';
-		newFolderName = '';
-		createNewFolder = false;
-		selectedPath = ['proyectos'];
-		result = null;
+		keywords = '';
+		fileName = '';
 		if (fileInput) fileInput.value = '';
-	}
-
-	function selectFolder(path: string[]) {
-		selectedPath = path;
 	}
 </script>
 
-<div class="p-3">
-	<!-- Header -->
-	<div class="border-bottom border-secondary pb-3 mb-4">
-		<h2 class="text-light mb-1">📁 Cargar Proyecto (.md)</h2>
-		<p class="text-secondary mb-0 small">Agrega archivos Markdown a la memoria y al sistema de archivos virtual</p>
+<div class="loader">
+	<div class="loader-header">
+		<h3>📁 Cargar proyecto desde .md</h3>
+		<p>
+			Se crea la memoria para la IA y la carpeta <code>C:/proyectos/&lt;slug&gt;</code> de la
+			terminal. Sin keywords, las genera la IA.
+		</p>
 	</div>
 
-	<form onsubmit={(e) => { e.preventDefault(); handleSubmit(); }}>
-		<!-- Ubicación en el FS -->
-		<div class="card bg-dark border-secondary mb-3">
-			<div class="card-header border-secondary">📍 Ubicación en el explorador</div>
-			<div class="card-body">
-				<div 
-					class="border border-secondary rounded p-2 mb-3"
-					style="background: #1a1a1a; max-height: 180px; overflow-y: scroll; display: block;"
-				>
-					{#each availableFolders as folder}
-						<button
-							type="button"
-							class="folder-item d-block w-100 text-start border-0 rounded px-2 py-1 mb-1"
-							class:selected={JSON.stringify(selectedPath) === JSON.stringify(folder.path)}
-							style="padding-left: {folder.depth * 1.2 + 0.5}rem !important;"
-							onclick={() => selectFolder(folder.path)}
-						>
-							<span class="me-2">{folder.depth === 0 ? '💻' : '📁'}</span>
-							<span class="text-light">{folder.label}</span>
-						</button>
+	<form
+		onsubmit={(e) => {
+			e.preventDefault();
+			handleSubmit();
+		}}
+	>
+		<div class="field">
+			<label for="pl-file">Archivo Markdown</label>
+			<input
+				id="pl-file"
+				bind:this={fileInput}
+				type="file"
+				accept=".md,.markdown,.txt"
+				onchange={handleFileLoad}
+			/>
+			{#if fileName}
+				<span class="hint">📄 {fileName} — {content.length} caracteres</span>
+			{/if}
+		</div>
+
+		<div class="row">
+			<div class="field">
+				<label for="pl-title">Título</label>
+				<input id="pl-title" type="text" bind:value={title} placeholder="Nombre del proyecto" />
+			</div>
+
+			<div class="field">
+				<label for="pl-slug">Slug</label>
+				<input id="pl-slug" type="text" bind:value={slug} placeholder={suggestedSlug || 'mi-proyecto'} />
+				{#if effectiveSlug}
+					<span class="hint">C:/proyectos/{effectiveSlug}/README.md</span>
+				{/if}
+			</div>
+		</div>
+
+		<div class="row">
+			<div class="field">
+				<label for="pl-keywords">Keywords (separadas por coma)</label>
+				<input
+					id="pl-keywords"
+					type="text"
+					bind:value={keywords}
+					placeholder="vacío = las genera la IA"
+				/>
+			</div>
+
+			<div class="field">
+				<label for="pl-folder">Carpeta destino (opcional)</label>
+				<select id="pl-folder" bind:value={folderId}>
+					<option value="">— sin archivo suelto —</option>
+					{#each folders as folder (folder.id)}
+						<option value={String(folder.id)}>{folder.path || folder.name}</option>
 					{/each}
-				</div>
-
-				<div class="form-check mb-3">
-					<input class="form-check-input" type="checkbox" id="createFolder" bind:checked={createNewFolder} />
-					<label class="form-check-label text-light" for="createFolder">
-						Crear nueva carpeta dentro de "<span class="text-info">{selectedPath[selectedPath.length - 1]}</span>"
-					</label>
-				</div>
-
-				{#if createNewFolder}
-					<div class="mb-3">
-						<input
-							type="text"
-							bind:value={newFolderName}
-							placeholder="mi-nuevo-proyecto"
-							class="form-control bg-dark text-light border-secondary"
-						/>
-					</div>
-				{/if}
-
-				<div class="alert alert-info py-2 mb-0 small">
-					<strong>Guardará en:</strong> <code class="text-white">C:\{pathDisplay}\README.md</code>
-				</div>
+				</select>
 			</div>
 		</div>
 
-		<!-- Contenido -->
-		<div class="card bg-dark border-secondary mb-3">
-			<div class="card-header border-secondary">📄 Contenido</div>
-			<div class="card-body">
-				<div class="mb-3">
-					<label for="file-input" class="form-label text-light small">Cargar archivo Markdown</label>
-					<input
-						bind:this={fileInput}
-						type="file"
-						id="file-input"
-						accept=".md,.markdown,.txt"
-						onchange={handleFileLoad}
-						class="form-control bg-dark text-light border-secondary"
-					/>
-					<div class="form-text">Formatos: .md, .markdown, .txt</div>
-				</div>
-
-				<div class="mb-3">
-					<label for="title" class="form-label text-light small">Título del proyecto *</label>
-					<input
-						type="text"
-						id="title"
-						bind:value={title}
-						placeholder="Sistema de Gestión Electoral"
-						class="form-control bg-dark text-light border-secondary"
-						required
-					/>
-					{#if generatedId}
-						<div class="form-text">ID generado: <code class="text-info">{generatedId}</code></div>
-					{/if}
-				</div>
-
-				<div class="mb-3">
-					<label for="content" class="form-label text-light small">Contenido Markdown *</label>
-					<textarea
-						id="content"
-						bind:value={content}
-						placeholder="# Mi Proyecto&#10;&#10;Descripción del proyecto..."
-						class="form-control bg-dark text-light border-secondary font-monospace"
-						rows="10"
-						required
-					></textarea>
-				</div>
-
-				<details>
-					<summary class="text-info small mb-2" style="cursor: pointer;">⚙️ Opciones avanzadas</summary>
-					<div class="mt-2">
-						<label for="readme-content" class="form-label text-light small">Resumen para el explorador (opcional)</label>
-						<textarea
-							id="readme-content"
-							bind:value={readmeContent}
-							placeholder="Versión resumida que aparece en el explorador de archivos..."
-							class="form-control bg-dark text-light border-secondary"
-							rows="4"
-						></textarea>
-						<div class="form-text">Si está vacío, se usan los primeros 500 caracteres</div>
-					</div>
-				</details>
-			</div>
-		</div>
-
-		<!-- Acciones -->
-		<div class="d-flex gap-2 mb-3">
-			<button type="submit" class="btn btn-primary" disabled={loading}>
-				{#if loading}
-					<span class="spinner-border spinner-border-sm me-2"></span>
-					Guardando...
-				{:else}
-					💾 Guardar en memoria + FS
-				{/if}
-			</button>
-			<button type="button" class="btn btn-outline-secondary" onclick={resetForm}>
-				🔄 Limpiar
-			</button>
-		</div>
-	</form>
-
-	<!-- Resultado -->
-	{#if result}
-		{#if result.success}
-			<div class="alert alert-success">
-				<h5 class="alert-heading">✅ {result.message}</h5>
-				{#if result.details}
-					<ul class="mb-0 mt-2">
-						<li>📝 Archivo MD: <code>{result.details.projectFile}</code></li>
-						<li>
-							{result.details.memoryUpdated ? '✅' : '⚠️'} memory.md: 
-							{result.details.memoryUpdated ? 'Actualizado' : 'No se pudo actualizar'}
-						</li>
-						<li>
-							{result.details.fileSystemUpdated ? '✅' : '⚠️'} file-system.ts: 
-							{result.details.fileSystemUpdated ? 'Modificado automáticamente' : 'No se pudo modificar'}
-						</li>
-					</ul>
-					{#if result.details.aiSummary}
-						<hr />
-						<div class="bg-dark rounded p-2 mt-2">
-							<small class="text-info">🤖 Resumen generado por IA:</small>
-							<p class="mb-0 mt-1 small text-light">{result.details.aiSummary}</p>
-						</div>
-					{/if}
-					{#if result.details.memoryUpdated && result.details.fileSystemUpdated}
-						<hr />
-						<p class="mb-0 small text-success-emphasis">
-							🎉 <strong>¡Listo!</strong> El proyecto ya está disponible en el explorador y en la memoria de la IA. 
-							Reinicia el servidor de desarrollo para ver los cambios.
-						</p>
-					{/if}
-				{/if}
-			</div>
-		{:else}
-			<div class="alert alert-danger">
-				<h5 class="alert-heading">❌ Error</h5>
-				<p class="mb-0">{result.error}</p>
+		{#if content}
+			<div class="field">
+				<label for="pl-preview">Contenido</label>
+				<textarea id="pl-preview" bind:value={content} rows="10"></textarea>
 			</div>
 		{/if}
-	{/if}
+
+		{#if result?.error}
+			<div class="alert error">❌ {result.error}</div>
+		{:else if result?.success}
+			<div class="alert ok">✅ {result.message}</div>
+		{/if}
+
+		<div class="actions">
+			<button type="submit" class="primary" disabled={loading}>
+				{loading ? 'Cargando…' : 'Cargar proyecto'}
+			</button>
+			<button type="button" onclick={resetForm} disabled={loading}>Limpiar</button>
+		</div>
+	</form>
 </div>
 
 <style>
-	.folder-item {
+	.loader {
+		padding: 1rem 0;
+	}
+
+	.loader-header h3 {
+		color: var(--theme-text-primary, #e0e0e0);
+		font-size: 1.1rem;
+		margin: 0 0 0.35rem;
+	}
+
+	.loader-header p {
+		color: var(--theme-text-muted, #888);
+		font-size: 0.85rem;
+		margin: 0 0 1.25rem;
+	}
+
+	.row {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+		gap: 1rem;
+	}
+
+	.field {
+		display: flex;
+		flex-direction: column;
+		margin-bottom: 1rem;
+	}
+
+	.field label {
+		color: var(--theme-text-muted, #888);
+		font-size: 0.8rem;
+		margin-bottom: 0.35rem;
+		text-transform: uppercase;
+		letter-spacing: 0.05em;
+	}
+
+	.field input,
+	.field select,
+	.field textarea {
+		background: var(--theme-bg-secondary, #1a1a2e);
+		border: 1px solid var(--theme-border, #333);
+		border-radius: 4px;
+		color: var(--theme-text-primary, #e0e0e0);
+		font-family: inherit;
+		font-size: 0.9rem;
+		padding: 0.55rem 0.7rem;
+	}
+
+	.field textarea {
+		font-family: 'Consolas', 'Monaco', monospace;
+		font-size: 0.8rem;
+		resize: vertical;
+	}
+
+	.hint {
+		color: var(--theme-text-muted, #666);
+		font-size: 0.75rem;
+		margin-top: 0.3rem;
+	}
+
+	.alert {
+		border-radius: 4px;
+		font-size: 0.85rem;
+		margin-bottom: 1rem;
+		padding: 0.7rem 0.9rem;
+	}
+
+	.alert.error {
+		background: rgba(220, 53, 69, 0.12);
+		border: 1px solid rgba(220, 53, 69, 0.4);
+		color: #ff8892;
+	}
+
+	.alert.ok {
+		background: rgba(78, 201, 176, 0.12);
+		border: 1px solid rgba(78, 201, 176, 0.4);
+		color: #4ec9b0;
+	}
+
+	.actions {
+		display: flex;
+		gap: 0.6rem;
+	}
+
+	.actions button {
 		background: transparent;
-		color: #adb5bd;
-		transition: background 0.15s;
-		font-family: 'Courier New', monospace;
+		border: 1px solid var(--theme-border, #333);
+		border-radius: 4px;
+		color: var(--theme-text-primary, #e0e0e0);
+		cursor: pointer;
+		font-size: 0.9rem;
+		padding: 0.55rem 1.1rem;
 	}
 
-	.folder-item:hover {
-		background: rgba(0, 255, 0, 0.05);
-		color: #00ff00;
+	.actions button.primary {
+		background: var(--theme-accent, #4ec9b0);
+		border-color: var(--theme-accent, #4ec9b0);
+		color: #0d0d1a;
+		font-weight: 600;
 	}
 
-	.folder-item.selected {
-		background: rgba(0, 255, 0, 0.15);
-		outline: 1px solid #00ff00;
-		color: #00ff00;
-    }
-
-	:global(.projects-page .card) {
-		background: #0d0d1a !important;
-		border-color: #333 !important;
-	}
-
-	:global(.projects-page .card-header) {
-		background: #161622 !important;
-		border-color: #333 !important;
-		color: #00ff00 !important;
-		font-family: 'Courier New', monospace !important;
-	}
-
-	:global(.projects-page .btn-primary) {
-		background: #00ff00 !important;
-		border-color: #00ff00 !important;
-		color: #0d0d1a !important;
-		font-family: 'Courier New', monospace !important;
-	}
-
-	:global(.projects-page .btn-primary:hover) {
-		background: #00cc00 !important;
-		border-color: #00cc00 !important;
-	}
-
-	:global(.projects-page .btn-outline-secondary) {
-		border-color: #00ff00 !important;
-		color: #00ff00 !important;
-		font-family: 'Courier New', monospace !important;
-	}
-
-	:global(.projects-page .btn-outline-secondary:hover) {
-		background: rgba(0, 255, 0, 0.1) !important;
-		color: #00ff00 !important;
-	}
-
-	:global(.projects-page .form-control) {
-		background: #161622 !important;
-		border-color: #333 !important;
-		font-family: 'Courier New', monospace !important;
-	}
-
-	:global(.projects-page .form-control:focus) {
-		border-color: #00ff00 !important;
-		box-shadow: 0 0 10px rgba(0, 255, 0, 0.15) !important;
-	}
-
-	:global(.projects-page .alert-info) {
-		background: rgba(0, 255, 0, 0.05) !important;
-		border-color: #00ff00 !important;
-		color: #00ff00 !important;
-	}
-
-	:global(.projects-page .text-info) {
-		color: #00ff00 !important;
+	.actions button:disabled {
+		cursor: not-allowed;
+		opacity: 0.55;
 	}
 </style>

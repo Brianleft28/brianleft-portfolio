@@ -7,18 +7,12 @@ import { AuthController } from './auth.controller';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { JwtRefreshStrategy } from './strategies/jwt-refresh.strategy';
 import { UsersModule } from '../users/users.module';
-import { SettingsModule } from '../settings/settings.module';
-import { FilesystemModule } from '../filesystem/filesystem.module';
-import { AiPersonalitiesModule } from '../ai-personalities/ai-personalities.module';
-import { MemoryModule } from '../memory/memory.module';
 
+// Sin registro público, el auth ya no inicializa settings, filesystem,
+// personalidades ni memorias: de eso se encarga el seeder del dueño.
 @Module({
   imports: [
     UsersModule,
-    SettingsModule,
-    FilesystemModule,
-    AiPersonalitiesModule,
-    MemoryModule,
     PassportModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],

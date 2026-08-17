@@ -1,4 +1,5 @@
 import 'reflect-metadata';
+import { NestFactory } from '@nestjs/core';
 import { DataSource } from 'typeorm';
 import * as dotenv from 'dotenv';
 import * as path from 'path';
@@ -6,62 +7,64 @@ import * as path from 'path';
 // Cargar .env desde el root del proyecto
 dotenv.config({ path: path.join(__dirname, '../../../.env') });
 
-import { User } from '../entities/user.entity';
-import { Folder } from '../entities/folder.entity';
-import { File } from '../entities/file.entity';
-import { Memory } from '../entities/memory.entity';
-import { MemoryKeyword } from '../entities/memory-keyword.entity';
-import { Setting } from '../entities/setting.entity';
-import { AiPersonality } from '../entities/ai-personality.entity';
+import { AppModule } from '../app.module';
 import { seedMemories } from './memory.seeder';
+import { bootstrapOwner } from './bootstrap-owner.seeder';
+import { seedProjects } from './projects.seeder';
 
 /**
- * Seeder para sistema white-label
- * 
- * NOTA: En modo white-label, los settings, filesystem y ai-personalities
- * se crean dinámicamente cuando un usuario se registra via initializeForUser().
- * 
- * Este seeder solo carga la memoria base del sistema (meta.md) que contiene
- * información sobre cómo funciona el portfolio.
+ * Seeder de arranque del portfolio.
+ *
+ * Levanta un contexto Nest standalone para poder reutilizar por DI los servicios
+ * que ya implementan la inicialización de usuario y el sync del filesystem,
+ * en vez de duplicar esa lógica con un DataSource crudo.
+ *
+ * Orden:
+ *   1. Memorias globales (meta.md y demás docs del sistema, userId = null)
+ *   2. Usuario dueño + su filesystem, settings, personalidades de IA y memorias base
+ *   3. Proyectos versionados en `${MEMORY_PATH}/projects/*.md`
+ *
+ * Todo el proceso es idempotente: se puede reejecutar sin duplicar nada.
  */
 async function runSeeders() {
-  console.log('🌱 Iniciando seeders (white-label mode)...\n');
+  console.log('🌱 Iniciando seeders...\n');
 
-  // Crear conexión
-  const dataSource = new DataSource({
-    type: 'mysql',
-    host: process.env.DB_HOST || 'localhost',
-    port: parseInt(process.env.DB_PORT || '3306'),
-    username: process.env.DB_USER || 'portfolio',
-    password: process.env.DB_PASSWORD,
-    database: process.env.DB_NAME || 'portfolio',
-    entities: [User, Folder, File, Memory, MemoryKeyword, Setting, AiPersonality],
-    synchronize: true, // Crear tablas si no existen
-    logging: false,
+  const app = await NestFactory.createApplicationContext(AppModule, {
+    logger: ['error', 'warn'],
   });
 
   try {
-    await dataSource.initialize();
+    const dataSource = app.get(DataSource);
     console.log('✅ Conexión a base de datos establecida\n');
 
-    // Solo cargar memoria base del sistema
     console.log('═══════════════════════════════════════');
-    console.log('📚 SEEDING MEMORIA BASE (meta.md)');
+    console.log('📚 MEMORIAS GLOBALES DEL SISTEMA');
     console.log('═══════════════════════════════════════');
     await seedMemories(dataSource);
 
     console.log('\n═══════════════════════════════════════');
-    console.log('ℹ️  NOTA: Settings, Filesystem y AI Personalities');
-    console.log('    se crean al registrar cada usuario.');
+    console.log('👤 USUARIO DUEÑO DEL PORTFOLIO');
     console.log('═══════════════════════════════════════');
+    const owner = await bootstrapOwner(app);
+
+    console.log('\n═══════════════════════════════════════');
+    console.log('🗂️  PROYECTOS');
+    console.log('═══════════════════════════════════════');
+    await seedProjects(app, owner.id);
 
     console.log('\n✅ Seeder completado exitosamente');
+    console.log('   Siguiente paso: completar el perfil en /admin/settings');
   } catch (error) {
     console.error('❌ Error ejecutando seeders:', error);
+    await app.close();
     process.exit(1);
-  } finally {
-    await dataSource.destroy();
   }
+
+  await app.close();
+
+  // `AppModule` crea su cliente de Redis a mano (fuera del ciclo de vida de Nest),
+  // así que ese handle mantiene el event loop vivo y el proceso nunca cerraría solo.
+  process.exit(0);
 }
 
 runSeeders();

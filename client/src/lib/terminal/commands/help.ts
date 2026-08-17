@@ -57,12 +57,7 @@ export const help: Command = {
 			'',
 			`<span class="category-header">🤖 ${t('terminal.help.categories.ai')}</span>`,
 			`   <span class="command-highlight">${aiCmd}</span>      ${aiName} - ${t('terminal.help.commands.ai_modes')}`,
-			`   <span class="command-highlight">apikey</span>    ${t('terminal.help.commands.apikey')}`,
-			'',
-			`<span class="category-header">🔐 ${t('terminal.help.categories.account')}</span>`,
-			`   <span class="command-highlight">register</span>  ${t('terminal.help.commands.register')}`,
-			`   <span class="command-highlight">email</span>     ${t('terminal.help.commands.email')}`,
-			`   <span class="command-highlight">admin</span>     ${t('terminal.help.commands.admin')}`,
+
 			'',
 			`<span class="category-header">🎨 ${t('terminal.help.categories.customization')}</span>`,
 			`   <span class="command-highlight">theme</span>     ${t('terminal.help.commands.theme')}`,

@@ -2,6 +2,8 @@ import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ThrottlerModule } from '@nestjs/throttler';
+import { ThrottlerStorageRedisService } from '@nest-lab/throttler-storage-redis';
+import Redis from 'ioredis';
 
 // Modules
 import { AuthModule } from './modules/auth/auth.module';
@@ -51,24 +53,36 @@ import { AiPersonality } from './entities/ai-personality.entity';
       inject: [ConfigService],
     }),
 
-    // Rate limiting global
-    ThrottlerModule.forRoot([
-      {
-        name: 'short',
-        ttl: 1000, // 1 segundo
-        limit: 3,
-      },
-      {
-        name: 'medium',
-        ttl: 10000, // 10 segundos
-        limit: 20,
-      },
-      {
-        name: 'long',
-        ttl: 60000, // 1 minuto
-        limit: 100,
-      },
-    ]),
+    // Rate limiting global con Redis
+    ThrottlerModule.forRootAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService) => ({
+        throttlers: [
+          {
+            name: 'short',
+            ttl: 1000, // 1 segundo
+            limit: 3,
+          },
+          {
+            name: 'medium',
+            ttl: 10000, // 10 segundos
+            limit: 20,
+          },
+          {
+            name: 'long',
+            ttl: 60000, // 1 minuto
+            limit: 100,
+          },
+        ],
+        storage: new ThrottlerStorageRedisService(
+          new Redis({
+            host: configService.get('REDIS_HOST', 'redis'),
+            port: configService.get<number>('REDIS_PORT', 6379),
+          })
+        ),
+      }),
+    }),
 
     // Feature modules
     AuthModule,

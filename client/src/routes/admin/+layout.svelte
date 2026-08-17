@@ -17,6 +17,16 @@
 					<span class="header-title">Panel de Administración</span>
 				</div>
 				<div class="header-actions">
+					<a
+						href="/admin/settings"
+						class="nav-link"
+						class:current={$page.url.pathname === '/admin/settings'}>Parametría</a
+					>
+					<a
+						href="/admin/projects"
+						class="nav-link"
+						class:current={$page.url.pathname === '/admin/projects'}>Proyectos</a
+					>
 					<a href="/" class="nav-link">← Volver al sitio</a>
 					<a href="/admin/logout" class="logout-btn">Cerrar sesión</a>
 				</div>
@@ -99,6 +109,11 @@
 
 	.nav-link:hover {
 		opacity: 0.8;
+	}
+
+	.nav-link.current {
+		border-bottom: 1px solid var(--theme-accent);
+		font-weight: 700;
 	}
 
 	.logout-btn {

@@ -5,7 +5,15 @@ import { Memory, MemoryType } from '../../entities/memory.entity';
 import { MemoryKeyword } from '../../entities/memory-keyword.entity';
 import { Setting } from '../../entities/setting.entity';
 import { CreateMemoryDto, UpdateMemoryDto } from './dto';
+import { detectTechStack, replaceSection } from '../projects/project-sections';
 import { GoogleGenerativeAI } from '@google/generative-ai';
+
+/**
+ * Modelo de Gemini. Configurable por entorno porque Google discontinúa versiones
+ * sin aviso: `gemini-2.0-flash` empezó a devolver 404 y rompió el asistente.
+ * Cambiarlo tiene que ser editar el `.env`, no rebuildear la imagen.
+ */
+const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-3.6-flash';
 
 @Injectable()
 export class MemoryService {
@@ -243,6 +251,110 @@ export class MemoryService {
   }
 
   /**
+   * Reemplaza por completo las keywords de una memoria.
+   * Borra y regraba en vez de hacer merge: son la clave de recuperación del RAG
+   * y una keyword vieja que sobrevive a una edición ensucia las búsquedas.
+   */
+  async replaceKeywords(memoryId: number, keywords: string[]): Promise<void> {
+    await this.keywordsRepository.delete({ memoryId });
+
+    const normalized = [
+      ...new Set(keywords.map((k) => k.trim().toLowerCase()).filter(Boolean)),
+    ];
+    if (normalized.length === 0) return;
+
+    await this.keywordsRepository.save(
+      normalized.map((keyword) => this.keywordsRepository.create({ memoryId, keyword })),
+    );
+  }
+
+  /**
+   * Regenera las secciones de proyectos de las memorias INDEX y DOCS a partir
+   * de todas las memorias tipo PROJECT del usuario.
+   *
+   * Es el **único** lugar que escribe esos bloques. La convergen los tres
+   * caminos de carga: el seeder de archivos, la creación desde el panel y la
+   * generación de resúmenes. Antes cada uno appendeaba por su cuenta, así que
+   * reejecutar cualquiera duplicaba entradas en el perfil y el RAG terminaba
+   * leyendo el mismo proyecto varias veces.
+   *
+   * @param techStackBySlug stacks curados (los del frontmatter, cuando vienen del
+   *   seeder). Para los que falten se detectan desde el contenido.
+   */
+  async regenerateProjectSections(
+    userId: number = 1,
+    techStackBySlug: Record<string, string[]> = {},
+  ): Promise<void> {
+    const projects = await this.memoriesRepository.find({
+      where: { type: MemoryType.PROJECT, userId, active: true },
+    });
+
+    projects.sort((a, b) => b.priority - a.priority || a.slug.localeCompare(b.slug));
+
+    const docs = projects.map((project) => ({
+      slug: project.slug,
+      title: project.title,
+      summary: project.summary || '',
+      techStack: techStackBySlug[project.slug] || detectTechStack(project.content),
+    }));
+
+    await this.rewriteSection(
+      { slug: 'memory', userId },
+      '## Proyectos',
+      docs
+        .map((d) =>
+          [
+            `### ${d.title}`,
+            '',
+            d.summary,
+            '',
+            `- **Slug:** \`${d.slug}\``,
+            `- **Stack:** ${d.techStack.join(', ') || '—'}`,
+          ].join('\n'),
+        )
+        .join('\n\n'),
+    );
+
+    await this.rewriteSection(
+      { slug: 'index', userId },
+      '## Proyectos Destacados',
+      docs
+        .map((d) => {
+          const short = d.title.split('—')[0].trim().toLowerCase();
+          return [
+            `### ${d.title}`,
+            '',
+            `- **Stack:** ${d.techStack.join(', ') || '—'}`,
+            '',
+            d.summary,
+            '',
+            `**Preguntas sugeridas:** "contame de ${short}", "cómo funciona ${short}", ` +
+              `"qué tecnologías usa ${short}".`,
+          ].join('\n');
+        })
+        .join('\n\n---\n\n'),
+    );
+
+    console.log(`[MemoryService] Secciones de proyectos regeneradas (${docs.length} proyectos).`);
+  }
+
+  private async rewriteSection(
+    where: { slug: string; userId: number },
+    heading: string,
+    block: string,
+  ): Promise<void> {
+    const memory = await this.memoriesRepository.findOne({ where });
+    if (!memory) {
+      console.warn(`[MemoryService] No existe la memoria "${where.slug}", se omite.`);
+      return;
+    }
+
+    await this.memoriesRepository.update(memory.id, {
+      content: replaceSection(memory.content, heading, block),
+    });
+  }
+
+  /**
    * Elimina una memoria (verificando ownership)
    */
   async delete(id: number, userId?: number): Promise<void> {
@@ -265,7 +377,7 @@ export class MemoryService {
     }
 
     const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
+    const model = genAI.getGenerativeModel({ model: GEMINI_MODEL });
 
     // Obtener proyectos del usuario
     const projects = await this.memoriesRepository.find({
@@ -333,17 +445,20 @@ Respondé SOLO con el resumen, sin introducción ni formato markdown.`;
           await new Promise(resolve => setTimeout(resolve, 300));
         }
 
-        // Actualizar memoria DOCS (memory.md) con el proyecto
-        if (needsSummary && project.summary && project.userId) {
-          await this.updateDocsMemory(project.title, project.slug, project.summary, project.userId);
-          await this.updateIndexWithProject(project, project.userId);
-        }
       } catch (error) {
         console.error(`Error generando contenido para ${project.slug}:`, error);
         if (!failed.includes(project.slug)) {
           failed.push(project.slug);
         }
       }
+    }
+
+    // Una sola regeneración al final, en vez de un append por proyecto.
+    const touchedUserIds = new Set(
+      projects.map((p) => p.userId).filter((id): id is number => id != null),
+    );
+    for (const touchedUserId of touchedUserIds) {
+      await this.regenerateProjectSections(touchedUserId);
     }
 
     return { updated, failed, keywordsGenerated };
@@ -377,7 +492,7 @@ Respondé SOLO con el resumen, sin introducción ni formato markdown.`;
 
     try {
       const genAI = new GoogleGenerativeAI(apiKey);
-      const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
+      const model = genAI.getGenerativeModel({ model: GEMINI_MODEL });
 
       const prompt = `Dado el siguiente proyecto de software, generá exactamente 15 keywords/tags relevantes para búsqueda.
 
@@ -446,7 +561,7 @@ Respondé SOLO con las 15 keywords separadas por comas, nada más.`;
     if (apiKey) {
       try {
         const genAI = new GoogleGenerativeAI(apiKey);
-        const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
+        const model = genAI.getGenerativeModel({ model: GEMINI_MODEL });
 
         const summaryPrompt = `Dado el siguiente proyecto de software, generá un resumen CONCISO en español (máximo 3 oraciones) que describa:
 1. Qué hace el proyecto
@@ -491,64 +606,14 @@ Respondé SOLO con el resumen, sin introducción ni formato markdown.`;
     );
     await this.keywordsRepository.save(keywordEntities);
 
-    // 6. Actualizar memoria DOCS (retroalimentación)
-    await this.updateDocsMemory(dto.title, dto.slug, summary, userId);
+    // 6. Regenerar las secciones de proyectos de index y memory
+    await this.regenerateProjectSections(userId);
 
     return { 
       project: savedProject, 
       summary, 
       keywords 
     };
-  }
-
-  /**
-   * Actualiza la memoria DOCS agregando un nuevo proyecto
-   */
-  private async updateDocsMemory(title: string, slug: string, summary: string, userId: number): Promise<void> {
-    try {
-      // Buscar la memoria de tipo DOCS (equivalente a memory.md) del usuario
-      let docsMemory = await this.memoriesRepository.findOne({
-        where: { type: MemoryType.DOCS, userId },
-      });
-
-      if (!docsMemory) {
-        // Si no existe, crear una básica
-        docsMemory = this.memoriesRepository.create({
-          type: MemoryType.DOCS,
-          slug: 'memory',
-          title: 'Base de Conocimiento',
-          content: '# Base de Conocimiento\n\n## Proyectos\n\n',
-          priority: 5,
-          userId,
-        });
-        await this.memoriesRepository.save(docsMemory);
-      }
-
-      // Agregar el nuevo proyecto al contenido
-      const newEntry = `
-### ${this.formatProjectTitle(title)}
-
-${summary || 'Proyecto sin resumen'}
-- **Slug:** \`${slug}\`
-- **Archivo fuente:** \`projects/${slug}.md\`
-`;
-
-      // Buscar dónde insertar (antes de sección de contacto si existe)
-      const contactSection = '## [DATOS DE CONTACTO]';
-      if (docsMemory.content.includes(contactSection)) {
-        docsMemory.content = docsMemory.content.replace(
-          contactSection, 
-          newEntry + '\n' + contactSection
-        );
-      } else {
-        // Agregar al final
-        docsMemory.content += newEntry;
-      }
-
-      await this.memoriesRepository.save(docsMemory);
-    } catch (error) {
-      console.error('Error actualizando memoria DOCS:', error);
-    }
   }
 
   /**
@@ -660,58 +725,4 @@ _Aún no hay proyectos registrados. Crea tu primer proyecto desde /admin/project
     console.log(`[MemoryService] Memorias inicializadas para usuario ${userId}`);
   }
 
-  /**
-   * Actualiza la memoria INDEX con información de un proyecto
-   */
-  private async updateIndexWithProject(project: Memory, userId: number): Promise<void> {
-    try {
-      const indexMemory = await this.memoriesRepository.findOne({
-        where: { slug: 'index', userId },
-      });
-
-      if (!indexMemory) {
-        console.warn(`[MemoryService] No se encontró memoria INDEX para usuario ${userId}`);
-        return;
-      }
-
-      // Verificar si el proyecto ya está en el index
-      if (indexMemory.content.includes(`### ${this.formatProjectTitle(project.title)}`)) {
-        console.log(`[MemoryService] Proyecto ${project.slug} ya existe en INDEX`);
-        return;
-      }
-
-      // Extraer tecnologías del contenido del proyecto
-      const techMatches = project.content?.match(/\*\*(?:Stack|Tecnolog[íi]as?):\*\*\s*([^\n]+)/i);
-      const techStack = techMatches ? techMatches[1].trim() : 'Varias tecnologías';
-
-      // Crear entrada del proyecto
-      const projectEntry = `
-
-### ${this.formatProjectTitle(project.title)}
-
-${project.summary || 'Proyecto sin descripción'}
-
-- **Stack:** ${techStack}
-- **Comando:** \`cat projects/${project.slug}.md\`
-`;
-
-      // Insertar antes de la línea de separación final
-      const insertPoint = indexMemory.content.lastIndexOf('---\n\nDocumento');
-      if (insertPoint !== -1) {
-        indexMemory.content = 
-          indexMemory.content.slice(0, insertPoint) + 
-          projectEntry + 
-          '\n' + 
-          indexMemory.content.slice(insertPoint);
-      } else {
-        // Agregar al final si no encuentra el patrón
-        indexMemory.content += projectEntry;
-      }
-
-      await this.memoriesRepository.save(indexMemory);
-      console.log(`[MemoryService] INDEX actualizado con proyecto ${project.slug}`);
-    } catch (error) {
-      console.error(`[MemoryService] Error actualizando INDEX:`, error);
-    }
-  }
 }

@@ -24,9 +24,9 @@ export class ChatService {
   ) {
     this.defaultApiKey = this.configService.get('GEMINI_API_KEY') || null;
     if (!this.defaultApiKey) {
-      this.logger.warn('GEMINI_API_KEY del servidor no configurada - se requiere key del usuario');
+      this.logger.error('GEMINI_API_KEY no configurada: el asistente no va a poder responder.');
     } else {
-      this.initializeModel(this.defaultApiKey);
+      this.model = this.initializeModel(this.defaultApiKey);
     }
   }
 
@@ -36,7 +36,8 @@ export class ChatService {
   private initializeModel(apiKey: string): GenerativeModel | null {
     try {
       const genAI = new GoogleGenerativeAI(apiKey);
-      return genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
+      const modelName = this.configService.get('GEMINI_MODEL') || 'gemini-3.6-flash';
+      return genAI.getGenerativeModel({ model: modelName });
     } catch (error) {
       this.logger.error(`Error inicializando modelo: ${error.message}`);
       return null;
@@ -44,15 +45,9 @@ export class ChatService {
   }
 
   /**
-   * Obtiene el modelo a usar (con key del usuario o del servidor)
+   * Obtiene el modelo del servidor, inicializándolo si hiciera falta.
    */
-  private getModel(userApiKey?: string): GenerativeModel | null {
-    // Si el usuario proporciona su propia key, usarla
-    if (userApiKey && userApiKey.length > 20) {
-      return this.initializeModel(userApiKey);
-    }
-
-    // Si no hay modelo por defecto pero tenemos la key, inicializarlo
+  private getModel(): GenerativeModel | null {
     if (!this.model && this.defaultApiKey) {
       this.model = this.initializeModel(this.defaultApiKey);
     }
@@ -63,15 +58,15 @@ export class ChatService {
   /**
    * Genera una respuesta de chat con streaming
    * @param prompt El mensaje del usuario
-   * @param userApiKey API key opcional del usuario (de localStorage)
    * @param mode Modo de personalidad: 'arquitecto' o 'asistente'
    * @param userId ID del usuario (default: 1 para admin)
    */
-  async *chat(prompt: string, userApiKey?: string, mode?: string, userId: number = 1): AsyncGenerator<string> {
-    const model = this.getModel(userApiKey);
+  async *chat(prompt: string, mode?: string, userId: number = 1): AsyncGenerator<string> {
+    const model = this.getModel();
 
     if (!model) {
-      yield 'Error: No hay API key de Gemini configurada.\n\nUsa el comando `apikey set TU_KEY` para configurar tu propia API key de Gemini.\nPodés obtener una gratis en: https://aistudio.google.com/apikey';
+      this.logger.error('Chat solicitado sin GEMINI_API_KEY configurada.');
+      yield 'El asistente no está disponible en este momento.';
       return;
     }
 
@@ -97,9 +92,9 @@ export class ChatService {
     } catch (error) {
       this.logger.error(`Error en chat: ${error.message}`);
 
-      // Mensaje más descriptivo si es error de API key
+      // La key es del servidor: si falla, es un problema nuestro, no del visitante.
       if (error.message?.includes('API key') || error.message?.includes('401')) {
-        yield 'Error: API key inválida o expirada.\n\nVerificá tu key con `apikey show` o configurá una nueva con `apikey set TU_KEY`';
+        yield 'El asistente no está disponible en este momento.';
       } else {
         yield `Error al procesar tu mensaje: ${error.message}`;
       }

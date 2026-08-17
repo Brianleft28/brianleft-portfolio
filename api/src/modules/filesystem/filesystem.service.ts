@@ -279,6 +279,27 @@ export class FilesystemService {
   }
 
   /**
+   * Elimina la carpeta `C:/proyectos/<slug>` de un proyecto, si existe.
+   *
+   * Reutiliza `deleteFolder()`, así que se lleva también la memoria y las
+   * keywords asociadas. Devuelve `false` si el proyecto no tenía carpeta.
+   */
+  async deleteProjectFolder(slug: string, userId: number): Promise<boolean> {
+    const proyectos = await this.foldersRepository.findOne({
+      where: { name: 'proyectos', userId },
+    });
+    if (!proyectos) return false;
+
+    const folder = await this.foldersRepository.findOne({
+      where: { name: slug, parentId: proyectos.id, userId },
+    });
+    if (!folder) return false;
+
+    await this.deleteFolder(folder.id, userId);
+    return true;
+  }
+
+  /**
    * Obtiene lista plana de todas las carpetas (para selectores) de un usuario
    */
   async getAllFolders(userId: number): Promise<{ id: number; name: string; path: string }[]> {

@@ -18,10 +18,13 @@ export class RateLimitService implements OnModuleInit, OnModuleDestroy {
   private memoryStore = new Map<string, { count: number; resetAt: number }>();
 
   // Configuración del free tier
-  readonly FREE_TIER_LIMIT = 15; // 15 intentos por día
+  readonly FREE_TIER_LIMIT: number;
   readonly FREE_TIER_RESET_SECONDS = 24 * 60 * 60; // 24 horas
 
-  constructor(private configService: ConfigService) {}
+  constructor(private configService: ConfigService) {
+    const configured = parseInt(this.configService.get('CHAT_FREE_TIER_LIMIT') || '', 10);
+    this.FREE_TIER_LIMIT = Number.isFinite(configured) && configured > 0 ? configured : 10;
+  }
 
   async onModuleInit() {
     await this.connectRedis();

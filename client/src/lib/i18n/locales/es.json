@@ -29,7 +29,6 @@
 				"navigation": "Navegación",
 				"files": "Archivos",
 				"ai": "Inteligencia Artificial",
-				"account": "Cuenta & Admin",
 				"customization": "Personalización",
 				"terminal": "Terminal"
 			},
@@ -41,84 +40,12 @@
 				"cat": "Ver contenido de archivo",
 				"cv": "Descargar curriculum vitae",
 				"ai_modes": "Modos especializados",
-				"apikey": "Configura tu API key de Gemini",
-				"register": "Crear cuenta (obtén tu subdominio)",
 				"email": "Ver o cambiar tu email (login)",
-				"admin": "Abrir panel de administración",
 				"theme": "Cambiar tema de colores",
 				"clear": "Limpiar consola (Ctrl+L)",
 				"help": "Mostrar esta ayuda",
 				"exit": "Cerrar terminal (Ctrl+Ñ)"
 			}
-		},
-		"register": {
-			"description": "Registrar nuevo usuario (crear portfolio)",
-			"title": "REGISTRO DE USUARIO",
-			"errors": {
-				"username_required": "Username requerido",
-				"email_required": "Email requerido",
-				"password_required": "Password requerida",
-				"invalid_email": "Email inválido"
-			},
-			"creating": "Creando usuario",
-			"will_create": "Esto creará:",
-			"projects_folder": "Carpeta ~/projects",
-			"initial_config": "Configuración inicial",
-			"subdomain": "Subdomain",
-			"options": {
-				"username": "Username (requerido)",
-				"email": "Email (requerido)",
-				"password": "Password (requerido)",
-				"name": "Nombre completo",
-				"role": "Rol profesional",
-				"help": "Mostrar ayuda"
-			},
-			"creates": {
-				"user_db": "Usuario en la base de datos",
-				"projects_folder": "Carpeta ~/projects para el portfolio",
-				"initial_config": "Configuración inicial del sitio"
-			},
-			"warning": "La contraseña es obligatoria y no se puede recuperar después.",
-			"success": "Usuario creado exitosamente!",
-			"credentials": "Credenciales",
-			"access": "Acceso",
-			"important": "IMPORTANTE: Guarda la contraseña en un lugar seguro!",
-			"no_recovery": "No se puede recuperar después."
-		},
-		"login": {
-			"description": "Iniciar sesión",
-			"title": "INICIAR SESIÓN",
-			"opening_panel": "Abriendo panel de login...",
-			"also_use": "También puedes usar:",
-			"errors": {
-				"username_required": "Username requerido",
-				"password_required": "Password requerida",
-				"auth_error": "Error de autenticación",
-				"invalid_credentials": "Credenciales inválidas"
-			},
-			"options": {
-				"username": "Nombre de usuario",
-				"password": "Contraseña",
-				"help": "Mostrar ayuda"
-			},
-			"examples": {
-				"panel": "Abre panel de login",
-				"terminal": "Login desde terminal"
-			},
-			"no_account": "No tienes cuenta? Usa",
-			"forgot_password": "¿Olvidaste tu contraseña? Contacta al administrador.",
-			"success": "Sesión iniciada correctamente!",
-			"welcome": "Bienvenido,",
-			"admin_panel": "Panel de admin:",
-			"your_info": "Ver tu info:",
-			"logout": "Cerrar sesión:"
-		},
-		"logout": {
-			"description": "Cerrar sesión",
-			"logging_out": "Cerrando sesión...",
-			"success": "Sesión cerrada correctamente",
-			"goodbye": "¡Hasta pronto!",
-			"to_login": "Para iniciar sesión:"
 		},
 		"whoami": {
 			"description": "Ver información del usuario actual",
@@ -137,18 +64,6 @@
 			"admin_panel": "Panel de admin:",
 			"logout": "Cerrar sesión:",
 			"error": "Error al obtener información del usuario"
-		},
-		"admin": {
-			"description": "Abrir panel de administración",
-			"panel": "Panel Admin",
-			"config": "Configuración",
-			"unknown_section": "Sección desconocida:",
-			"available_sections": "Secciones disponibles:",
-			"login": "Iniciar sesión",
-			"settings": "Configuración del portfolio",
-			"opening": "Abriendo",
-			"new_tab": "en nueva pestaña...",
-			"tip_sections": "para ver todas las secciones disponibles."
 		},
 		"cv": {
 			"description": "Descarga el curriculum vitae",
@@ -222,41 +137,6 @@
 			"available_themes": "Temas disponibles:",
 			"unknown_subcommand": "Subcomando desconocido:",
 			"title": "Sistema de temas visuales"
-		},
-		"verify": {
-			"description": "Verificar email con código de confirmación",
-			"title": "VERIFICACIÓN DE EMAIL",
-			"errors": {
-				"email_required": "Email requerido",
-				"invalid_code": "Código inválido",
-				"code_format": "El código debe ser de 6 dígitos numéricos",
-				"no_pending": "No hay verificación pendiente",
-				"failed": "Verificación fallida",
-				"invalid_or_expired": "Código inválido o expirado",
-				"connection_error": "Error de conexión"
-			},
-			"resending": "Reenviando código a",
-			"include_email": "Incluye el email:",
-			"verifying": "Verificando código...",
-			"examples": {
-				"verify_code": "Verificar con código de 6 dígitos",
-				"verify_email": "Verificar especificando email",
-				"resend": "Reenviar código",
-				"resend_email": "Reenviar a email específico"
-			},
-			"note_expiry": "El código se envía al registrarse y expira en 15 minutos",
-			"try_with": "Prueba con:",
-			"get_new_code": "para obtener un nuevo código",
-			"success": "Email verificado exitosamente!",
-			"account_active": "Tu cuenta está activa",
-			"access_panel": "Ya puedes acceder a tu panel:",
-			"or_visit": "o visita",
-			"already_verified": "Email ya verificado",
-			"can_login": "Ya puedes hacer login:",
-			"code_resent": "Código reenviado!",
-			"check_email": "Revisa tu correo",
-			"expires_15min": "El código expira en 15 minutos",
-			"next_step": "Siguiente paso:"
 		},
 		"lang": {
 			"description": "Cambia el idioma de la interfaz",

@@ -16,10 +16,7 @@ export const whoami: Command = {
 			if (!response.ok) {
 				return {
 					output: `<span class="system-hint">👤 ${t('terminal.whoami.guest')}</span>
-<span class="system-hint">${t('terminal.whoami.no_session')}</span>
-
-<span class="system-hint">💡 ${t('terminal.whoami.to_register')} <code>register -h</code></span>
-<span class="system-hint">💡 ${t('terminal.whoami.to_login')} <code>login -h</code></span>`,
+<span class="system-hint">${t('terminal.whoami.no_session')}</span>`,
 					isHtml: true
 				};
 			}
@@ -33,12 +30,7 @@ export const whoami: Command = {
   <span class="ai-info">${t('terminal.whoami.username')}:</span>    <strong>${user.username}</strong>
   <span class="ai-info">${t('terminal.whoami.email')}:</span>       ${user.email}
   <span class="ai-info">${t('terminal.whoami.role')}:</span>         ${user.role}
-  <span class="ai-info">${t('terminal.whoami.display')}:</span>     ${user.displayName || user.username}
-  <span class="ai-info">${t('terminal.whoami.subdomain')}:</span>   ${user.subdomain}
-  <span class="ai-info">${t('terminal.whoami.verified')}:</span>  ${user.emailVerified ? '✅' : '❌'}
-
-<span class="system-hint">💡 ${t('terminal.whoami.admin_panel')} <code>admin</code></span>
-<span class="system-hint">💡 ${t('terminal.whoami.logout')} <code>logout</code></span>`,
+  <span class="ai-info">${t('terminal.whoami.display')}:</span>     ${user.displayName || user.username}`,
 				isHtml: true
 			};
 		} catch (error) {

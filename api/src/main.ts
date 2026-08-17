@@ -30,6 +30,8 @@ async function bootstrap() {
         callback(null, true);
         return;
       }
+      
+      console.log('CORS rejected origin:', origin);
 
       callback(new Error('Not allowed by CORS'));
     },

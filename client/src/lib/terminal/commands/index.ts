@@ -1,25 +1,23 @@
 import type { Command } from '../types';
 import admin from './admin';
-import { apikey } from './apikey';
 import { cat } from './cat';
 import { cd } from './cd';
 import { cls } from './cls';
 import { cv } from './cv';
-import email from './email';
 import { help } from './help';
 import { lang } from './lang';
-import { login } from './login';
-import { logout } from './logout';
 import { ls } from './ls';
 import { pwd } from './pwd';
-import { register } from './register';
 import { tree } from './tree';
 import { torvalds } from './torvalds';
 import { theme } from './theme';
-import { verify } from './verify';
 import { whoami } from './whoami';
 
-const allCommands: Command[] = [admin, apikey, cat, cd, cls, cv, email, help, lang, login, logout, ls, pwd, register, tree, torvalds, theme, verify, whoami];
+/**
+ * Comandos públicos: son los que enumera `getAllCommands()` y, por lo tanto,
+ * los únicos que aparecen en `help` y en `help <comando>`.
+ */
+const allCommands: Command[] = [cat, cd, cls, cv, help, lang, ls, pwd, tree, torvalds, theme, whoami];
 const commandRegistry: Map<string, Command> = new Map();
 
 // Registrar todos los comandos
@@ -27,15 +25,15 @@ allCommands.forEach((cmd) => {
 	commandRegistry.set(cmd.name, cmd);
 });
 
+// `admin` es del dueño: se registra para poder ejecutarlo, pero queda fuera de
+// `allCommands` para que no lo liste ninguna ayuda ni enumeración de comandos.
+commandRegistry.set(admin.name, admin);
+
 // Aliases
 commandRegistry.set('clear', cls);
 commandRegistry.set('dir', ls);
 commandRegistry.set('-h', help);
 commandRegistry.set('--help', help);
-
-// Aliases para admin
-commandRegistry.set('settings', admin);
-commandRegistry.set('panel', admin);
 
 // Aliases para el comando AI - múltiples para compatibilidad
 // El alias dinámico se registra desde el componente Terminal
@@ -43,18 +41,6 @@ commandRegistry.set('ai', torvalds);
 commandRegistry.set('torvalds', torvalds);
 commandRegistry.set('assistant', torvalds);
 
-// Aliases para register
-commandRegistry.set('signup', register);
-commandRegistry.set('createuser', register);
-
-// Aliases para verify
-commandRegistry.set('confirmar', verify);
-commandRegistry.set('verificar', verify);
-
-// Aliases para auth
-commandRegistry.set('signin', login);
-commandRegistry.set('signout', logout);
-commandRegistry.set('salir', logout);
 
 // ll es ls -l (alias especial)
 const llCommand: Command = {
@@ -70,10 +56,6 @@ commandRegistry.set('ll', llCommand);
 // Aliases para cv
 commandRegistry.set('curriculum', cv);
 commandRegistry.set('resume', cv);
-
-// Aliases para apikey
-commandRegistry.set('key', apikey);
-commandRegistry.set('gemini', apikey);
 
 // Aliases para lang
 commandRegistry.set('language', lang);
@@ -119,4 +101,4 @@ export function generateHelp(): string {
 }
 
 // Re-exportar comandos individuales
-export { apikey, cat, cd, cls, cv, help, lang, ls, pwd, register, tree, torvalds };
+export { cat, cd, cls, cv, help, lang, ls, pwd, tree, torvalds };

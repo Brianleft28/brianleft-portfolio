@@ -37,18 +37,16 @@ RUN mkdir -p /app/data/memory && chown -R nestjs:nodejs /app/data
 # Copiar archivos de dependencias
 COPY package*.json ./
 
-# Instalar solo dependencias de producción + ts-node para seeders
+# Instalar solo dependencias de producción
 RUN npm ci --only=production && \
-    npm install ts-node typescript && \
     npm cache clean --force
 
-# Copiar build desde builder
+# Copiar build desde builder.
+# Los seeders corren desde `dist` (`npm run seed`): antes se copiaba `src/seeders`
+# para ejecutarlos con ts-node, pero `run-seeders.ts` importa `app.module`, que no
+# se copiaba — el seed fallaba en la imagen. Usar el build evita el problema y saca
+# ts-node y typescript de producción.
 COPY --from=builder /app/dist ./dist
-
-# Copiar fuentes de seeders para poder ejecutarlos con ts-node
-COPY --from=builder /app/src/seeders ./src/seeders
-COPY --from=builder /app/src/entities ./src/entities
-COPY --from=builder /app/tsconfig.json ./tsconfig.json
 
 # Cambiar ownership de todo
 RUN chown -R nestjs:nodejs /app

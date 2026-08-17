@@ -2,7 +2,7 @@
 	import { onMount, tick } from 'svelte';
 	import { isTerminalVisible } from '$lib/stores/ui';
 	import { currentPath, startInChatMode, iaMode } from '$lib/stores/terminal';
-	import { portfolioConfig, aiPersonality, loadConfig, loadGeminiApiKey, asciiBanner } from '$lib/stores/config';
+	import { portfolioConfig, aiPersonality, loadConfig, asciiBanner } from '$lib/stores/config';
 	import { fileSystemData, type FileSystemNode, type FolderNode } from '$lib/data/file-system';
 	
 	// Sistema modular de comandos
@@ -52,8 +52,8 @@
 
 	/**
 	 * Parsear línea de comando respetando comillas
-	 * Ej: register user email --name "Juan Pérez" --role "Dev"
-	 * Retorna: ['register', 'user', 'email', '--name', 'Juan Pérez', '--role', 'Dev']
+	 * Ej: cat "mi archivo.md" --raw
+	 * Retorna: ['cat', 'mi archivo.md', '--raw']
 	 */
 	function parseCommandLine(input: string): string[] {
 		const result: string[] = [];
@@ -102,13 +102,20 @@
 	let terminalElement: HTMLDivElement;
 	let isChatModeActive = $state(false);
 	let isInitialized = $state(false);
-	
-	// Modo verificación inline
-	let isVerificationMode = $state(false);
-	let verificationEmail = $state('');
-	
+
 	// Estado de autenticación
 	let isAuthenticated = $state(false);
+
+	/**
+	 * Prompt interactivo pedido por un comando (ver `ctx.ask`).
+	 * Mientras está activo, Enter resuelve la promesa en vez de despachar un comando.
+	 */
+	type PromptRequest = {
+		label: string;
+		masked: boolean;
+		resolve: (value: string | null) => void;
+	};
+	let promptRequest = $state<PromptRequest | null>(null);
 
 	// Configuración dinámica
 	// Prioridad: AI Personality > Settings > Default
@@ -170,8 +177,7 @@
 	onMount(() => {
 		// Cargar configuración primero
 		loadConfig();
-		loadGeminiApiKey();
-		
+
 		// Verificar si hay sesión activa
 		checkAuthStatus();
 		
@@ -180,8 +186,6 @@
 		promptHistory = [];
 		historyIndex = -1;
 		isChatModeActive = false;
-		isVerificationMode = false;
-		verificationEmail = '';
 		currentPath.set('C:\\');
 
 		// Registrar alias dinámico para el comando AI
@@ -207,20 +211,12 @@
 			addSystemMessage(e.detail.output);
 		};
 		
-		const handleVerificationMode = (e: CustomEvent) => {
-			isVerificationMode = true;
-			verificationEmail = e.detail.email;
-			addSystemMessage(`<span class="ai-info">📧 Ingresa el código de 6 dígitos enviado a <strong>${e.detail.email}</strong></span>
-<span class="system-hint">Escribe el código o "cancelar" para salir</span>`);
-		};
-		
 		// Listener para cambios de auth (login/logout)
 		const handleAuthChange = () => {
 			checkAuthStatus();
 		};
 
 		window.addEventListener('terminal:output', handleTerminalOutput as EventListener);
-		window.addEventListener('terminal:verification-mode', handleVerificationMode as EventListener);
 		window.addEventListener('auth:change', handleAuthChange);
 
 		isInitialized = true;
@@ -229,7 +225,6 @@
 		// Cleanup
 		return () => {
 			window.removeEventListener('terminal:output', handleTerminalOutput as EventListener);
-			window.removeEventListener('terminal:verification-mode', handleVerificationMode as EventListener);
 			window.removeEventListener('auth:change', handleAuthChange);
 		};
 	});
@@ -274,11 +269,8 @@
 
 <span class="category-header">  🤖 Inteligencia Artificial</span>
        <span class="command-highlight">${aiCmd}</span>        ${aiNm} con modos especializados
-       <span class="command-highlight">apikey</span>      Configurar tu API key de Gemini
 
-<span class="category-header">  🔐 Cuenta & Admin</span>
-       <span class="command-highlight">register</span>    Crear cuenta (obtén tu subdominio)
-       <span class="command-highlight">email</span>       Ver o cambiar tu email
+<span class="category-header">  🔐 Admin</span>
        <span class="command-highlight">admin</span>       Panel de administración
 
 <span class="category-header">  🎨 Personalización</span>
@@ -331,8 +323,38 @@
 			aiDisplayName: aiDisplayName,
 			ownerName: ownerName,
 			// Autenticación
-			isAuthenticated: isAuthenticated
+			isAuthenticated: isAuthenticated,
+			ask
 		};
+	}
+
+	/**
+	 * Pide un dato por teclado. El valor no pasa por `promptHistory` ni por el
+	 * historial persistido: si `masked`, en pantalla sólo quedan puntos.
+	 */
+	function ask(label: string, options?: { masked?: boolean }): Promise<string | null> {
+		return new Promise((resolve) => {
+			currentPrompt = '';
+			promptRequest = { label, masked: options?.masked === true, resolve };
+			tick().then(() => inputElement?.focus());
+		});
+	}
+
+	function resolvePrompt(value: string | null) {
+		const request = promptRequest;
+		if (!request) return;
+
+		promptRequest = null;
+		currentPrompt = '';
+
+		// Se escribe directo en `history` (no vía addHistoryItem) para no ensuciar
+		// `promptHistory`, que es lo que recorren las flechas arriba/abajo.
+		const shown =
+			value === null ? '^C' : request.masked ? '•'.repeat(Math.min(value.length, 12)) : value;
+		history = [...history, { type: 'prompt', text: shown, promptIndicator: request.label }];
+		scrollToBottom();
+
+		request.resolve(value);
 	}
 
 	// Comandos legacy que requieren lógica especial del componente
@@ -380,8 +402,6 @@
 		promptHistory = [];
 		historyIndex = -1;
 		isChatModeActive = false;
-		isVerificationMode = false;
-		verificationEmail = '';
 		currentPath.set('C:\\');
 		iaMode.set(null);
 
@@ -395,64 +415,18 @@
 	}
 
 	async function handleSubmit() {
+		// Va antes del guard de isLoading: el comando que pidió el prompt sigue
+		// ejecutándose (isLoading === true) mientras espera la respuesta.
+		if (promptRequest) {
+			resolvePrompt(currentPrompt);
+			return;
+		}
+
 		if (isLoading || !currentPrompt.trim()) return;
 
 		const promptText = currentPrompt;
 		addHistoryItem({ type: 'prompt', text: promptText, promptIndicator });
 		currentPrompt = '';
-
-		// Modo verificación inline
-		if (isVerificationMode) {
-			if (promptText.toLowerCase().trim() === 'cancelar' || promptText.toLowerCase().trim() === 'cancel') {
-				isVerificationMode = false;
-				verificationEmail = '';
-				addSystemMessage('<span class="ai-warning">Verificación cancelada</span>');
-				await tick();
-				scrollToBottom();
-				return;
-			}
-			
-			// Intentar verificar código
-			const code = promptText.trim();
-			if (/^\d{6}$/.test(code)) {
-				isLoading = true;
-				await tick();
-				scrollToBottom();
-				
-				try {
-					const response = await fetch('/api/auth/verify-email', {
-						method: 'POST',
-						headers: { 'Content-Type': 'application/json' },
-						body: JSON.stringify({ email: verificationEmail, code })
-					});
-					
-					const data = await response.json();
-					
-					if (response.ok) {
-						isVerificationMode = false;
-						verificationEmail = '';
-						sessionStorage.removeItem('pending_verification_email');
-						addSystemMessage(`<span class="ai-success">✅ Email verificado exitosamente!</span>
-<span class="system-hint">Tu cuenta está activa. Usa <code>admin login</code> para acceder.</span>`);
-					} else {
-						addSystemMessage(`<span class="error-text">❌ ${data.message || 'Código inválido'}</span>
-<span class="system-hint">Intenta de nuevo o escribe "cancelar"</span>`);
-					}
-				} catch (error) {
-					addSystemMessage('<span class="error-text">❌ Error de conexión</span>');
-				}
-				
-				isLoading = false;
-				await tick();
-				scrollToBottom();
-				return;
-			} else {
-				addSystemMessage('<span class="error-text">El código debe ser de 6 dígitos</span>');
-				await tick();
-				scrollToBottom();
-				return;
-			}
-		}
 
 		if (isChatModeActive && promptText.toLowerCase().trim() === 'exit') {
 			isChatModeActive = false;
@@ -523,6 +497,11 @@ Usa <code>admin login</code> para acceder.`);
 			
 			const ctx = createCommandContext();
 			const result = await modularCommand.execute(args, ctx);
+
+			// `admin` puede haber iniciado o cerrado sesión: revalidar la cookie.
+			if (command === 'admin') {
+				await checkAuthStatus();
+			}
 
 			// Sincronizar estado del modo AI con el componente
 			if (ctx.aiMode !== $iaMode) {
@@ -637,16 +616,13 @@ Usa <code>admin login</code> para acceder.`);
 		startTypewriter(responseIndex);
 
 		try {
-			// Obtener API key del usuario si existe
-			const userApiKey = loadGeminiApiKey();
-			
 			const response = await fetch('/api/chat', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ 
-					prompt, 
-					mode: $iaMode,
-					apiKey: userApiKey || undefined
+				credentials: 'include',
+				body: JSON.stringify({
+					prompt,
+					mode: $iaMode
 				})
 			});
 
@@ -687,6 +663,26 @@ Usa <code>admin login</code> para acceder.`);
 		}
 	}
 
+	function handleInputKeyDown(event: KeyboardEvent) {
+		if (event.key === 'Enter') {
+			handleSubmit();
+			return;
+		}
+
+		if (promptRequest) {
+			// Escape cancela el prompt en curso, no cierra la terminal.
+			if (event.key === 'Escape') {
+				event.preventDefault();
+				event.stopPropagation();
+				resolvePrompt(null);
+			}
+			// El historial de flechas queda deshabilitado mientras se pide un dato.
+			return;
+		}
+
+		handleKeyDown(event);
+	}
+
 	function handleKeyDown(event: KeyboardEvent) {
 		if (event.key === 'ArrowUp') {
 			event.preventDefault();
@@ -716,11 +712,9 @@ Usa <code>admin login</code> para acceder.`);
 	}
 
 	let promptIndicator = $derived(
-		isVerificationMode
-			? 'codigo:\\> '
-			: isChatModeActive
-				? `🤖 ${aiDisplayName} [${$iaMode || 'asistente'}]> `
-				: $currentPath + '> '
+		isChatModeActive
+			? `🤖 ${aiDisplayName} [${$iaMode || 'asistente'}]> `
+			: $currentPath + '> '
 	);
 </script>
 
@@ -766,7 +760,7 @@ Usa <code>admin login</code> para acceder.`);
 					{/if}
 				</div>
 			{/each}
-			{#if isLoading || isTyping}
+			{#if (isLoading && !promptRequest) || isTyping}
 				<div class="line">
 					<span class="typing-cursor">▋</span>
 				</div>
@@ -774,19 +768,34 @@ Usa <code>admin login</code> para acceder.`);
 		</div>
 
 		<div class="input-line d-flex align-items-center flex-nowrap">
-			<span class="prompt-user me-2" style="white-space: nowrap;">{promptIndicator}</span>
-			<input
-				bind:this={inputElement}
-				bind:value={currentPrompt}
-				class="form-control-plaintext text-white flex-grow-1"
-				type="text"
-				autocomplete="off"
-				spellcheck="false"
-				onkeydown={(e) => {
-					if (e.key === 'Enter') handleSubmit();
-					else handleKeyDown(e);
-				}}
-			/>
+			<span class="prompt-user me-2" style="white-space: nowrap;"
+				>{promptRequest ? promptRequest.label : promptIndicator}</span
+			>
+			<!--
+				Dos inputs en vez de `type={...}`: Svelte no permite un `type` dinámico
+				en un input con `bind:value`.
+			-->
+			{#if promptRequest?.masked}
+				<input
+					bind:this={inputElement}
+					bind:value={currentPrompt}
+					class="form-control-plaintext text-white flex-grow-1"
+					type="password"
+					autocomplete="off"
+					spellcheck="false"
+					onkeydown={handleInputKeyDown}
+				/>
+			{:else}
+				<input
+					bind:this={inputElement}
+					bind:value={currentPrompt}
+					class="form-control-plaintext text-white flex-grow-1"
+					type="text"
+					autocomplete="off"
+					spellcheck="false"
+					onkeydown={handleInputKeyDown}
+				/>
+			{/if}
 		</div>
 	</div>
 </div>

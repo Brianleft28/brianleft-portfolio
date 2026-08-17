@@ -1,87 +1,26 @@
-import { Injectable, UnauthorizedException, BadRequestException } from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcrypt';
-import * as nodemailer from 'nodemailer';
-import { UsersService, CreateUserDto } from '../users/users.service';
-import { SettingsService } from '../settings/settings.service';
-import { FilesystemService } from '../filesystem/filesystem.service';
-import { AiPersonalitiesService } from '../ai-personalities/ai-personalities.service';
-import { MemoryService } from '../memory/memory.service';
+import { UsersService } from '../users/users.service';
 import { LoginDto } from './dto/login.dto';
 import { TokensDto } from './dto/tokens.dto';
-import { User, UserRole } from '../../entities/user.entity';
 
-export interface RegisterDto {
-  username: string;
-  email: string;
-  password?: string;
-  firstName?: string;
-  lastName?: string;
-  role?: string;
-}
-
-export interface RegisterResult {
-  user: User;
-  password: string; // Contraseña en texto plano para mostrar al usuario
-  subdomain: string;
-  message: string;
-  requiresVerification: boolean;
-}
-
+/**
+ * Autenticación del portfolio.
+ *
+ * El registro público y la verificación por email se retiraron cuando el
+ * proyecto pasó de multi-tenant a portfolio de un solo dueño: el usuario lo
+ * crea `bootstrapOwner()` desde el seeder, con las credenciales del `.env`.
+ * Acá sólo queda el ciclo de sesión.
+ */
 @Injectable()
 export class AuthService {
-  private transporter: nodemailer.Transporter | null = null;
-
   constructor(
     private usersService: UsersService,
-    private settingsService: SettingsService,
-    private filesystemService: FilesystemService,
-    private aiPersonalitiesService: AiPersonalitiesService,
-    private memoryService: MemoryService,
     private jwtService: JwtService,
     private configService: ConfigService,
-  ) {
-    // Configurar transporter de email si hay credenciales
-    const smtpHost = this.configService.get('SMTP_HOST');
-    const smtpUser = this.configService.get('SMTP_USER');
-    const smtpPass = this.configService.get('SMTP_PASS');
-    const smtpPort = parseInt(this.configService.get('SMTP_PORT') || '587', 10);
-    const smtpSecure = this.configService.get('SMTP_SECURE');
-    // SMTP_SECURE puede venir como string 'true'/'false' o boolean
-    const isSecure = smtpSecure === 'true' || smtpSecure === true || smtpPort === 465;
-
-    console.log('[AuthService] SMTP Config:', { 
-      host: smtpHost, 
-      port: smtpPort, 
-      secure: isSecure,
-      user: smtpUser ? '***' : 'NOT SET',
-      pass: smtpPass ? '***' : 'NOT SET'
-    });
-
-    if (smtpHost && smtpUser && smtpPass) {
-      this.transporter = nodemailer.createTransport({
-        host: smtpHost,
-        port: smtpPort,
-        secure: isSecure,
-        auth: {
-          user: smtpUser,
-          pass: smtpPass,
-        },
-      });
-      
-      // Verificar conexión SMTP al iniciar
-      this.transporter.verify((error, success) => {
-        if (error) {
-          console.error('[AuthService] SMTP connection failed:', error.message);
-        } else {
-          console.log('[AuthService] SMTP server is ready to send emails');
-        }
-      });
-    } else {
-      console.warn('[AuthService] SMTP not configured - emails will be logged to console');
-    }
-  }
+  ) {}
 
   async login(loginDto: LoginDto): Promise<TokensDto> {
     const { username, password } = loginDto;
@@ -130,163 +69,6 @@ export class AuthService {
 
   async logout(userId: number): Promise<void> {
     await this.usersService.updateRefreshToken(userId, null);
-  }
-
-  /**
-   * Registra un nuevo usuario con todo el setup inicial
-   * - Crea el usuario en la DB
-   * - Inicializa el filesystem (C:, proyectos, apps)
-   * - Crea los settings por defecto
-   * - Envía email de verificación
-   */
-  async register(dto: RegisterDto): Promise<RegisterResult> {
-    console.log('DTO recibido en register:', dto);
-    const firstName = dto.firstName || dto.username;
-    const lastName = dto.lastName || '';
-    const displayName = `${firstName} ${lastName}`.trim() || dto.username;
-
-    // Todos los usuarios que se registran son ADMIN de su propio portfolio
-    const role: UserRole = UserRole.ADMIN;
-    const subdomain = dto.username.toLowerCase().replace(/[^a-z0-9]/g, '');
-
-
-    // Crear usuario
-    const { user, plainPassword } = await this.usersService.createUser({
-    username: dto.username,
-    email: dto.email,
-    password: dto.password,
-    displayName,
-    role,
-    subdomain,
-  });
-
-    // Inicializar filesystem
-    await this.filesystemService.initializeForUser(user.id);
-
-    // Crear settings por defecto
-    await this.settingsService.initializeForUser(user.id, {
-      ownerName: displayName,
-      ownerFirstName: firstName,
-      ownerLastName: lastName,
-      ownerRole: dto.role || 'Developer',
-      email: dto.email,
-    });
-
-    // Crear AI personalities por defecto
-    await this.aiPersonalitiesService.initializeForUser(user.id, displayName);
-
-    // Crear memorias base (INDEX y DOCS)
-    await this.memoryService.initializeForUser(user.id, displayName);
-
-    // Enviar código de verificación por email
-    let requiresVerification = true;
-    let message = '';
-    const verificationCode = await this.usersService.setVerificationCode(user.id);
-    const emailSent = await this.sendVerificationEmail(dto.email, verificationCode, firstName);
-    message = emailSent
-      ? `Usuario creado. Se envió un código de verificación a ${dto.email}`
-      : `Usuario creado. Tu portfolio estará disponible en: ${user.subdomain}.portfolio.dev`;
-
-    return {
-      user,
-      password: plainPassword,
-      subdomain: user.subdomain || user.username,
-      message,
-      requiresVerification,
-    };
-  }
-
-  /**
-   * Envía email con código de verificación
-   */
-  async sendVerificationEmail(email: string, code: string, name: string): Promise<boolean> {
-    if (!this.transporter) {
-      console.log(`[DEV] Código de verificación para ${email}: ${code}`);
-      return false;
-    }
-
-    try {
-      await this.transporter.sendMail({
-        from: this.configService.get('SMTP_FROM') || '"Portfolio Dev" <noreply@portfolio.dev>',
-        to: email,
-        subject: '🔐 Verifica tu cuenta - Portfolio Dev',
-        html: `
-          <div style="font-family: 'Courier New', monospace; background: #0d0d1a; color: #00ff00; padding: 30px; max-width: 500px; margin: 0 auto;">
-            <h1 style="color: #00ff00; border-bottom: 1px solid #00ff00; padding-bottom: 10px;">
-              Bienvenido, ${name}! 👋
-            </h1>
-            <p style="color: #e0e0e0; font-size: 16px;">
-              Tu código de verificación es:
-            </p>
-            <div style="background: #1a1a2e; border: 2px solid #00ff00; padding: 20px; text-align: center; margin: 20px 0; border-radius: 8px;">
-              <span style="font-size: 32px; letter-spacing: 8px; color: #00ff00; font-weight: bold;">
-                ${code}
-              </span>
-            </div>
-            <p style="color: #888; font-size: 14px;">
-              Este código expira en 15 minutos.
-            </p>
-            <p style="color: #888; font-size: 14px;">
-              Ingresa el código en la terminal con:<br>
-              <code style="background: #1a1a2e; padding: 4px 8px; border-radius: 4px; color: #00ff00;">
-                verify ${code}
-              </code>
-            </p>
-            <hr style="border: none; border-top: 1px solid #333; margin: 20px 0;">
-            <p style="color: #666; font-size: 12px;">
-              Si no solicitaste esta cuenta, ignora este email.
-            </p>
-          </div>
-        `,
-      });
-      return true;
-    } catch (error) {
-      console.error('Error enviando email:', error);
-      return false;
-    }
-  }
-
-  /**
-   * Verifica el código de email
-   */
-  async verifyEmail(email: string, code: string): Promise<{ success: boolean; message: string }> {
-    const user = await this.usersService.findByEmail(email);
-    
-    if (!user) {
-      throw new BadRequestException('Email no encontrado');
-    }
-
-    if (user.emailVerified) {
-      return { success: true, message: 'Email ya verificado' };
-    }
-
-    const verified = await this.usersService.verifyEmail(user.id, code);
-
-    if (!verified) {
-      throw new BadRequestException('Código inválido o expirado');
-    }
-
-    return { success: true, message: 'Email verificado exitosamente' };
-  }
-
-  /**
-   * Reenvía el código de verificación
-   */
-  async resendVerificationCode(email: string): Promise<{ success: boolean; message: string }> {
-    const user = await this.usersService.findByEmail(email);
-    
-    if (!user) {
-      throw new BadRequestException('Email no encontrado');
-    }
-
-    if (user.emailVerified) {
-      return { success: false, message: 'Email ya verificado' };
-    }
-
-    const code = await this.usersService.setVerificationCode(user.id);
-    await this.sendVerificationEmail(email, code, user.displayName || user.username);
-
-    return { success: true, message: 'Código reenviado' };
   }
 
   private async generateTokens(

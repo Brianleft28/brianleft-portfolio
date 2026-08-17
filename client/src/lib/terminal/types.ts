@@ -12,6 +12,13 @@ export interface CommandContext {
 	ownerName?: string;
 	// Autenticación
 	isAuthenticated?: boolean;
+	/**
+	 * Pide un dato por teclado sin que el comando quede escrito en la línea.
+	 * Con `masked: true` el input es de tipo password y en el historial sólo
+	 * quedan puntos, nunca el valor: la contraseña no toca localStorage.
+	 * Resuelve `null` si el usuario cancela con Escape.
+	 */
+	ask?: (label: string, options?: { masked?: boolean }) => Promise<string | null>;
 }
 
 export interface CommandResult {

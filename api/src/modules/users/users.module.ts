@@ -20,14 +20,15 @@ export class UsersModule implements OnModuleInit {
   ) {}
 
   async onModuleInit() {
-    // En modo white-label, NO crear admin automáticamente
-    // El admin se crea solo si CREATE_ADMIN_ON_STARTUP=true en el .env
+    // El dueño lo crea `npm run seed` (bootstrap-owner.seeder.ts), que además
+    // inicializa filesystem, settings, personalidades y memorias. Este atajo de
+    // arranque queda sólo como escape hatch si hiciera falta un admin sin seeder.
     const createAdmin = this.configService.get('CREATE_ADMIN_ON_STARTUP') === 'true';
-    
+
     if (createAdmin) {
       await this.usersService.createAdminIfNotExists();
     } else {
-      this.logger.log('Modo white-label: Los usuarios se crean via /auth/register');
+      this.logger.log('Usuario dueño gestionado por el seeder (npm run seed).');
     }
   }
 }

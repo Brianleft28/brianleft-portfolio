@@ -93,33 +93,11 @@ export const portfolioConfig = writable<PortfolioConfig>(DEFAULT_CONFIG);
 export const aiPersonality = writable<AiPersonality>(DEFAULT_PERSONALITY);
 export const dynamicFilesystem = writable<FileSystemNode[]>([]);
 
-// Store para API key de Gemini (localStorage)
-export const geminiApiKey = writable<string>('');
-
 // Derived values para fácil acceso
 export const ownerName = derived(portfolioConfig, ($c) => $c.owner_name);
 export const aiName = derived(aiPersonality, ($p) => $p.displayName);
 export const aiCommand = derived(portfolioConfig, ($c) => $c.ai_command || 'ai');
 export const asciiBanner = derived(portfolioConfig, ($c) => $c.branding_ascii_banner || '');
-
-// Cargar API key desde localStorage
-export function loadGeminiApiKey(): string {
-	if (typeof window === 'undefined') return '';
-	const key = localStorage.getItem('gemini_api_key') || '';
-	geminiApiKey.set(key);
-	return key;
-}
-
-// Guardar API key en localStorage
-export function saveGeminiApiKey(key: string): void {
-	if (typeof window === 'undefined') return;
-	if (key) {
-		localStorage.setItem('gemini_api_key', key);
-	} else {
-		localStorage.removeItem('gemini_api_key');
-	}
-	geminiApiKey.set(key);
-}
 
 // Cargar configuración desde API
 export async function loadConfig(): Promise<void> {

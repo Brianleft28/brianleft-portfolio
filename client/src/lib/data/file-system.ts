@@ -36,18 +36,7 @@ export const fileSystemData: FolderNode = {
 			type: 'folder',
 			children: []
 		},
-		{
-			id: 'apps',
-			name: 'apps',
-			type: 'folder',
-			children: [
-				{
-					id: 'contacto-app',
-					name: 'Contacto.exe',
-					type: 'component'
-				}
-			]
-		},
+
 		{
 			id: 'welcome',
 			name: 'LEEME.md',
@@ -75,14 +64,13 @@ Este portfolio es interactivo. Podés navegar usando:
 - \`cd [carpeta]\` - Navegar a una carpeta
 - \`cat [archivo]\` - Leer contenido de un archivo
 - \`help\` - Ver todos los comandos disponibles
-- \`register -h\` - Ver cómo registrarte
 - \`whoami\` - Ver tu información de usuario
 
 Para ver todos los comandos, ejecutá \`cat COMANDOS.md\` o abrí el archivo desde el explorador.
 
 ---
 
-*Empezá registrándote con el comando \`register\` en la terminal.*`
+*Abrí la terminal con Ctrl+Ñ y empezá por \`ls\`.*`
 		},
 		{
 			id: 'comandos',
@@ -95,12 +83,9 @@ Para ver todos los comandos, ejecutá \`cat COMANDOS.md\` o abrí el archivo des
 - \`cd [carpeta]\` - Cambiar directorio
 - \`pwd\` - Directorio actual
 
-## Autenticación
-- \`register --username [user] --email [email] --password [pass]\` - Registrar
-- \`verify [código]\` - Verificar email (el prompt cambia a codigo:\\>)
-- \`login\` - Abrir panel de login o iniciar sesión
-- \`logout\` - Cerrar sesión
+## Sesión
 - \`whoami\` - Ver info del usuario actual
+- \`admin\` - Abrir el panel de administración (solo para el dueño)
 
 ## Asistente IA
 - \`ai\` - Iniciar asistente

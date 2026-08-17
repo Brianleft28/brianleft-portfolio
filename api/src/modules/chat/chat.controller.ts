@@ -4,15 +4,21 @@ import {
   Body,
   Res,
   HttpStatus,
-  Headers,
   Req,
+  Logger,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBody, ApiHeader } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiBody } from '@nestjs/swagger';
+import { ConfigService } from '@nestjs/config';
+import { JwtService } from '@nestjs/jwt';
 import { Response, Request } from 'express';
 import { ChatService } from './chat.service';
 import { RateLimitService } from './rate-limit.service';
+import { SettingsService } from '../settings/settings.service';
 import { Throttle } from '@nestjs/throttler';
 import { IsString, IsNotEmpty, IsOptional } from 'class-validator';
+
+/** Portfolio de un solo dueño: todo el contenido cuelga del usuario 1. */
+const OWNER_USER_ID = 1;
 
 class ChatDto {
   @IsString()
@@ -22,9 +28,6 @@ class ChatDto {
   @IsString()
   @IsOptional()
   mode?: string; // 'arquitecto' o 'asistente'
-
-  @IsOptional()
-  userId?: number; // ID del usuario (default: 1 para endpoints públicos)
 }
 
 function getClientIp(req: Request): string {
@@ -38,20 +41,19 @@ function getClientIp(req: Request): string {
 @ApiTags('chat')
 @Controller('chat')
 export class ChatController {
+  private readonly logger = new Logger(ChatController.name);
+
   constructor(
     private chatService: ChatService,
     private rateLimitService: RateLimitService,
+    private settingsService: SettingsService,
+    private jwtService: JwtService,
+    private configService: ConfigService,
   ) {}
 
   @Post()
   @Throttle({ default: { limit: 10, ttl: 60000 } }) // 10 requests por minuto
   @ApiOperation({ summary: 'Enviar mensaje al AI (streaming)' })
-  @ApiHeader({
-    name: 'X-Gemini-Api-Key',
-    description:
-      'API key de Gemini del usuario (opcional). Si no se provee, usa la del servidor con límite de 15 intentos/día.',
-    required: false,
-  })
   @ApiBody({
     schema: {
       type: 'object',
@@ -61,35 +63,21 @@ export class ChatController {
     },
   })
   @ApiResponse({ status: 200, description: 'Respuesta en streaming' })
-  @ApiResponse({ status: 403, description: 'Free tier agotado - requiere API key propia' })
+  @ApiResponse({ status: 403, description: 'Free tier agotado' })
   @ApiResponse({ status: 429, description: 'Rate limit excedido' })
-  async chat(
-    @Body() dto: ChatDto,
-    @Res() res: Response,
-    @Req() req: Request,
-    @Headers('X-Gemini-Api-Key') userApiKey?: string,
-  ) {
+  async chat(@Body() dto: ChatDto, @Res() res: Response, @Req() req: Request) {
     const clientIp = getClientIp(req);
-    const hasOwnKey = userApiKey && userApiKey.length > 20;
-    const FREE_TIER_LIMIT = this.rateLimitService.FREE_TIER_LIMIT;
+    const isOwner = await this.isOwner(req);
+    const limit = this.rateLimitService.FREE_TIER_LIMIT;
 
-    // Si no tiene key propia, verificar free tier
-    if (!hasOwnKey) {
+    // El dueño consulta su propio portfolio sin límite; el resto tiene free tier.
+    if (!isOwner) {
       const freeTierStatus = await this.rateLimitService.checkLimit(clientIp);
 
       if (!freeTierStatus.allowed) {
         res.setHeader('Content-Type', 'text/plain; charset=utf-8');
         res.status(HttpStatus.FORBIDDEN);
-        res.write(`🚫 Has agotado tus ${FREE_TIER_LIMIT} intentos gratuitos del día.\n\n`);
-        res.write(`Para seguir usando el asistente AI, configura tu propia API key de Gemini:\n\n`);
-        res.write(`  apikey set TU_API_KEY\n\n`);
-        res.write(`Obtené una key gratis en: https://aistudio.google.com/apikey\n\n`);
-        res.write(`Tip: Usá "apikey -h" para más información.`);
-        if (freeTierStatus.resetIn) {
-          const hours = Math.floor(freeTierStatus.resetIn / 3600);
-          const minutes = Math.floor((freeTierStatus.resetIn % 3600) / 60);
-          res.write(`\n\n⏰ Se reinicia en: ${hours}h ${minutes}m`);
-        }
+        res.write(await this.buildLimitReachedMessage(limit, freeTierStatus.resetIn));
         res.end();
         return;
       }
@@ -102,27 +90,21 @@ export class ChatController {
     res.setHeader('Connection', 'keep-alive');
     res.status(HttpStatus.OK);
 
-    let showRemaining = false;
+    let remaining: number | null = null;
 
     try {
-      // Incrementar contador si usa free tier (antes de procesar)
-      if (!hasOwnKey) {
+      if (!isOwner) {
         await this.rateLimitService.incrementUsage(clientIp);
         const status = await this.rateLimitService.checkLimit(clientIp);
-        // Agregar info de intentos restantes al final
-        showRemaining = status.remaining > 0;
+        remaining = status.remaining;
       }
 
-      // Generar respuesta con streaming (usa la key del usuario si está disponible)
-      const userId = dto.userId || 1; // Default to admin user for public endpoints
-      for await (const chunk of this.chatService.chat(dto.prompt, userApiKey, dto.mode, userId)) {
+      for await (const chunk of this.chatService.chat(dto.prompt, dto.mode, OWNER_USER_ID)) {
         res.write(chunk);
       }
 
-      // Mostrar intentos restantes si usa free tier
-      if (!hasOwnKey && showRemaining) {
-        const status = await this.rateLimitService.checkLimit(clientIp);
-        res.write(`\n\n---\n💡 _Intentos gratuitos restantes: ${status.remaining}/${FREE_TIER_LIMIT}_`);
+      if (remaining !== null && remaining > 0) {
+        res.write(`\n\n---\n💡 _Consultas restantes hoy: ${remaining}/${limit}_`);
       }
     } catch (error) {
       res.write(`Error: ${error.message}`);
@@ -145,5 +127,65 @@ export class ChatController {
   async generateSummary(@Body() dto: { content: string }) {
     const summary = await this.chatService.generateSummary(dto.content);
     return { summary };
+  }
+
+  /**
+   * ¿La request viene del dueño logueado?
+   *
+   * El cliente SvelteKit inyecta `Authorization: Bearer <accessToken>` en todo
+   * `/api/*` cuando hay sesión (ver `hooks.server.ts`), así que alcanza con
+   * validar el JWT. Cualquier token inválido o vencido cae al free tier.
+   */
+  private async isOwner(req: Request): Promise<boolean> {
+    const header = req.headers.authorization;
+    if (!header?.startsWith('Bearer ')) return false;
+
+    try {
+      const payload = await this.jwtService.verifyAsync(header.slice(7), {
+        secret: this.configService.get('JWT_SECRET'),
+      });
+      return payload?.role === 'admin';
+    } catch {
+      return false;
+    }
+  }
+
+  /**
+   * Mensaje de free tier agotado. En vez de pedirle una API key al visitante,
+   * le damos los datos de contacto reales, leídos de la parametría.
+   */
+  private async buildLimitReachedMessage(limit: number, resetIn?: number): Promise<string> {
+    const lines = [`🚫 Llegaste al límite de ${limit} consultas diarias.`];
+
+    if (resetIn) {
+      const hours = Math.floor(resetIn / 3600);
+      const minutes = Math.floor((resetIn % 3600) / 60);
+      lines.push(`⏰ Se reinicia en: ${hours}h ${minutes}m`);
+    }
+
+    try {
+      const settings = await this.settingsService.getAsMap(OWNER_USER_ID);
+      const contacts: Array<[string, string | undefined]> = [
+        ['📧', settings.get('contact_email_primary') || settings.get('owner_email')],
+        ['🐙', settings.get('social_github')],
+        ['💼', settings.get('social_linkedin')],
+        ['🌐', settings.get('social_website')],
+      ];
+      const contactLines = contacts
+        .filter(([, value]) => Boolean(value?.trim()))
+        .map(([icon, value]) => `  ${icon} ${value!.trim()}`);
+
+      if (contactLines.length > 0) {
+        lines.push('', '¿Querés seguir la charla directamente?', ...contactLines);
+      }
+
+      const cta = settings.get('contact_cta')?.trim();
+      if (cta) lines.push('', cta);
+    } catch (error) {
+      // Sin datos de contacto el mensaje sigue siendo válido: no rompemos por esto.
+      this.logger.warn(`No se pudo leer la parametría de contacto: ${error.message}`);
+    }
+
+    return lines.join('\n');
   }
 }

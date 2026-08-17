@@ -17,35 +17,51 @@ export async function seedMemories(dataSource: DataSource): Promise<void> {
     return;
   }
 
-  // Cargar solo la memoria meta (global, sin userId)
-  const metaFilePath = path.join(memoryPath, 'meta.md');
-  
-  if (!fs.existsSync(metaFilePath)) {
-    console.warn('⚠️ meta.md no encontrado, saltando.');
+  // `index.md` y `memory.md` son del dueño, no del sistema: los crea
+  // `bootstrapOwner()` / `MemoryService` con su userId. Seedearlos también como
+  // memorias globales dejaba dos INDEX y dos DOCS compitiendo en el RAG.
+  const OWNER_FILES = ['index.md', 'memory.md'];
+  const files = fs
+    .readdirSync(memoryPath)
+    .filter((file) => file.endsWith('.md') && !OWNER_FILES.includes(file));
+
+
+  if (files.length === 0) {
+    console.warn('⚠️ No se encontraron archivos .md en la carpeta de memorias.');
     return;
   }
 
-  const content = fs.readFileSync(metaFilePath, 'utf-8');
-  const title = extractTitle(content) || 'Meta';
+  for (const file of files) {
+    const metaFilePath = path.join(memoryPath, file);
+    const content = fs.readFileSync(metaFilePath, 'utf-8');
+    const slug = file.replace('.md', '');
+    const title = extractTitle(content) || slug;
+    
+    let type = MemoryType.DOCS;
+    if (slug === 'meta') type = MemoryType.META;
+    else if (slug === 'index') type = MemoryType.INDEX;
+    else if (slug === 'memory') type = MemoryType.DOCS;
+    else type = MemoryType.CUSTOM;
 
-  // Verificar si ya existe la memoria global meta
-  const existing = await memoryRepo.findOne({ 
-    where: { slug: 'meta', userId: IsNull() } 
-  });
-  
-  if (existing) {
-    console.log('⏭️ Memoria global "meta" ya existe.');
-  } else {
-    const memory = memoryRepo.create({
-      type: MemoryType.META,
-      slug: 'meta',
-      title,
-      content,
-      priority: 10,
-      userId: null, // GLOBAL - disponible para todos los usuarios
+    // Verificar si ya existe la memoria global
+    const existing = await memoryRepo.findOne({ 
+      where: { slug, userId: IsNull() } 
     });
-    await memoryRepo.save(memory);
-    console.log('✅ Memoria global "meta" creada.');
+    
+    if (existing) {
+      console.log(`⏭️ Memoria global "${slug}" ya existe.`);
+    } else {
+      const memory = memoryRepo.create({
+        type,
+        slug,
+        title,
+        content,
+        priority: 10,
+        userId: null, // GLOBAL - disponible para todos los usuarios
+      });
+      await memoryRepo.save(memory);
+      console.log(`✅ Memoria global "${slug}" creada.`);
+    }
   }
 
   console.log('🎉 Seeding de memorias base completado.');

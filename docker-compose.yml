@@ -5,7 +5,7 @@ services:
   client:
     build: ./client
     ports:
-      - "3000:3000"
+      - "3001:3000"
     environment:
       - PUBLIC_API_URL=http://api:4000
       - SESSION_SECRET=${SESSION_SECRET}
@@ -27,6 +27,8 @@ services:
     ports:
       - "4000:4000"
     environment:
+      - NODE_ENV=${NODE_ENV:-production}
+      - PORTFOLIO_DOMAIN=${PORTFOLIO_DOMAIN}
       - DB_HOST=db
       - DB_PORT=3306
       - DB_USER=${DB_USER}
@@ -37,6 +39,8 @@ services:
       - JWT_SECRET=${JWT_SECRET}
       - JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET}
       - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - GEMINI_MODEL=${GEMINI_MODEL:-gemini-3.6-flash}
+      - CHAT_FREE_TIER_LIMIT=${CHAT_FREE_TIER_LIMIT:-10}
       - ADMIN_USERNAME=${ADMIN_USERNAME}
       - ADMIN_PASSWORD=${ADMIN_PASSWORD}
       - SMTP_HOST=${SMTP_HOST:-}
