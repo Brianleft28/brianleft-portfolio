@@ -13,7 +13,7 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
  * sin aviso: `gemini-2.0-flash` empezó a devolver 404 y rompió el asistente.
  * Cambiarlo tiene que ser editar el `.env`, no rebuildear la imagen.
  */
-const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-3.6-flash';
+const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
 
 @Injectable()
 export class MemoryService {

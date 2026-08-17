@@ -27,6 +27,11 @@
 						class="nav-link"
 						class:current={$page.url.pathname === '/admin/projects'}>Proyectos</a
 					>
+					<a
+						href="/admin/ai"
+						class="nav-link"
+						class:current={$page.url.pathname === '/admin/ai'}>Asistente</a
+					>
 					<a href="/" class="nav-link">← Volver al sitio</a>
 					<a href="/admin/logout" class="logout-btn">Cerrar sesión</a>
 				</div>

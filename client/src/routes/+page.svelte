@@ -19,7 +19,6 @@
 	let currentPathIds = $state<string[]>([]);
 	let activeFileId = $state<string | null>(null);
 	let dynamicFs = $state<DynamicFSNode[]>([]);
-	let initialLoadDone = $state(false);
 	let isSelectingReadme = $state(false);
 	let projectSummaries = $state<ProjectSummary[]>([]);
 
@@ -27,33 +26,33 @@
 	onMount(() => {
 		loadConfig();
 		loadProjectSummaries();
-		
-		// Suscribirse al store dinámico
-		const unsubscribe = dynamicFilesystem.subscribe((value) => {
+
+		return dynamicFilesystem.subscribe((value) => {
 			dynamicFs = value;
-			// Cuando se carga el filesystem por primera vez, auto-seleccionar LEEME.md
-			if (value && value.length > 0 && !initialLoadDone) {
-				initialLoadDone = true;
-				// Auto-seleccionar LEEME.md inmediatamente
-				const root = fileSystemData();
-				if (root && root.children && !activeFileId) {
-					autoSelectReadme(root);
-				}
-			}
 		});
-		
-		// También intentar seleccionar inmediatamente con datos estáticos
-		// si el filesystem dinámico no carga
-		setTimeout(() => {
-			if (!activeFileId && !initialLoadDone) {
-				const root = fileSystemData();
-				if (root && root.children) {
-					autoSelectReadme(root);
-				}
-			}
-		}, 50);
-		
-		return unsubscribe;
+	});
+
+	/**
+	 * Monta la portada (LEEME.md) al abrir, sin que haya que seleccionarla.
+	 *
+	 * Se dispara por la *forma* del árbol, no por un timeout: antes se elegía a
+	 * los 50ms contra el filesystem estático y, cuando llegaba el real por red,
+	 * ya había un `activeFileId` — de otro árbol — así que no se reintentaba y
+	 * no se mostraba nada. Al cambiar el árbol se vuelve a elegir.
+	 *
+	 * La firma evita reabrir el archivo si el visitante lo cerró con la ✕.
+	 */
+	let autoSelectedSignature = $state<string | null>(null);
+
+	$effect(() => {
+		const root = fileSystemData();
+		if (!root?.children?.length) return;
+
+		const signature = root.children.map((child) => child.id).join(',');
+		if (autoSelectedSignature === signature) return;
+
+		autoSelectedSignature = signature;
+		autoSelectReadme(root);
 	});
 
 	// Cargar resúmenes de proyectos desde la API

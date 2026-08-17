@@ -36,7 +36,7 @@ export class ChatService {
   private initializeModel(apiKey: string): GenerativeModel | null {
     try {
       const genAI = new GoogleGenerativeAI(apiKey);
-      const modelName = this.configService.get('GEMINI_MODEL') || 'gemini-3.6-flash';
+      const modelName = this.configService.get('GEMINI_MODEL') || 'gemini-2.5-flash';
       return genAI.getGenerativeModel({ model: modelName });
     } catch (error) {
       this.logger.error(`Error inicializando modelo: ${error.message}`);
@@ -87,7 +87,7 @@ export class ChatService {
       const fullPrompt = await this.buildFullPrompt(prompt, context, isListRequest, mode, userId, locale);
 
       // Generar respuesta con streaming
-      const result = await model.generateContentStream(fullPrompt);
+      const result = await this.startStreamWithRetry(model, fullPrompt);
 
       for await (const chunk of result.stream) {
         const text = chunk.text();
@@ -98,13 +98,57 @@ export class ChatService {
     } catch (error) {
       this.logger.error(`Error en chat: ${error.message}`);
 
-      // La key es del servidor: si falla, es un problema nuestro, no del visitante.
-      if (error.message?.includes('API key') || error.message?.includes('401')) {
+      // Nada de esto es culpa del visitante ni algo que pueda accionar:
+      // la key y el modelo son del servidor. Mensajes claros, sin stack traces.
+      if (this.isOverloaded(error)) {
+        yield 'El asistente está saturado en este momento. Probá de nuevo en unos segundos.';
+      } else if (error.message?.includes('API key') || error.message?.includes('401')) {
         yield 'El asistente no está disponible en este momento.';
       } else {
-        yield `Error al procesar tu mensaje: ${error.message}`;
+        yield 'No pude procesar tu mensaje. Probá de nuevo.';
       }
     }
+  }
+
+  /**
+   * Arranca el stream reintentando cuando el modelo está saturado.
+   *
+   * Gemini devuelve 503 ("high demand") de forma intermitente y bastante
+   * seguido. Sin reintentos, el visitante veía el error crudo de la SDK y
+   * parecía que el asistente estaba roto. Se reintenta sólo el arranque: una
+   * vez que el stream empezó a emitir, cortarlo y reiniciarlo duplicaría texto.
+   */
+  private async startStreamWithRetry(model: GenerativeModel, prompt: string, attempts = 3) {
+    let lastError: any;
+
+    for (let attempt = 1; attempt <= attempts; attempt++) {
+      try {
+        return await model.generateContentStream(prompt);
+      } catch (error) {
+        lastError = error;
+
+        if (!this.isOverloaded(error) || attempt === attempts) break;
+
+        const delayMs = 700 * attempt; // 700ms, 1.4s
+        this.logger.warn(
+          `Modelo saturado (intento ${attempt}/${attempts}), reintentando en ${delayMs}ms.`,
+        );
+        await new Promise((resolve) => setTimeout(resolve, delayMs));
+      }
+    }
+
+    throw lastError;
+  }
+
+  /** ¿El error es por saturación/cuota del modelo y no por nuestra request? */
+  private isOverloaded(error: any): boolean {
+    const message = String(error?.message ?? '');
+    return (
+      message.includes('503') ||
+      message.includes('429') ||
+      message.includes('overloaded') ||
+      message.toLowerCase().includes('high demand')
+    );
   }
 
   /**
