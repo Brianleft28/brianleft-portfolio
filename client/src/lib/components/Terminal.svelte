@@ -270,9 +270,6 @@
 <span class="category-header">  🤖 Inteligencia Artificial</span>
        <span class="command-highlight">${aiCmd}</span>        ${aiNm} con modos especializados
 
-<span class="category-header">  🔐 Admin</span>
-       <span class="command-highlight">admin</span>       Panel de administración
-
 <span class="category-header">  🎨 Personalización</span>
        <span class="command-highlight">theme</span>       Cambiar tema de colores (7 temas)
 

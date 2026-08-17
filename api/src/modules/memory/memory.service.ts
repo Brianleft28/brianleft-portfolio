@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, In } from 'typeorm';
+import { Repository, In, IsNull } from 'typeorm';
 import { Memory, MemoryType } from '../../entities/memory.entity';
 import { MemoryKeyword } from '../../entities/memory-keyword.entity';
 import { Setting } from '../../entities/setting.entity';
@@ -147,19 +147,22 @@ export class MemoryService {
     await this.loadSettingsCache(userId);
     const promptLower = prompt.toLowerCase();
 
-    // Buscar keywords que matcheen con el prompt para memorias del usuario
+    // Las memorias del sistema (meta, COMANDOS, docs técnicos) son globales:
+    // se guardan con userId NULL. Filtrar sólo por userId las dejaba fuera del
+    // contexto siempre, y sin ellas el modelo se inventaba los comandos.
     const matchingKeywords = await this.keywordsRepository
       .createQueryBuilder('k')
       .innerJoin('k.memory', 'm')
-      .where('m.userId = :userId', { userId })
+      .where('(m.userId = :userId OR m.userId IS NULL)', { userId })
       .andWhere('LOWER(:prompt) LIKE CONCAT("%", LOWER(k.keyword), "%")', { prompt: promptLower })
       .getMany();
 
     if (matchingKeywords.length === 0) {
-      // Si no hay match, devolver memorias base (meta + index) del usuario
+      // Si no hay match, devolver memorias base (meta + index)
       const memories = await this.memoriesRepository.find({
         where: [
           { type: MemoryType.META, active: true, userId },
+          { type: MemoryType.META, active: true, userId: IsNull() },
           { type: MemoryType.INDEX, active: true, userId },
         ],
       });
@@ -168,9 +171,9 @@ export class MemoryService {
 
     // Obtener memorias únicas de los keywords
     const memoryIds = [...new Set(matchingKeywords.map((k) => k.memoryId))];
-    
+
     return this.memoriesRepository.find({
-      where: { id: In(memoryIds), active: true, userId },
+      where: { id: In(memoryIds), active: true },
       order: { priority: 'DESC' },
     }).then(memories => memories.map(m => this.hydrateMemory(m, userId)));
   }

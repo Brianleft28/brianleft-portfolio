@@ -2,6 +2,25 @@ import { DataSource, IsNull } from 'typeorm';
 import * as fs from 'fs';
 import * as path from 'path';
 import { Memory, MemoryType } from '../entities/memory.entity';
+import { MemoryKeyword } from '../entities/memory-keyword.entity';
+
+/**
+ * Keywords de las memorias del sistema.
+ *
+ * La recuperación del RAG es por keywords, y estos documentos no pasan por el
+ * generador con IA (no son proyectos). Sin keywords nunca entraban al contexto:
+ * ante "qué comandos hay" el modelo no tenía la lista real y se la inventaba.
+ */
+const SYSTEM_KEYWORDS: Record<string, string[]> = {
+  COMANDOS: [
+    'comando', 'comandos', 'terminal', 'consola', 'ayuda', 'help', 'usar',
+    'como se usa', 'que puedo hacer', 'navegar', 'atajos', 'listar comandos',
+  ],
+  meta: [
+    'portfolio', 'este sitio', 'esta terminal', 'como funciona', 'asistente',
+    'arquitectura del sitio', 'memoria', 'rag',
+  ],
+};
 
 /**
  * Carga la memoria meta del sistema (información sobre cómo funciona el portfolio)
@@ -49,7 +68,16 @@ export async function seedMemories(dataSource: DataSource): Promise<void> {
     });
     
     if (existing) {
-      console.log(`⏭️ Memoria global "${slug}" ya existe.`);
+      // Los .md del repo son la fuente de verdad: si cambian, la memoria se
+      // actualiza. Antes sólo se creaba, así que editar `meta.md` no tenía
+      // ningún efecto y la IA seguía sirviendo la versión vieja para siempre.
+      if (existing.content === content && existing.title === title && existing.type === type) {
+        console.log(`⏭️ Memoria global "${slug}" sin cambios.`);
+      } else {
+        await memoryRepo.update(existing.id, { content, title, type });
+        console.log(`♻️  Memoria global "${slug}" actualizada desde el archivo.`);
+      }
+      await syncKeywords(dataSource, existing.id, slug);
     } else {
       const memory = memoryRepo.create({
         type,
@@ -60,11 +88,26 @@ export async function seedMemories(dataSource: DataSource): Promise<void> {
         userId: null, // GLOBAL - disponible para todos los usuarios
       });
       await memoryRepo.save(memory);
+      await syncKeywords(dataSource, memory.id, slug);
       console.log(`✅ Memoria global "${slug}" creada.`);
     }
   }
 
   console.log('🎉 Seeding de memorias base completado.');
+}
+
+/** Regraba las keywords de una memoria del sistema desde `SYSTEM_KEYWORDS`. */
+async function syncKeywords(
+  dataSource: DataSource,
+  memoryId: number,
+  slug: string,
+): Promise<void> {
+  const keywords = SYSTEM_KEYWORDS[slug];
+  if (!keywords) return;
+
+  const keywordRepo = dataSource.getRepository(MemoryKeyword);
+  await keywordRepo.delete({ memoryId });
+  await keywordRepo.save(keywords.map((keyword) => keywordRepo.create({ memoryId, keyword })));
 }
 
 // Utilidad para extraer título del contenido markdown

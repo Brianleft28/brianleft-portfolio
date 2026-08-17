@@ -158,13 +158,16 @@ RESUMEN:`;
     const memoryDoc = await this.memoryService.findBySlug('memory', userId);
     const baseContext = memoryDoc?.content || '';
 
-    if (isListRequest) {
-      // Para listas de proyectos, usar memory.md que tiene todos los resúmenes
-      return baseContext;
-    }
-
-    // Buscar memorias relevantes adicionales
+    // Buscar memorias relevantes adicionales.
+    // Ojo: esto corre también para `isListRequest`. Antes ese branch devolvía
+    // sólo `memory` (los resúmenes de proyectos), así que un "listame los
+    // comandos" se quedaba sin la referencia real y el modelo la inventaba.
     const memories = await this.memoryService.findRelevant(prompt, userId);
+
+    if (isListRequest) {
+      const extra = memories.map((m) => m.content).join('\n\n---\n\n');
+      return extra ? `${baseContext}\n\n---\n\n${extra}` : baseContext;
+    }
 
     if (memories.length === 0) {
       // Si no hay match específico, usar memory.md + meta

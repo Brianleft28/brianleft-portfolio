@@ -29,7 +29,6 @@ client/
 │   │   │   └── Terminal.svelte      # Terminal interactiva
 │   │   ├── terminal/
 │   │   │   ├── commands/            # Comandos modulares
-│   │   │   │   ├── apikey.ts        # Config de API key
 │   │   │   │   ├── torvalds.ts      # Comando AI
 │   │   │   │   └── ...
 │   │   │   └── types.ts
@@ -79,34 +78,20 @@ api/
 | `cat` | Muestra contenido de archivo | — |
 | `tree` | Árbol de directorios | — |
 | `pwd` | Directorio actual | — |
-| `clear` | Limpia terminal | `Ctrl+L`, `cls` alias |
+| `cls` | Limpia terminal | `Ctrl+L`, `clear` alias |
+| `exit` | Cierra la terminal | — |
 | `cv` | Descarga CV/currículum | `-d` download, `-i` info |
 | `theme` | Cambia tema visual | `list`, `set <nombre>` |
 | `lang` | Cambia idioma de interfaz | `list`, `set <código>` |
-| `apikey` | Configura API key Gemini | `set`, `show`, `clear` |
-| `register` | Crear cuenta de usuario | `-u`, `-e`, `-p` |
-| `login` | Iniciar sesión | `--user`, `--pass` |
-| `logout` | Cerrar sesión | — |
 | `whoami` | Info del usuario actual | — |
-| `verify` | Verificar email | `<código>`, `--resend` |
-| `admin` | Panel de administración | secciones disponibles |
 | `{ai_cmd}` | Chat con IA | `start`, `modes`, `status` |
 
-## Sistema de API Key de Usuario
+## Límite de consultas
 
-Los usuarios pueden usar su propia API key de Gemini:
-
-```
-apikey set <TU_API_KEY>   # Configura la key
-apikey show               # Muestra key (parcial)
-apikey clear              # Elimina la key
-apikey status             # Verifica estado
-```
-
-**Seguridad:**
-- ✅ La key se guarda SOLO en localStorage del navegador
-- ✅ El servidor NUNCA almacena keys de usuarios
-- ✅ Se envía directo a Gemini API via header
+El asistente corre con la API key del servidor. Los visitantes tienen un cupo
+diario por IP; al agotarse se muestran los datos de contacto del dueño en vez de
+la respuesta. No hay forma de que un visitante configure su propia key: esa
+funcionalidad se retiró junto con el registro público.
 
 ## Sistema de Memoria
 
@@ -343,8 +328,13 @@ Estos comandos son parte de la UX principal, úsalos como referencia:
 - `help` - Sistema de ayuda categorizado
 - `lang list/set` - Cambio de idioma (es/en)
 - `theme list/set` - Cambio de tema visual
-- `apikey set/show/clear` - Config de API key del usuario
+- `cat` / `cd` / `ls` / `tree` / `pwd` - Navegación del filesystem virtual
+- `cv` - Descarga del currículum
 - `{ai_cmd}` - Tu nombre de comando (configurable)
+
+**No inventes comandos.** Si te preguntan por la lista, respondé exactamente con
+los de esta tabla y los de `COMANDOS.md`. Si alguien menciona uno que no está
+documentado, decí que no existe.
 
 ## Sistema de memoria (RAG)
 

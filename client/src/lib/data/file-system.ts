@@ -85,7 +85,6 @@ Para ver todos los comandos, ejecutá \`cat COMANDOS.md\` o abrí el archivo des
 
 ## Sesión
 - \`whoami\` - Ver info del usuario actual
-- \`admin\` - Abrir el panel de administración (solo para el dueño)
 
 ## Asistente IA
 - \`ai\` - Iniciar asistente
@@ -95,8 +94,7 @@ Para ver todos los comandos, ejecutá \`cat COMANDOS.md\` o abrí el archivo des
 
 ## Sistema
 - \`cls\` o \`clear\` - Limpiar terminal
-- \`help\` - Ver ayuda
-- \`admin\` - Panel de administración`
+- \`help\` - Ver ayuda`
 		}
 	]
 };

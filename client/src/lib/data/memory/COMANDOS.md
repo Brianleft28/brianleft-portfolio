@@ -1,35 +1,31 @@
 # 📋 COMANDOS DE TERMINAL
 
-Lista completa de comandos disponibles en la terminal interactiva.
+Lista **completa y exhaustiva** de los comandos de la terminal interactiva.
+No existe ningún otro comando: si alguien pregunta por uno que no está acá, no existe.
 
 ---
 
-## 🗂️ Navegación y Archivos
+## 🗂️ Navegación
 
 | Comando | Descripción |
 |---------|-------------|
-| `ls` o `dir` | Listar archivos y carpetas |
-| `ll` | Lista detallada (alias de ls -l) |
+| `ls` (alias `dir`) | Listar archivos y carpetas |
+| `ll` | Lista detallada (alias de `ls -l`) |
 | `cd [carpeta]` | Cambiar de directorio |
 | `cd ..` | Subir un nivel |
 | `pwd` | Mostrar directorio actual |
-| `cat [archivo]` | Ver contenido de un archivo |
 | `tree` | Mostrar estructura de carpetas |
 
 ---
 
-## 🔐 Autenticación
+## 📄 Archivos
 
 | Comando | Descripción |
 |---------|-------------|
-| `register -u [user] -e [email] -p [pass]` | Crear cuenta |
-| `register -u [user] -e [email] -p [pass] -n "Nombre" -r developer` | Cuenta con nombre y rol |
-| `verify [código]` | Verificar email con código de 6 dígitos |
-| `verify resend` | Reenviar código de verificación |
-| `login` | Abrir panel de login |
-| `login -u [user] -p [pass]` | Iniciar sesión desde terminal |
-| `logout` | Cerrar sesión |
-| `whoami` | Ver información del usuario actual |
+| `cat [archivo]` | Ver contenido de un archivo |
+| `cv` (alias `curriculum`, `resume`) | Ver/descargar el CV |
+
+Los proyectos viven en `C:/proyectos/<slug>/README.md`.
 
 ---
 
@@ -37,17 +33,18 @@ Lista completa de comandos disponibles en la terminal interactiva.
 
 | Comando | Descripción |
 |---------|-------------|
-| `ai` | Iniciar asistente IA en modo por defecto |
+| `ai` (alias `assistant`) | Iniciar el asistente en el modo por defecto |
 | `ai [pregunta]` | Hacer una pregunta directa |
-| `ai start [modo]` | Iniciar sesión con modo específico |
-| `ai stop` | Terminar sesión de IA |
-| `ai mode [modo]` | Cambiar modo activo |
-| `ai modes` | Ver modos disponibles |
-| `ai status` | Ver estado actual |
+| `ai start [modo]` | Iniciar sesión con un modo específico |
+| `ai stop` | Terminar la sesión de IA |
+| `ai mode [modo]` | Cambiar el modo activo |
+| `ai modes` | Ver los modos disponibles |
+| `ai status` | Ver el estado actual |
 
-**Modos disponibles:**
-- `asistente` - Asistente general amigable
-- `arquitecto` - Modo técnico para arquitectura
+**Modos:** `asistente` (general) y `arquitecto` (técnico).
+
+El nombre del comando puede estar personalizado desde la parametría: si `ai_command`
+tiene otro valor, ese alias también funciona.
 
 ---
 
@@ -55,9 +52,8 @@ Lista completa de comandos disponibles en la terminal interactiva.
 
 | Comando | Descripción |
 |---------|-------------|
-| `theme [nombre]` | Cambiar tema visual |
-| `apikey [key]` | Configurar API key de Gemini |
-| `apikey clear` | Eliminar API key guardada |
+| `theme [nombre]` | Cambiar el tema visual |
+| `lang` (alias `language`, `idioma`, `locale`) | Cambiar idioma (`list`, `set es\|en`) |
 
 ---
 
@@ -65,38 +61,23 @@ Lista completa de comandos disponibles en la terminal interactiva.
 
 | Comando | Descripción |
 |---------|-------------|
-| `cls` o `clear` | Limpiar terminal |
-| `help` o `-h` | Ver ayuda general |
-| `admin` | Abrir panel de administración |
-| `admin settings` | Abrir configuración |
-| `admin projects` | Abrir gestión de proyectos |
-| `cv` o `resume` | Ver/descargar CV |
-| `email` | Abrir formulario de contacto |
+| `cls` (alias `clear`) | Limpiar la terminal |
+| `help` (alias `-h`, `--help`) | Ver la ayuda |
+| `whoami` | Ver la sesión actual |
+| `exit` | Cerrar la terminal |
 
 ---
 
 ## 💡 Ejemplos
 
 ```bash
-# Registrarse
-register -u miusuario -e mi@email.com -p miPassword123
-
-# Registrarse con nombre y rol
-register -u miusuario -e mi@email.com -p miPassword123 -n "Mi Nombre" -r developer
-
-# Verificar email (el prompt cambia a codigo:\>)
-verify 123456
-
-# Login desde terminal
-login -u miusuario -p miPassword123
-
 # Navegar
 cd proyectos
 ls
 cat README.md
 
 # Preguntar a la IA
-ai ¿Cuáles son tus proyectos destacados?
+ai ¿cuáles son tus proyectos destacados?
 ai start arquitecto
 ```
 
@@ -104,7 +85,6 @@ ai start arquitecto
 
 ## 💡 Tips
 
-- Usa `Tab` para autocompletar comandos
-- Usa `↑` y `↓` para navegar el historial
-- Escribe `[comando] -h` para ver ayuda específica
-- La mayoría de comandos tienen aliases (ej: `dir` = `ls`, `clear` = `cls`)
+- Usá `↑` y `↓` para navegar el historial
+- Escribí `[comando] -h` para ver la ayuda específica
+- `Ctrl+L` limpia la consola
