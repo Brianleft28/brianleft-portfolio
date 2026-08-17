@@ -4,11 +4,12 @@ import { Folder } from '../../entities/folder.entity';
 import { File } from '../../entities/file.entity';
 import { Memory } from '../../entities/memory.entity';
 import { MemoryKeyword } from '../../entities/memory-keyword.entity';
+import { Setting } from '../../entities/setting.entity';
 import { FilesystemService } from './filesystem.service';
 import { FilesystemController } from './filesystem.controller';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Folder, File, Memory, MemoryKeyword])],
+  imports: [TypeOrmModule.forFeature([Folder, File, Memory, MemoryKeyword, Setting])],
   controllers: [FilesystemController],
   providers: [FilesystemService],
   exports: [FilesystemService],

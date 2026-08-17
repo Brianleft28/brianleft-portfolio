@@ -138,8 +138,13 @@ export async function loadConfig(): Promise<void> {
 
 		if (filesystemRes.ok) {
 			const data = await filesystemRes.json();
-			if (data.tree && Array.isArray(data.tree)) {
-				dynamicFilesystem.set(data.tree);
+			// La API devuelve el árbol como array plano. Esto esperaba `{tree: [...]}`,
+			// que nunca matcheaba: el filesystem dinámico quedaba vacío y la home caía
+			// al estático de `file-system.ts` — sin proyectos y con el texto de
+			// instalación white-label. Se aceptan las dos formas por las dudas.
+			const tree = Array.isArray(data) ? data : data?.tree;
+			if (Array.isArray(tree) && tree.length > 0) {
+				dynamicFilesystem.set(tree);
 			}
 		}
 	} catch (error) {

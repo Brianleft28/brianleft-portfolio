@@ -45,6 +45,7 @@ export async function bootstrapOwner(app: INestApplicationContext): Promise<User
     // renombrar ADMIN_USERNAME te dejaba afuera sin ninguna señal.
     await reconcileCredentials(usersRepo, existing, username, password);
     await syncOwnerIndex(dataSource, existing.id);
+    await syncRootFiles(app, existing.id);
     return existing;
   }
 
@@ -92,8 +93,40 @@ export async function bootstrapOwner(app: INestApplicationContext): Promise<User
   console.log('   └─ memorias base (index, memory) creadas.');
 
   await syncOwnerIndex(dataSource, user.id);
+  await syncRootFiles(app, user.id);
 
   return usersRepo.findOneOrFail({ where: { id: user.id } });
+}
+
+/**
+ * Carga los archivos de `${MEMORY_PATH}/fs/` en la raíz `C:` del filesystem
+ * virtual. Ahí vive `LEEME.md`, la portada que ve el visitante al entrar.
+ *
+ * Se versionan como `.md` del repo en vez de hardcodearse, igual que el perfil
+ * y los proyectos. Los placeholders `{{...}}` los resuelve el filesystem al
+ * servir el árbol, contra la parametría.
+ */
+async function syncRootFiles(app: INestApplicationContext, userId: number): Promise<void> {
+  const fsPath = path.join(process.env.MEMORY_PATH || '/app/data/memory', 'fs');
+
+  if (!fs.existsSync(fsPath)) {
+    console.warn(`⚠️  No existe ${fsPath}: no hay archivos de raíz para cargar.`);
+    return;
+  }
+
+  const files = fs.readdirSync(fsPath).filter((f) => f.endsWith('.md')).sort();
+  if (files.length === 0) return;
+
+  const filesystemService = app.get(FilesystemService);
+
+  for (const file of files) {
+    const content = fs.readFileSync(path.join(fsPath, file), 'utf-8');
+    const { created, changed } = await filesystemService.upsertRootFile(file, content, userId);
+
+    if (created) console.log(`   ├─ "${file}" creado en la raíz del filesystem.`);
+    else if (changed) console.log(`   ├─ "${file}" actualizado desde el archivo.`);
+    else console.log(`   ├─ "${file}" sin cambios.`);
+  }
 }
 
 /**

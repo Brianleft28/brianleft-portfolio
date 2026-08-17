@@ -5,6 +5,7 @@ import { Folder } from '../../entities/folder.entity';
 import { File, FileType } from '../../entities/file.entity';
 import { Memory, MemoryType } from '../../entities/memory.entity';
 import { MemoryKeyword } from '../../entities/memory-keyword.entity';
+import { Setting } from '../../entities/setting.entity';
 import { CreateFolderDto, CreateFileDto, UpdateFileDto } from './dto';
 
 export interface FileSystemNode {
@@ -29,6 +30,8 @@ export class FilesystemService {
     private memoriesRepository: Repository<Memory>,
     @InjectRepository(MemoryKeyword)
     private keywordsRepository: Repository<MemoryKeyword>,
+    @InjectRepository(Setting)
+    private settingsRepository: Repository<Setting>,
   ) {}
 
   /**
@@ -41,19 +44,86 @@ export class FilesystemService {
       order: { order: 'ASC' },
     });
 
+    // Los archivos del filesystem admiten los mismos placeholders {{...}} que las
+    // memorias, así que la parametría también manda acá. Se resuelve al servir el
+    // árbol, no al guardarlo: cambiar el perfil en el panel se refleja solo.
+    const placeholders = await this.loadPlaceholders(userId);
+
     // Construir árbol recursivamente
     const tree: FileSystemNode[] = [];
     for (const folder of rootFolders) {
-      tree.push(await this.buildFolderNode(folder, userId));
+      tree.push(await this.buildFolderNode(folder, userId, placeholders));
     }
 
     return tree;
   }
 
   /**
+   * Crea o actualiza un archivo en la raíz `C:` del usuario.
+   *
+   * Lo usa el seeder para versionar la portada del portfolio (`LEEME.md`) como
+   * un `.md` del repo en vez de tenerla hardcodeada. Es idempotente.
+   */
+  async upsertRootFile(
+    name: string,
+    content: string,
+    userId: number,
+  ): Promise<{ created: boolean; changed: boolean }> {
+    const root = await this.foldersRepository.findOne({
+      where: { name: 'C:', parentId: IsNull(), userId },
+    });
+
+    if (!root) {
+      this.logger.warn(`Usuario ${userId} sin carpeta raíz: se omite "${name}".`);
+      return { created: false, changed: false };
+    }
+
+    const existing = await this.filesRepository.findOne({
+      where: { name, folderId: root.id, userId },
+    });
+
+    if (!existing) {
+      await this.filesRepository.save(
+        this.filesRepository.create({
+          name,
+          type: FileType.MARKDOWN,
+          content,
+          folderId: root.id,
+          userId,
+          isActive: true,
+        }),
+      );
+      return { created: true, changed: true };
+    }
+
+    if (existing.content === content) {
+      return { created: false, changed: false };
+    }
+
+    await this.filesRepository.update(existing.id, { content });
+    return { created: false, changed: true };
+  }
+
+  /** Mapa `clave -> valor` de la parametría del usuario. */
+  private async loadPlaceholders(userId: number): Promise<Map<string, string>> {
+    const settings = await this.settingsRepository.find({ where: { userId } });
+    return new Map(settings.map((s) => [s.key, s.value]));
+  }
+
+  /** Reemplaza `{{clave}}` por su valor; deja intacto lo que no exista. */
+  private applyPlaceholders(content: string, values: Map<string, string>): string {
+    if (!content) return content;
+    return content.replace(/\{\{(\w+)\}\}/g, (match, key) => values.get(key) ?? match);
+  }
+
+  /**
    * Construye un nodo de carpeta con sus hijos
    */
-  private async buildFolderNode(folder: Folder, userId: number): Promise<FileSystemNode> {
+  private async buildFolderNode(
+    folder: Folder,
+    userId: number,
+    placeholders: Map<string, string> = new Map(),
+  ): Promise<FileSystemNode> {
     // Obtener subcarpetas del usuario
     const subfolders = await this.foldersRepository.find({
       where: { parentId: folder.id, userId },
@@ -69,7 +139,7 @@ export class FilesystemService {
 
     // Agregar subcarpetas recursivamente
     for (const subfolder of subfolders) {
-      children.push(await this.buildFolderNode(subfolder, userId));
+      children.push(await this.buildFolderNode(subfolder, userId, placeholders));
     }
 
     // Agregar archivos
@@ -79,7 +149,7 @@ export class FilesystemService {
         name: file.name,
         type: 'file',
         fileType: file.type,
-        content: file.content || undefined,
+        content: file.content ? this.applyPlaceholders(file.content, placeholders) : undefined,
       });
     }
 
