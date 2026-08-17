@@ -2,6 +2,10 @@
 
 Soy {{owner_name}}, {{owner_role}}. Este portfolio no es una página: es un entorno que se explora.
 
+> 🇬🇧 **Reading in English?** Run `lang set en` for the interface, and just ask the
+> assistant in English — it answers in whatever language you write to it:
+> `ai what has Brian worked on?`
+
 ## Cómo navegarlo
 
 - **El explorador de archivos**, a la izquierda, para moverte con el mouse.

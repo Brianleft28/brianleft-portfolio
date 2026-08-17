@@ -60,8 +60,14 @@ export class ChatService {
    * @param prompt El mensaje del usuario
    * @param mode Modo de personalidad: 'arquitecto' o 'asistente'
    * @param userId ID del usuario (default: 1 para admin)
+   * @param locale Idioma de la interfaz del visitante (`es`, `en`)
    */
-  async *chat(prompt: string, mode?: string, userId: number = 1): AsyncGenerator<string> {
+  async *chat(
+    prompt: string,
+    mode?: string,
+    userId: number = 1,
+    locale?: string,
+  ): AsyncGenerator<string> {
     const model = this.getModel();
 
     if (!model) {
@@ -78,7 +84,7 @@ export class ChatService {
       const context = await this.buildContext(prompt, isListRequest, userId);
 
       // Construir prompt completo (ahora es async, con modo)
-      const fullPrompt = await this.buildFullPrompt(prompt, context, isListRequest, mode, userId);
+      const fullPrompt = await this.buildFullPrompt(prompt, context, isListRequest, mode, userId, locale);
 
       // Generar respuesta con streaming
       const result = await model.generateContentStream(fullPrompt);
@@ -192,6 +198,7 @@ RESUMEN:`;
     isListRequest: boolean,
     mode?: string,
     userId: number = 1,
+    locale?: string,
   ): Promise<string> {
     // Cargar settings para placeholders (del usuario específico)
     const settings = await this.settingsRepository.find({ where: { userId } });
@@ -277,7 +284,7 @@ Tu propósito es ayudar a los visitantes a conocer:
       .replace(/\{\{site_description\}\}/g, siteDescription);
 
     // Inyectar configuración adicional de la personalidad
-    const languageInstruction = this.getLanguageInstruction(personality?.language);
+    const languageInstruction = this.getLanguageInstruction(personality?.language, locale);
     const voiceStyleInstruction = this.getVoiceStyleInstruction(personality?.voiceStyle || undefined);
     const traitsInstruction = personality?.traits?.length
       ? `\n## RASGOS DE PERSONALIDAD (MUY IMPORTANTE)\nESTOS RASGOS DEFINEN TU FORMA DE RESPONDER. Debés aplicarlos en CADA respuesta:\n${personality.traits.map(t => `- ${t.toUpperCase()}: Incorporá este rasgo activamente`).join('\n')}\n\nSi un rasgo es "sarcástico", usá sarcasmo. Si es "directo", sé muy directo. NUNCA ignores estos rasgos.`
@@ -313,16 +320,34 @@ TU RESPUESTA (sin headers, formato terminal):`;
   }
 
   /**
-   * Obtiene la instrucción de idioma según el código
+   * Instrucción de idioma.
+   *
+   * El contenido del portfolio (perfil, READMEs de proyectos, portada) está
+   * escrito una sola vez, en español. En vez de duplicar cada documento por
+   * idioma, la traducción la hace el modelo al responder: se le pide que
+   * espeje el idioma del visitante.
+   *
+   * @param language variante configurada en la personalidad, para el caso por defecto
+   * @param preferredLocale idioma de la interfaz del visitante (`es`, `en`), si se conoce
    */
-  private getLanguageInstruction(language?: string): string {
-    const instructions: Record<string, string> = {
-      'es-AR': '\n## IDIOMA\nRespondé en español argentino (vos, usás, tenés). Sé natural pero profesional.',
-      'es-ES': '\n## IDIOMA\nResponde en español de España (tú, usas, tienes). Sé formal y profesional.',
-      'en-US': '\n## LANGUAGE\nRespond in American English. Be professional and clear.',
-      'pt-BR': '\n## IDIOMA\nResponda em português brasileiro. Seja profissional e claro.',
+  private getLanguageInstruction(language?: string, preferredLocale?: string): string {
+    const defaultVariants: Record<string, string> = {
+      'es-AR': 'español argentino (vos, usás, tenés), natural pero profesional',
+      'es-ES': 'español de España (tú, usas, tienes), formal y profesional',
+      'en-US': 'American English, professional and clear',
+      'pt-BR': 'português brasileiro, profissional e claro',
     };
-    return instructions[language || 'es-AR'] || instructions['es-AR'];
+    const fallback = defaultVariants[language || 'es-AR'] || defaultVariants['es-AR'];
+
+    const preference = preferredLocale
+      ? `\n- La interfaz del visitante está en "${preferredLocale}": ante la duda, usá ese idioma.`
+      : '';
+
+    return `\n## IDIOMA
+- Respondé SIEMPRE en el mismo idioma en que te escribieron. Si te preguntan en inglés, respondé en inglés; en portugués, en portugués.${preference}
+- Si no hay señal clara, usá ${fallback}.
+- El material que leés está en español. Traducilo al responder: no lo copies tal cual ni te disculpes por el idioma de las fuentes.
+- Los nombres propios, slugs y comandos no se traducen.`;
   }
 
   /**

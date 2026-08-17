@@ -6,6 +6,7 @@
 	import { fileSystemData, type FileSystemNode, type FolderNode } from '$lib/data/file-system';
 	
 	// Sistema modular de comandos
+	import { locale } from '$lib/i18n';
 	import { getCommand, getAllCommands, registerAiCommandAlias, isCommandProtected } from '$lib/terminal/commands';
 	import type { CommandContext } from '$lib/terminal/types';
 
@@ -619,7 +620,10 @@ Usa <code>admin login</code> para acceder.`);
 				credentials: 'include',
 				body: JSON.stringify({
 					prompt,
-					mode: $iaMode
+					mode: $iaMode,
+					// El contenido está escrito una sola vez, en español: la IA traduce
+					// al responder. Le pasamos el idioma de la interfaz como preferencia.
+					locale: $locale ?? undefined
 				})
 			});
 

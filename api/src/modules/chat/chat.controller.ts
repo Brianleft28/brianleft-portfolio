@@ -28,6 +28,10 @@ class ChatDto {
   @IsString()
   @IsOptional()
   mode?: string; // 'arquitecto' o 'asistente'
+
+  @IsString()
+  @IsOptional()
+  locale?: string; // idioma de la interfaz del visitante ('es', 'en')
 }
 
 function getClientIp(req: Request): string {
@@ -99,7 +103,12 @@ export class ChatController {
         remaining = status.remaining;
       }
 
-      for await (const chunk of this.chatService.chat(dto.prompt, dto.mode, OWNER_USER_ID)) {
+      for await (const chunk of this.chatService.chat(
+        dto.prompt,
+        dto.mode,
+        OWNER_USER_ID,
+        dto.locale,
+      )) {
         res.write(chunk);
       }
 
