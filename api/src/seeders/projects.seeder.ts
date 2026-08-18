@@ -134,6 +134,37 @@ export async function seedProjects(
   // Misma función que usa la carga desde el panel: un solo lugar escribe estos bloques.
   const techStackBySlug = Object.fromEntries(docs.map((d) => [d.slug, d.techStack]));
   await memoryService.regenerateProjectSections(userId, techStackBySlug);
+
+  await warnAboutOrphans(memoryRepo, userId, docs);
+}
+
+/**
+ * Avisa de proyectos que están en la base pero ya no tienen `.md` que los
+ * respalde: típicamente, un archivo renombrado o borrado del repo.
+ *
+ * No se borran solos a propósito. Un proyecto cargado desde el panel tampoco
+ * tiene archivo, y una poda automática se lo llevaría puesto en el próximo
+ * deploy. Mejor avisar y que la baja sea una decisión explícita.
+ */
+async function warnAboutOrphans(
+  memoryRepo: Repository<Memory>,
+  userId: number,
+  docs: ProjectDoc[],
+): Promise<void> {
+  const fromFiles = new Set(docs.map((d) => d.slug));
+  const stored = await memoryRepo.find({
+    where: { type: MemoryType.PROJECT, userId },
+    select: ['slug'],
+  });
+
+  const orphans = stored.map((m) => m.slug).filter((slug) => !fromFiles.has(slug));
+  if (orphans.length === 0) return;
+
+  console.warn(
+    `⚠️  Proyectos en la base sin archivo en projects/: [${orphans.join(', ')}].\n` +
+      '   Si los cargaste desde el panel, está bien. Si borraste el .md y querés\n' +
+      '   darlos de baja: DELETE /projects/<slug> o el botón del panel.',
+  );
 }
 
 // ─────────────────────────────────────────────────────────────
