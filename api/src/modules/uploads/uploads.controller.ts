@@ -148,6 +148,7 @@ export class UploadsController {
   @UseInterceptors(FileInterceptor('file'))
   async uploadCv(
     @Req() req: any,
+    @Query('lang') lang: string | undefined,
     @UploadedFile(
       new ParseFilePipe({
         validators: [
@@ -163,7 +164,7 @@ export class UploadsController {
       throw new BadRequestException('Usuario no identificado');
     }
     
-    const result = await this.uploadsService.saveCv(file, userId);
+    const result = await this.uploadsService.saveCv(file, userId, lang);
     return {
       success: true,
       message: 'CV subido correctamente',
@@ -176,10 +177,10 @@ export class UploadsController {
    * Si se pasa ?userId=X, descarga el CV de ese usuario
    */
   @Get('cv')
-  async downloadCv(@Res() res: Response, @Query('userId') userId?: string) {
+  async downloadCv(@Res() res: Response, @Query('userId') userId?: string, @Query('lang') lang?: string) {
     try {
       const numericUserId = userId ? parseInt(userId, 10) : undefined;
-      const { path, displayName } = await this.uploadsService.getCvPath(numericUserId);
+      const { path, displayName } = await this.uploadsService.getCvPath(numericUserId, lang);
 
       res.setHeader('Content-Type', 'application/pdf');
       res.setHeader('Content-Disposition', `attachment; filename="${displayName}"`);
@@ -198,10 +199,10 @@ export class UploadsController {
    * Si se pasa ?userId=X, retorna info del CV de ese usuario
    */
   @Get('cv/info')
-  async getCvInfo(@Query('userId') userId?: string) {
+  async getCvInfo(@Query('userId') userId?: string, @Query('lang') lang?: string) {
     const numericUserId = userId ? parseInt(userId, 10) : undefined;
-    const hasCv = await this.uploadsService.hasCv(numericUserId);
-    
+    const hasCv = await this.uploadsService.hasCv(numericUserId, lang);
+
     if (!hasCv) {
       return {
         available: false,
@@ -210,11 +211,16 @@ export class UploadsController {
     }
 
     const displayName = await this.uploadsService.getSetting('cv_display_name', numericUserId);
-    
+    const params = new URLSearchParams();
+    if (userId) params.set('userId', userId);
+    if (lang) params.set('lang', lang);
+    const query = params.toString();
+
     return {
       available: true,
       displayName: displayName || 'curriculum-vitae.pdf',
-      downloadUrl: userId ? `/uploads/cv?userId=${userId}` : '/uploads/cv',
+      downloadUrl: query ? `/uploads/cv?${query}` : '/uploads/cv',
+      languages: await this.uploadsService.availableCvLangs(numericUserId),
     };
   }
 }

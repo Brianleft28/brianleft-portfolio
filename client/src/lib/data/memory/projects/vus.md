@@ -3,8 +3,8 @@ slug: vus
 title: "VUS — Sistema llamador de turnos para atención al público"
 summary: "Un llamador: el sistema que ordena la cola de un edificio con atención al público. El ciudadano saca turno en un tótem, la pantalla lo llama, el operador lo atiende. Tótem, backend, pantallas, impresión térmica, dashboard en vivo, analítica histórica y despliegue en Kubernetes — corriendo todo el día en un municipio, sin poder caerse. En Ituzaingó se lo conoce como VUS, Ventanilla Única Simplificada."
 priority: 10
-techStack: [NestJS, SvelteKit, TypeScript, MySQL, TypeORM, Socket.io, Redis, Chart.js, Node.js, Docker, Kubernetes, PM2, ESC/POS, GitLab CI/CD]
-keywords: [vus, vus app, ventanilla unica, ventanilla unica simplificada, llamador, llamador de turnos, turnero, sistema de turnos, gestion de colas, smart queue management, municipio, ituzaingo, govtech, sector publico, totem, kiosk, autogestion, pantallas, smart tv, sala de espera, operador, box, atencion al publico, impresion termica, esc-pos, print server, nestjs, sveltekit, typeorm, mysql, socket.io, websockets, tiempo real, redis, pub/sub, adapter, pods, kubernetes, escalado horizontal, replicas, dashboard, dashboard en vivo, analitica, metricas, chart.js, graficos, parametria, configuracion, pm2, vps, gitlab, ci/cd, sargable, memory leak, monorepo]
+techStack: [NestJS, SvelteKit, TypeScript, MySQL, TypeORM, Socket.io, Redis, Chart.js, Node.js, .NET, C#, Docker, Kubernetes, PM2, ESC/POS, GitLab CI/CD]
+keywords: [vus, vus app, ventanilla unica, ventanilla unica simplificada, llamador, llamador de turnos, turnero, sistema de turnos, gestion de colas, smart queue management, municipio, ituzaingo, govtech, sector publico, totem, kiosk, autogestion, pantallas, smart tv, sala de espera, operador, box, atencion al publico, impresion termica, esc-pos, print server, dotnet, net, csharp, c#, nestjs, sveltekit, typeorm, mysql, socket.io, websockets, tiempo real, redis, pub/sub, adapter, pods, kubernetes, escalado horizontal, replicas, dashboard, dashboard en vivo, analitica, metricas, chart.js, graficos, parametria, configuracion, pm2, vps, gitlab, ci/cd, sargable, memory leak, monorepo]
 ---
 
 # Portfolio: VUS — Llamador de turnos
@@ -21,7 +21,7 @@ Lo que lo hace interesante no es el dominio —un turnero es conceptualmente sim
 flowchart TD
     C([Ciudadano]) -->|toque| T[Tótem de autogestión<br/>SvelteKit]
     T -->|POST /turnos| API[VUS API<br/>NestJS + TypeORM]
-    API -->|cola de impresión| PS[Print Server<br/>daemon local Node.js]
+    API -->|cola de impresión| PS[Print Server<br/>daemon local .NET]
     PS -->|ESC/POS por USB| PR([Impresora térmica])
     PR --> B([Boleto físico])
 
@@ -44,7 +44,7 @@ flowchart TD
 - **Front** (SvelteKit + Socket.IO) — los televisores de sala de espera y el panel del operador.
 - **Dashboard** (Chart.js) — la foto del momento: qué está pasando **ahora** en el edificio. Se alimenta de los mismos eventos de socket que las pantallas, así que se mueve solo.
 - **Analítica** (Chart.js) — lo contrario del dashboard: consulta histórica sobre datos ya cerrados. Tiempos de atención, volumen por oficina, comportamiento por franja horaria.
-- **Print Server** (Node.js) — daemon local que traduce HTTP/JSON a comandos ESC/POS nativos.
+- **Print Server** (.NET / C#) — daemon local que traduce HTTP/JSON a comandos ESC/POS nativos.
 - **Parametría** — oficinas, servicios y comportamiento del llamador se configuran desde el sistema, sin tocar código ni redeployar. Lo que cambia según la institución es dato, no build.
 - **Infraestructura** — Kubernetes con múltiples pods, Redis, MySQL y CI/CD en GitLab.
 
@@ -101,7 +101,7 @@ La causa: Socket.IO mantiene las conexiones en la memoria del proceso. Con un so
 
 **El Desafío:** conectar navegadores modernos con impresoras térmicas por COM/USB, vía APIs experimentales o extensiones, es una deuda técnica que se cobra en la próxima actualización del navegador.
 
-**La Resolución Defensiva:** un microservicio local (daemon en localhost) en cada terminal. El frontend manda un JSON limpio; el daemon se encarga del driver, del protocolo ESC/POS y de la cola de impresión a nivel sistema operativo. Aislamiento total de responsabilidades: si cambia la impresora, cambia un solo componente.
+**La Resolución Defensiva:** un microservicio local en .NET (daemon en localhost) en cada terminal. El frontend manda un JSON limpio; el daemon se encarga del driver, del protocolo ESC/POS y de la cola de impresión a nivel sistema operativo. Aislamiento total de responsabilidades: si cambia la impresora, cambia un solo componente.
 
 ## 🛡️ Torvalds Defender: el monorepo que no era
 

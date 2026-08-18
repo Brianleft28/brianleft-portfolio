@@ -1,0 +1,2295 @@
+%PDF-1.4
+%‚„œ”
+1 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>
+endobj
+2 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>
+endobj
+3 0 obj
+<< /Length 13889 >>
+stream
+BT
+0.11 0.12 0.14 rg
+1 0 0 1 42.00 795.89 Tm
+/F2 21 Tf
+(Brian Benegas) Tj
+ET
+BT
+0.11 0.12 0.14 rg
+1 0 0 1 42.00 766.89 Tm
+/F1 9 Tf
+(Desarrollador) Tj
+( ) Tj
+(Full) Tj
+( ) Tj
+(Stack) Tj
+ET
+BT
+0.11 0.12 0.14 rg
+1 0 0 1 42.00 754.69 Tm
+/F1 9 Tf
+(Ituzaing\363,) Tj
+( ) Tj
+(Buenos) Tj
+( ) Tj
+(Aires,) Tj
+( ) Tj
+(Argentina) Tj
+( ) Tj
+(\267) Tj
+( ) Tj
+(Disponible) Tj
+( ) Tj
+(para) Tj
+( ) Tj
+(remoto) Tj
+ET
+BT
+0.11 0.12 0.14 rg
+1 0 0 1 42.00 742.49 Tm
+/F1 9 Tf
+(contactobrianleft@gmail.com) Tj
+( ) Tj
+(\267) Tj
+( ) Tj
+(+54) Tj
+( ) Tj
+(11) Tj
+( ) Tj
+(3155) Tj
+( ) Tj
+(6315) Tj
+ET
+BT
+0.11 0.12 0.14 rg
+1 0 0 1 42.00 730.29 Tm
+/F1 9 Tf
+(github.com/Brianleft28) Tj
+( ) Tj
+(\267) Tj
+( ) Tj
+(linkedin.com/in/brian-benegas-44770729b) Tj
+( ) Tj
+(\267) Tj
+( ) Tj
+(brianleft.com) Tj
+ET
+BT
+0.38 0.40 0.44 rg
+/F2 8.6 Tf
+1 0 0 1 42 701.09 Tm
+1.1 Tc (PERFIL) Tj 0 Tc
+ET
+0.80 0.82 0.85 RG 0.6 w
+42 695.59 m 553.28 695.59 l S
+BT
+0.11 0.12 0.14 rg
+1 0 0 1 42.00 679.59 Tm
+/F1 9 Tf
+(Desarrollador) Tj
+( ) Tj
+(full) Tj
+( ) Tj
+(stack) Tj
+( ) Tj
+(enfocado) Tj
+( ) Tj
+(en) Tj
+( ) Tj
+(sistemas) Tj
+( ) Tj
+(de) Tj
+( ) Tj
+(sector) Tj
+( ) Tj
+(p\372blico) Tj
+( ) Tj
+(que) Tj
+( ) Tj
+(funcionan) Tj
+( ) Tj
+(todo) Tj
+( ) Tj
+(el) Tj
+( ) Tj
+(d\355a,) Tj
+( ) Tj
+(desatendidos,) Tj
+( ) Tj
+(y) Tj
+( ) Tj
+(no) Tj
+ET
+BT
+0.11 0.12 0.14 rg
+1 0 0 1 42.00 667.39 Tm
+/F1 9 Tf
+(se) Tj
+( ) Tj
+(pueden) Tj
+( ) Tj
+(caer.) Tj
+( ) Tj
+(Trabajo) Tj
+( ) Tj
+(de) Tj
+( ) Tj
+(punta) Tj
+( ) Tj
+(a) Tj
+( ) Tj
+(punta:) Tj
+( ) Tj
+(backend) Tj
+( ) Tj
+(y) Tj
+( ) Tj
+(frontend,) Tj
+( ) Tj
+(y) Tj
+( ) Tj
+(tambi\351n) Tj
+( ) Tj
+(el) Tj
+( ) Tj
+(Linux) Tj
+( ) Tj
+(donde) Tj
+( ) Tj
+(corren,) Tj
+( ) Tj
+(el) Tj
+( ) Tj
+(CI/CD) Tj
+( ) Tj
+(que) Tj
+( ) Tj
+(los) Tj
+ET
+BT
+0.11 0.12 0.14 rg
+1 0 0 1 42.00 655.19 Tm
+/F1 9 Tf
+(despliega,) Tj
+( ) Tj
+(el) Tj
+( ) Tj
+(nginx) Tj
+( ) Tj
+(que) Tj
+( ) Tj
+(los) Tj
+( ) Tj
+(publica) Tj
+( ) Tj
+(y) Tj
+( ) Tj
+(el) Tj
+( ) Tj
+(certificado) Tj
+( ) Tj
+(que) Tj
+( ) Tj
+(los) Tj
+( ) Tj
+(asegura.) Tj
+( ) Tj
+(La) Tj
+( ) Tj
+(mayor) Tj
+( ) Tj
+(parte) Tj
+( ) Tj
+(de) Tj
+( ) Tj
+(mi) Tj
+( ) Tj
+(trabajo) Tj
+( ) Tj
+(consiste) Tj
+( ) Tj
+(en) Tj
+ET
+BT
+0.11 0.12 0.14 rg
+1 0 0 1 42.00 642.99 Tm
+/F1 9 Tf
+(blindar) Tj
+( ) Tj
+(sistemas) Tj
+( ) Tj
+(de) Tj
+( ) Tj
+(tiempo) Tj
+( ) Tj
+(real) Tj
+( ) Tj
+(bajo) Tj
+( ) Tj
+(carga:) Tj
+( ) Tj
+(escalado) Tj
+( ) Tj
+(horizontal,) Tj
+( ) Tj
+(comportamiento) Tj
+( ) Tj
+(de) Tj
+( ) Tj
+(memoria) Tj
+( ) Tj
+(en) Tj
+( ) Tj
+(clientes) Tj
+( ) Tj
+(de) Tj
+ET
+BT
+0.11 0.12 0.14 rg
+1 0 0 1 42.00 630.79 Tm
+/F1 9 Tf
+(larga) Tj
+( ) Tj
+(duraci\363n) Tj
+( ) Tj
+(y) Tj
+( ) Tj
+(acceso) Tj
+( ) Tj
+(a) Tj
+( ) Tj
+(base) Tj
+( ) Tj
+(de) Tj
+( ) Tj
+(datos) Tj
+( ) Tj
+(en) Tj
+( ) Tj
+(hora) Tj
+( ) Tj
+(pico.) Tj
+( ) Tj
+(Actualmente) Tj
+( ) Tj
+(lidero) Tj
+( ) Tj
+(el) Tj
+( ) Tj
+(equipo) Tj
+( ) Tj
+(de) Tj
+( ) Tj
+(innovaci\363n) Tj
+( ) Tj
+(del) Tj
+( ) Tj
+(Municipio) Tj
+ET
+BT
+0.11 0.12 0.14 rg
+1 0 0 1 42.00 618.59 Tm
+/F1 9 Tf
+(de) Tj
+( ) Tj
+(Ituzaing\363.) Tj
+ET
+BT
+0.38 0.40 0.44 rg
+/F2 8.6 Tf
+1 0 0 1 42 589.39 Tm
+1.1 Tc (EXPERIENCIA) Tj 0 Tc
+ET
+0.80 0.82 0.85 RG 0.6 w
+42 583.89 m 553.28 583.89 l S
+BT
+0.11 0.12 0.14 rg
+1 0 0 1 42.00 564.89 Tm
+/F1 10.5 Tf
+(Municipio) Tj
+( ) Tj
+(de) Tj
+( ) Tj
+(Ituzaing\363) Tj
+( ) Tj
+(\227) Tj
+( ) Tj
+(Secretar\355a) Tj
+( ) Tj
+(de) Tj
+( ) Tj
+(Innovaci\363n) Tj
+( ) Tj
+(y) Tj
+( ) Tj
+(Tecnolog\355a) Tj
+ET
+BT
+0.11 0.12 0.14 rg
+1 0 0 1 42.00 546.39 Tm
+/F1 9 Tf
+(Buenos) Tj
+( ) Tj
+(Aires,) Tj
+( ) Tj
+(Argentina) Tj
+( ) Tj
+(\267) Tj
+( ) Tj
+(Septiembre) Tj
+( ) Tj
+(2023) Tj
+( ) Tj
+(\226) Tj
+( ) Tj
+(Presente) Tj
+ET
+BT
+0.11 0.12 0.14 rg
+1 0 0 1 42.00 534.19 Tm
+/F2 9 Tf
+(L\355der) Tj
+( ) Tj
+(del) Tj
+( ) Tj
+(Equipo) Tj
+( ) Tj
+(de) Tj
+( ) Tj
+(Innovaci\363n) Tj
+/F1 9 Tf
+( ) Tj
+(\(Octubre) Tj
+( ) Tj
+(2024) Tj
+( ) Tj
+(\226) Tj
+( ) Tj
+(Presente\)) Tj
+( ) Tj
+(\267) Tj
+( ) Tj
+/F2 9 Tf
+(Desarrollador) Tj
+( ) Tj
+(Backend) Tj
+/F1 9 Tf
+( ) Tj
+(\(Septiembre) Tj
+( ) Tj
+(2023) Tj
+( ) Tj
+(\226) Tj
+( ) Tj
+(Octubre) Tj
+( ) Tj
+(2024\)) Tj
+ET
+BT
+0.11 0.12 0.14 rg
+1 0 0 1 42.00 517.99 Tm
+/F1 9 Tf
+(Desarrollador) Tj
+( ) Tj
+(principal) Tj
+( ) Tj
+(de) Tj
+( ) Tj
+(VUS) Tj
+( ) Tj
+(\(Ventanilla) Tj
+( ) Tj
+(\332nica) Tj
+( ) Tj
+(Simplificada\),) Tj
+( ) Tj
+(un) Tj
+( ) Tj
+(sistema) Tj
+( ) Tj
+(llamador) Tj
+( ) Tj
+(de) Tj
+( ) Tj
+(turnos) Tj
+( ) Tj
+(en) Tj
+( ) Tj
+(tiempo) Tj
+( ) Tj
+(real) Tj
+ET
+BT
+0.11 0.12 0.14 rg
+1 0 0 1 42.00 505.79 Tm
+/F1 9 Tf
+(que) Tj
+( ) Tj
+(funciona) Tj
+( ) Tj
+(a) Tj
+( ) Tj
+(diario) Tj
+( ) Tj
+(en) Tj
+( ) Tj
+(oficinas) Tj
+( ) Tj
+(municipales:) Tj
+( ) Tj
+(t\363tems) Tj
+( ) Tj
+(de) Tj
+( ) Tj
+(autogesti\363n,) Tj
+( ) Tj
+(impresi\363n) Tj
+( ) Tj
+(t\351rmica) Tj
+( ) Tj
+(de) Tj
+( ) Tj
+(boletos,) Tj
+( ) Tj
+(pantallas) Tj
+ET
+BT
+0.11 0.12 0.14 rg
+1 0 0 1 42.00 493.59 Tm
+/F1 9 Tf
+(de) Tj
+( ) Tj
+(sala) Tj
+( ) Tj
+(de) Tj
+( ) Tj
+(espera,) Tj
+( ) Tj
+(puestos) Tj
+( ) Tj
+(de) Tj
+( ) Tj
+(atenci\363n,) Tj
+( ) Tj
+(dashboard) Tj
+( ) Tj
+(en) Tj
+( ) Tj
+(vivo) Tj
+( ) Tj
+(y) Tj
+( ) Tj
+(anal\355tica) Tj
+( ) Tj
+(hist\363rica,) Tj
+( ) Tj
+(desplegado) Tj
+( ) Tj
+(sobre) Tj
+( ) Tj
+(Kubernetes.) Tj
+ET
+BT
+0.11 0.12 0.14 rg
+1 0 0 1 44.00 477.39 Tm
+/F1 9 Tf
+(\267   ) Tj
+(Resolv\355) Tj
+( ) Tj
+(la) Tj
+( ) Tj
+(p\351rdida) Tj
+( ) Tj
+(intermitente) Tj
+( ) Tj
+(de) Tj
+( ) Tj
+(eventos) Tj
+( ) Tj
+(en) Tj
+( ) Tj
+(tiempo) Tj
+( ) Tj
+(real) Tj
+( ) Tj
+(al) Tj
+( ) Tj
+(escalar) Tj
+( ) Tj
+(a) Tj
+( ) Tj
+(m\372ltiples) Tj
+( ) Tj
+(r\351plicas) Tj
+( ) Tj
+(en) Tj
+( ) Tj
+(Kubernetes,) Tj
+ET
+BT
+0.11 0.12 0.14 rg
+1 0 0 1 54.00 465.19 Tm
+/F1 9 Tf
+(incorporando) Tj
+( ) Tj
+(Redis) Tj
+( ) Tj
+(como) Tj
+( ) Tj
+(adapter) Tj
+( ) Tj
+(pub/sub) Tj
+( ) Tj
+(de) Tj
+( ) Tj
+(Socket.IO) Tj
+( ) Tj
+(y) Tj
+( ) Tj
+(sacando) Tj
+( ) Tj
+(de) Tj
+( ) Tj
+(la) Tj
+( ) Tj
+(memoria) Tj
+( ) Tj
+(de) Tj
+( ) Tj
+(cada) Tj
+( ) Tj
+(proceso) Tj
+( ) Tj
+(el) Tj
+( ) Tj
+(estado) Tj
+( ) Tj
+(de) Tj
+( ) Tj
+(las) Tj
+ET
+BT
+0.11 0.12 0.14 rg
+1 0 0 1 54.00 452.99 Tm
+/F1 9 Tf
+(conexiones,) Tj
+( ) Tj
+(que) Tj
+( ) Tj
+(en) Tj
+( ) Tj
+(silencio) Tj
+( ) Tj
+(imped\355a) Tj
+( ) Tj
+(que) Tj
+( ) Tj
+(los) Tj
+( ) Tj
+(pods) Tj
+( ) Tj
+(fueran) Tj
+( ) Tj
+(intercambiables.) Tj
+ET
+BT
+0.11 0.12 0.14 rg
+1 0 0 1 44.00 439.29 Tm
+/F1 9 Tf
+(\267   ) Tj
+(Elimin\351) Tj
+( ) Tj
+(los) Tj
+( ) Tj
+(timeouts) Tj
+( ) Tj
+(de) Tj
+( ) Tj
+(la) Tj
+( ) Tj
+(API) Tj
+( ) Tj
+(en) Tj
+( ) Tj
+(el) Tj
+( ) Tj
+(pico) Tj
+( ) Tj
+(diario) Tj
+( ) Tj
+(reescribiendo) Tj
+( ) Tj
+(una) Tj
+( ) Tj
+(consulta) Tj
+( ) Tj
+(no-SARGable) Tj
+( ) Tj
+(\(DATE\(campo\)) Tj
+( ) Tj
+(=) Tj
+ET
+BT
+0.11 0.12 0.14 rg
+1 0 0 1 54.00 427.09 Tm
+/F1 9 Tf
+(CURDATE\(\)\)) Tj
+( ) Tj
+(como) Tj
+( ) Tj
+(un) Tj
+( ) Tj
+(rango) Tj
+( ) Tj
+(puro,) Tj
+( ) Tj
+(devolvi\351ndole) Tj
+( ) Tj
+(el) Tj
+( ) Tj
+(\355ndice) Tj
+( ) Tj
+(al) Tj
+( ) Tj
+(motor) Tj
+( ) Tj
+(y) Tj
+( ) Tj
+(reduciendo) Tj
+( ) Tj
+(un) Tj
+( ) Tj
+(Full) Tj
+( ) Tj
+(Table) Tj
+( ) Tj
+(Scan) Tj
+( ) Tj
+(a) Tj
+ET
+BT
+0.11 0.12 0.14 rg
+1 0 0 1 54.00 414.89 Tm
+/F1 9 Tf
+(milisegundos.) Tj
+ET
+BT
+0.11 0.12 0.14 rg
+1 0 0 1 44.00 401.19 Tm
+/F1 9 Tf
+(\267   ) Tj
+(Dej\351) Tj
+( ) Tj
+(plana) Tj
+( ) Tj
+(la) Tj
+( ) Tj
+(huella) Tj
+( ) Tj
+(de) Tj
+( ) Tj
+(memoria) Tj
+( ) Tj
+(de) Tj
+( ) Tj
+(las) Tj
+( ) Tj
+(pantallas) Tj
+( ) Tj
+(que) Tj
+( ) Tj
+(nunca) Tj
+( ) Tj
+(se) Tj
+( ) Tj
+(apagan,) Tj
+( ) Tj
+(reemplazando) Tj
+( ) Tj
+(un) Tj
+( ) Tj
+(Set) Tj
+( ) Tj
+(sin) Tj
+( ) Tj
+(l\355mite) Tj
+( ) Tj
+(por) Tj
+( ) Tj
+(un) Tj
+ET
+BT
+0.11 0.12 0.14 rg
+1 0 0 1 54.00 388.99 Tm
+/F1 9 Tf
+(Map) Tj
+( ) Tj
+(tipo) Tj
+( ) Tj
+(LRU) Tj
+( ) Tj
+(que) Tj
+( ) Tj
+(expira) Tj
+( ) Tj
+(a) Tj
+( ) Tj
+(los) Tj
+( ) Tj
+(60) Tj
+( ) Tj
+(segundos,) Tj
+( ) Tj
+(y) Tj
+( ) Tj
+(saqu\351) Tj
+( ) Tj
+(los) Tj
+( ) Tj
+(watchdogs) Tj
+( ) Tj
+(artesanales) Tj
+( ) Tj
+(de) Tj
+( ) Tj
+(reconexi\363n) Tj
+( ) Tj
+(para) Tj
+( ) Tj
+(delegar) Tj
+( ) Tj
+(en) Tj
+( ) Tj
+(el) Tj
+ET
+BT
+0.11 0.12 0.14 rg
+1 0 0 1 54.00 376.79 Tm
+/F1 9 Tf
+(exponential) Tj
+( ) Tj
+(backoff) Tj
+( ) Tj
+(nativo) Tj
+( ) Tj
+(de) Tj
+( ) Tj
+(Socket.IO.) Tj
+ET
+BT
+0.11 0.12 0.14 rg
+1 0 0 1 44.00 363.09 Tm
+/F1 9 Tf
+(\267   ) Tj
+(Elimin\351) Tj
+( ) Tj
+(los) Tj
+( ) Tj
+(llamados) Tj
+( ) Tj
+(duplicados) Tj
+( ) Tj
+(por) Tj
+( ) Tj
+(audio) Tj
+( ) Tj
+(con) Tj
+( ) Tj
+(un) Tj
+( ) Tj
+(debounce) Tj
+( ) Tj
+(por) Tj
+( ) Tj
+(hash) Tj
+( ) Tj
+(de) Tj
+( ) Tj
+(ID) Tj
+( ) Tj
+(y) Tj
+( ) Tj
+(estado,) Tj
+( ) Tj
+(con) Tj
+( ) Tj
+(ventana) Tj
+ET
+BT
+0.11 0.12 0.14 rg
+1 0 0 1 54.00 350.89 Tm
+/F1 9 Tf
+(anti-repetici\363n) Tj
+( ) Tj
+(de) Tj
+( ) Tj
+(15) Tj
+( ) Tj
+(segundos.) Tj
+ET
+BT
+0.11 0.12 0.14 rg
+1 0 0 1 44.00 337.19 Tm
+/F1 9 Tf
+(\267   ) Tj
+(Desacopl\351) Tj
+( ) Tj
+(el) Tj
+( ) Tj
+(navegador) Tj
+( ) Tj
+(de) Tj
+( ) Tj
+(los) Tj
+( ) Tj
+(puertos) Tj
+( ) Tj
+(del) Tj
+( ) Tj
+(sistema) Tj
+( ) Tj
+(operativo) Tj
+( ) Tj
+(construyendo) Tj
+( ) Tj
+(un) Tj
+( ) Tj
+(daemon) Tj
+( ) Tj
+(local) Tj
+( ) Tj
+(en) Tj
+( ) Tj
+(.NET) Tj
+( ) Tj
+(que) Tj
+( ) Tj
+(traduce) Tj
+ET
+BT
+0.11 0.12 0.14 rg
+1 0 0 1 54.00 324.99 Tm
+/F1 9 Tf
+(JSON) Tj
+( ) Tj
+(sobre) Tj
+( ) Tj
+(HTTP) Tj
+( ) Tj
+(a) Tj
+( ) Tj
+(comandos) Tj
+( ) Tj
+(ESC/POS) Tj
+( ) Tj
+(nativos,) Tj
+( ) Tj
+(aislando) Tj
+( ) Tj
+(el) Tj
+( ) Tj
+(driver) Tj
+( ) Tj
+(de) Tj
+( ) Tj
+(las) Tj
+( ) Tj
+(impresoras) Tj
+( ) Tj
+(t\351rmicas) Tj
+( ) Tj
+(en) Tj
+( ) Tj
+(un) Tj
+( ) Tj
+(\372nico) Tj
+ET
+BT
+0.11 0.12 0.14 rg
+1 0 0 1 54.00 312.79 Tm
+/F1 9 Tf
+(componente) Tj
+( ) Tj
+(reemplazable.) Tj
+ET
+BT
+0.11 0.12 0.14 rg
+1 0 0 1 44.00 299.09 Tm
+/F1 9 Tf
+(\267   ) Tj
+(Desarm\351) Tj
+( ) Tj
+(un) Tj
+( ) Tj
+(monorepo) Tj
+( ) Tj
+(falso) Tj
+( ) Tj
+(\227cuatro) Tj
+( ) Tj
+(microservicios) Tj
+( ) Tj
+(compartiendo) Tj
+( ) Tj
+(un) Tj
+( ) Tj
+(solo) Tj
+( ) Tj
+(.git\227) Tj
+( ) Tj
+(separ\341ndolo) Tj
+( ) Tj
+(en) Tj
+( ) Tj
+(repositorios) Tj
+ET
+BT
+0.11 0.12 0.14 rg
+1 0 0 1 54.00 286.89 Tm
+/F1 9 Tf
+(independientes) Tj
+( ) Tj
+(con) Tj
+( ) Tj
+(su) Tj
+( ) Tj
+(propio) Tj
+( ) Tj
+(pipeline) Tj
+( ) Tj
+(de) Tj
+( ) Tj
+(CI/CD) Tj
+( ) Tj
+(en) Tj
+( ) Tj
+(GitLab,) Tj
+( ) Tj
+(terminando) Tj
+( ) Tj
+(con) Tj
+( ) Tj
+(las) Tj
+( ) Tj
+(colisiones) Tj
+( ) Tj
+(de) Tj
+( ) Tj
+(dependencias) Tj
+( ) Tj
+(y) Tj
+ET
+BT
+0.11 0.12 0.14 rg
+1 0 0 1 54.00 274.69 Tm
+/F1 9 Tf
+(los) Tj
+( ) Tj
+(builds) Tj
+( ) Tj
+(cruzados.) Tj
+ET
+BT
+0.11 0.12 0.14 rg
+1 0 0 1 44.00 260.99 Tm
+/F1 9 Tf
+(\267   ) Tj
+(Separ\351) Tj
+( ) Tj
+(el) Tj
+( ) Tj
+(dashboard) Tj
+( ) Tj
+(de) Tj
+( ) Tj
+(operaci\363n) Tj
+( ) Tj
+(en) Tj
+( ) Tj
+(vivo,) Tj
+( ) Tj
+(alimentado) Tj
+( ) Tj
+(por) Tj
+( ) Tj
+(sockets,) Tj
+( ) Tj
+(de) Tj
+( ) Tj
+(la) Tj
+( ) Tj
+(anal\355tica) Tj
+( ) Tj
+(hist\363rica,) Tj
+( ) Tj
+(para) Tj
+( ) Tj
+(que) Tj
+( ) Tj
+(las) Tj
+ET
+BT
+0.11 0.12 0.14 rg
+1 0 0 1 54.00 248.79 Tm
+/F1 9 Tf
+(consultas) Tj
+( ) Tj
+(agregadas) Tj
+( ) Tj
+(pesadas) Tj
+( ) Tj
+(nunca) Tj
+( ) Tj
+(corran) Tj
+( ) Tj
+(sobre) Tj
+( ) Tj
+(el) Tj
+( ) Tj
+(camino) Tj
+( ) Tj
+(de) Tj
+( ) Tj
+(tiempo) Tj
+( ) Tj
+(real.) Tj
+ET
+BT
+0.11 0.12 0.14 rg
+1 0 0 1 44.00 235.09 Tm
+/F1 9 Tf
+(\267   ) Tj
+(Llev\351) Tj
+( ) Tj
+(oficinas,) Tj
+( ) Tj
+(servicios) Tj
+( ) Tj
+(y) Tj
+( ) Tj
+(comportamiento) Tj
+( ) Tj
+(del) Tj
+( ) Tj
+(llamador) Tj
+( ) Tj
+(a) Tj
+( ) Tj
+(parametr\355a) Tj
+( ) Tj
+(configurable) Tj
+( ) Tj
+(en) Tj
+( ) Tj
+(runtime:) Tj
+( ) Tj
+(lo) Tj
+( ) Tj
+(que) Tj
+( ) Tj
+(cambia) Tj
+ET
+BT
+0.11 0.12 0.14 rg
+1 0 0 1 54.00 222.89 Tm
+/F1 9 Tf
+(seg\372n) Tj
+( ) Tj
+(la) Tj
+( ) Tj
+(instituci\363n) Tj
+( ) Tj
+(es) Tj
+( ) Tj
+(dato) Tj
+( ) Tj
+(y) Tj
+( ) Tj
+(no) Tj
+( ) Tj
+(un) Tj
+( ) Tj
+(build) Tj
+( ) Tj
+(nuevo.) Tj
+ET
+BT
+0.11 0.12 0.14 rg
+1 0 0 1 44.00 209.19 Tm
+/F1 9 Tf
+(\267   ) Tj
+(Constru\355) Tj
+( ) Tj
+(un) Tj
+( ) Tj
+(ETL) Tj
+( ) Tj
+(recurrente) Tj
+( ) Tj
+(en) Tj
+( ) Tj
+(Node.js) Tj
+( ) Tj
+(que) Tj
+( ) Tj
+(migra) Tj
+( ) Tj
+(el) Tj
+( ) Tj
+(padr\363n) Tj
+( ) Tj
+(mensual) Tj
+( ) Tj
+(de) Tj
+( ) Tj
+(un) Tj
+( ) Tj
+(programa) Tj
+( ) Tj
+(social) Tj
+( ) Tj
+(desde) Tj
+( ) Tj
+(planillas) Tj
+ET
+BT
+0.11 0.12 0.14 rg
+1 0 0 1 54.00 196.99 Tm
+/F1 9 Tf
+(Excel) Tj
+( ) Tj
+(a) Tj
+( ) Tj
+(MySQL,) Tj
+( ) Tj
+(dejando) Tj
+( ) Tj
+(los) Tj
+( ) Tj
+(archivos) Tj
+( ) Tj
+(con) Tj
+( ) Tj
+(datos) Tj
+( ) Tj
+(personales) Tj
+( ) Tj
+(fuera) Tj
+( ) Tj
+(del) Tj
+( ) Tj
+(repositorio) Tj
+( ) Tj
+(por) Tj
+( ) Tj
+(dise\361o) Tj
+( ) Tj
+(y) Tj
+( ) Tj
+(exigiendo) Tj
+ET
+BT
+0.11 0.12 0.14 rg
+1 0 0 1 54.00 184.79 Tm
+/F1 9 Tf
+(selecci\363n) Tj
+( ) Tj
+(expl\355cita) Tj
+( ) Tj
+(del) Tj
+( ) Tj
+(archivo) Tj
+( ) Tj
+(mediante) Tj
+( ) Tj
+(una) Tj
+( ) Tj
+(CLI) Tj
+( ) Tj
+(interactiva,) Tj
+( ) Tj
+(para) Tj
+( ) Tj
+(evitar) Tj
+( ) Tj
+(reprocesos) Tj
+( ) Tj
+(silenciosos.) Tj
+ET
+BT
+0.11 0.12 0.14 rg
+1 0 0 1 44.00 171.09 Tm
+/F1 9 Tf
+(\267   ) Tj
+(Lidero) Tj
+( ) Tj
+(el) Tj
+( ) Tj
+(equipo) Tj
+( ) Tj
+(de) Tj
+( ) Tj
+(innovaci\363n,) Tj
+( ) Tj
+(coordino) Tj
+( ) Tj
+(la) Tj
+( ) Tj
+(entrega) Tj
+( ) Tj
+(entre) Tj
+( ) Tj
+(\341reas) Tj
+( ) Tj
+(t\351cnicas) Tj
+( ) Tj
+(y) Tj
+( ) Tj
+(administrativas,) Tj
+( ) Tj
+(y) Tj
+( ) Tj
+(capacito) Tj
+( ) Tj
+(a) Tj
+ET
+BT
+0.11 0.12 0.14 rg
+1 0 0 1 54.00 158.89 Tm
+/F1 9 Tf
+(personal) Tj
+( ) Tj
+(municipal) Tj
+( ) Tj
+(en) Tj
+( ) Tj
+(los) Tj
+( ) Tj
+(sistemas) Tj
+( ) Tj
+(implementados.) Tj
+ET
+BT
+0.11 0.12 0.14 rg
+1 0 0 1 42.00 138.19 Tm
+/F1 10.5 Tf
+(Pidgeon) Tj
+( ) Tj
+(Solutions) Tj
+( ) Tj
+(\227) Tj
+( ) Tj
+(Cofundador) Tj
+ET
+BT
+0.11 0.12 0.14 rg
+1 0 0 1 44.00 119.69 Tm
+/F1 9 Tf
+(\267   ) Tj
+(Cofund\351) Tj
+( ) Tj
+(un) Tj
+( ) Tj
+(estudio) Tj
+( ) Tj
+(de) Tj
+( ) Tj
+(servicios) Tj
+( ) Tj
+(de) Tj
+( ) Tj
+(software,) Tj
+( ) Tj
+(junto) Tj
+( ) Tj
+(a) Tj
+( ) Tj
+(otro) Tj
+( ) Tj
+(desarrollador) Tj
+( ) Tj
+(y) Tj
+( ) Tj
+(un) Tj
+( ) Tj
+(dise\361ador) Tj
+( ) Tj
+(gr\341fico.) Tj
+ET
+BT
+0.38 0.40 0.44 rg
+/F2 8.6 Tf
+1 0 0 1 42 88.99 Tm
+1.1 Tc (PROYECTOS DESTACADOS) Tj 0 Tc
+ET
+0.80 0.82 0.85 RG 0.6 w
+42 83.49 m 553.28 83.49 l S
+BT
+0.11 0.12 0.14 rg
+1 0 0 1 42.00 67.49 Tm
+/F2 9 Tf
+(VUS) Tj
+( ) Tj
+(\227) Tj
+( ) Tj
+(Sistema) Tj
+( ) Tj
+(llamador) Tj
+( ) Tj
+(de) Tj
+( ) Tj
+(turnos) Tj
+( ) Tj
+(municipal) Tj
+ET
+BT
+0.11 0.12 0.14 rg
+1 0 0 1 42.00 55.29 Tm
+/F1 9 Tf
+(NestJS) Tj
+( ) Tj
+(\267) Tj
+( ) Tj
+(SvelteKit) Tj
+( ) Tj
+(\267) Tj
+( ) Tj
+(TypeScript) Tj
+( ) Tj
+(\267) Tj
+( ) Tj
+(MySQL) Tj
+( ) Tj
+(\267) Tj
+( ) Tj
+(TypeORM) Tj
+( ) Tj
+(\267) Tj
+( ) Tj
+(Socket.IO) Tj
+( ) Tj
+(\267) Tj
+( ) Tj
+(Redis) Tj
+( ) Tj
+(\267) Tj
+( ) Tj
+(Kubernetes) Tj
+( ) Tj
+(\267) Tj
+( ) Tj
+(.NET) Tj
+( ) Tj
+(\267) Tj
+( ) Tj
+(GitLab) Tj
+( ) Tj
+(CI/CD) Tj
+ET
+endstream
+endobj
+4 0 obj
+<< /Type /Page /Parent 7 0 R /MediaBox [0 0 595.28 841.89] /Resources << /Font << /F1 1 0 R /F2 2 0 R >> >> /Contents 3 0 R >>
+endobj
+5 0 obj
+<< /Length 8822 >>
+stream
+BT
+0.11 0.12 0.14 rg
+1 0 0 1 42.00 795.89 Tm
+/F1 9 Tf
+(Ecosistema) Tj
+( ) Tj
+(completo) Tj
+( ) Tj
+(de) Tj
+( ) Tj
+(atenci\363n) Tj
+( ) Tj
+(al) Tj
+( ) Tj
+(p\372blico:) Tj
+( ) Tj
+(t\363tem) Tj
+( ) Tj
+(t\341ctil,) Tj
+( ) Tj
+(API) Tj
+( ) Tj
+(orquestadora,) Tj
+( ) Tj
+(pantallas) Tj
+( ) Tj
+(de) Tj
+( ) Tj
+(sala) Tj
+( ) Tj
+(de) Tj
+( ) Tj
+(espera,) Tj
+( ) Tj
+(panel) Tj
+ET
+BT
+0.11 0.12 0.14 rg
+1 0 0 1 42.00 783.69 Tm
+/F1 9 Tf
+(del) Tj
+( ) Tj
+(operador,) Tj
+( ) Tj
+(daemon) Tj
+( ) Tj
+(de) Tj
+( ) Tj
+(impresi\363n) Tj
+( ) Tj
+(ESC/POS,) Tj
+( ) Tj
+(dashboard) Tj
+( ) Tj
+(en) Tj
+( ) Tj
+(vivo) Tj
+( ) Tj
+(y) Tj
+( ) Tj
+(anal\355tica.) Tj
+( ) Tj
+(Pensado) Tj
+( ) Tj
+(para) Tj
+( ) Tj
+(hardware) Tj
+( ) Tj
+(heterog\351neo) Tj
+( ) Tj
+(y) Tj
+ET
+BT
+0.11 0.12 0.14 rg
+1 0 0 1 42.00 771.49 Tm
+/F1 9 Tf
+(operaci\363n) Tj
+( ) Tj
+(desatendida,) Tj
+( ) Tj
+(donde) Tj
+( ) Tj
+(cada) Tj
+( ) Tj
+(componente) Tj
+( ) Tj
+(falla) Tj
+( ) Tj
+(distinto) Tj
+( ) Tj
+(y) Tj
+( ) Tj
+(todos) Tj
+( ) Tj
+(tienen) Tj
+( ) Tj
+(que) Tj
+( ) Tj
+(degradar) Tj
+( ) Tj
+(sin) Tj
+( ) Tj
+(tirar) Tj
+( ) Tj
+(el) Tj
+( ) Tj
+(resto.) Tj
+ET
+BT
+0.11 0.12 0.14 rg
+1 0 0 1 42.00 755.29 Tm
+/F2 9 Tf
+(brianleft.com) Tj
+( ) Tj
+(\227) Tj
+( ) Tj
+(Portfolio) Tj
+( ) Tj
+(interactivo) Tj
+( ) Tj
+(con) Tj
+( ) Tj
+(RAG) Tj
+( ) Tj
+(escrito) Tj
+( ) Tj
+(a) Tj
+( ) Tj
+(mano) Tj
+ET
+BT
+0.11 0.12 0.14 rg
+1 0 0 1 42.00 743.09 Tm
+/F1 9 Tf
+(SvelteKit) Tj
+( ) Tj
+(\267) Tj
+( ) Tj
+(NestJS) Tj
+( ) Tj
+(\267) Tj
+( ) Tj
+(TypeScript) Tj
+( ) Tj
+(\267) Tj
+( ) Tj
+(MySQL) Tj
+( ) Tj
+(\267) Tj
+( ) Tj
+(Redis) Tj
+( ) Tj
+(\267) Tj
+( ) Tj
+(Docker) Tj
+( ) Tj
+(\267) Tj
+( ) Tj
+(nginx) Tj
+ET
+BT
+0.11 0.12 0.14 rg
+1 0 0 1 42.00 730.89 Tm
+/F1 9 Tf
+(Portfolio) Tj
+( ) Tj
+(que) Tj
+( ) Tj
+(se) Tj
+( ) Tj
+(navega) Tj
+( ) Tj
+(como) Tj
+( ) Tj
+(una) Tj
+( ) Tj
+(consola) Tj
+( ) Tj
+(de) Tj
+( ) Tj
+(Linux) Tj
+( ) Tj
+(y) Tj
+( ) Tj
+(responde) Tj
+( ) Tj
+(preguntas) Tj
+( ) Tj
+(sobre) Tj
+( ) Tj
+(mi) Tj
+( ) Tj
+(trabajo) Tj
+( ) Tj
+(mediante) Tj
+( ) Tj
+(un) Tj
+( ) Tj
+(pipeline) Tj
+( ) Tj
+(de) Tj
+ET
+BT
+0.11 0.12 0.14 rg
+1 0 0 1 42.00 718.69 Tm
+/F1 9 Tf
+(recuperaci\363n) Tj
+( ) Tj
+(escrito) Tj
+( ) Tj
+(paso) Tj
+( ) Tj
+(a) Tj
+( ) Tj
+(paso) Tj
+( ) Tj
+(en) Tj
+( ) Tj
+(TypeScript) Tj
+( ) Tj
+(\227ingesta) Tj
+( ) Tj
+(de) Tj
+( ) Tj
+(documentos,) Tj
+( ) Tj
+(extracci\363n) Tj
+( ) Tj
+(de) Tj
+( ) Tj
+(keywords) Tj
+( ) Tj
+(con) Tj
+( ) Tj
+(LLM,) Tj
+ET
+BT
+0.11 0.12 0.14 rg
+1 0 0 1 42.00 706.49 Tm
+/F1 9 Tf
+(recuperaci\363n) Tj
+( ) Tj
+(por) Tj
+( ) Tj
+(relevancia,) Tj
+( ) Tj
+(armado) Tj
+( ) Tj
+(de) Tj
+( ) Tj
+(contexto) Tj
+( ) Tj
+(y) Tj
+( ) Tj
+(streaming\227) Tj
+( ) Tj
+(sin) Tj
+( ) Tj
+(motor) Tj
+( ) Tj
+(de) Tj
+( ) Tj
+(workflows) Tj
+( ) Tj
+(en) Tj
+( ) Tj
+(el) Tj
+( ) Tj
+(medio.) Tj
+ET
+BT
+0.11 0.12 0.14 rg
+1 0 0 1 42.00 694.29 Tm
+/F1 9 Tf
+(Autogestionado) Tj
+( ) Tj
+(de) Tj
+( ) Tj
+(punta) Tj
+( ) Tj
+(a) Tj
+( ) Tj
+(punta) Tj
+( ) Tj
+(en) Tj
+( ) Tj
+(mi) Tj
+( ) Tj
+(propio) Tj
+( ) Tj
+(VPS,) Tj
+( ) Tj
+(incluyendo) Tj
+( ) Tj
+(nginx,) Tj
+( ) Tj
+(TLS) Tj
+( ) Tj
+(y) Tj
+( ) Tj
+(despliegue.) Tj
+ET
+BT
+0.11 0.12 0.14 rg
+1 0 0 1 42.00 678.09 Tm
+/F2 9 Tf
+(S\330REN) Tj
+( ) Tj
+(\227) Tj
+( ) Tj
+(Visi\363n) Tj
+( ) Tj
+(por) Tj
+( ) Tj
+(computadora) Tj
+( ) Tj
+(sobre) Tj
+( ) Tj
+(un) Tj
+( ) Tj
+(proceso) Tj
+( ) Tj
+(desatendido) Tj
+ET
+BT
+0.11 0.12 0.14 rg
+1 0 0 1 42.00 665.89 Tm
+/F1 9 Tf
+(Python) Tj
+( ) Tj
+(\267) Tj
+( ) Tj
+(OpenCV) Tj
+( ) Tj
+(\267) Tj
+( ) Tj
+(Tesseract) Tj
+( ) Tj
+(\267) Tj
+( ) Tj
+(Discord) Tj
+( ) Tj
+(Webhooks) Tj
+ET
+BT
+0.11 0.12 0.14 rg
+1 0 0 1 42.00 653.69 Tm
+/F1 9 Tf
+(Lee) Tj
+( ) Tj
+(el) Tj
+( ) Tj
+(estado) Tj
+( ) Tj
+(de) Tj
+( ) Tj
+(un) Tj
+( ) Tj
+(proceso) Tj
+( ) Tj
+(externo) Tj
+( ) Tj
+(por) Tj
+( ) Tj
+(OCR) Tj
+( ) Tj
+(y) Tj
+( ) Tj
+(an\341lisis) Tj
+( ) Tj
+(de) Tj
+( ) Tj
+(p\355xeles,) Tj
+( ) Tj
+(sin) Tj
+( ) Tj
+(tocar) Tj
+( ) Tj
+(su) Tj
+( ) Tj
+(memoria) Tj
+( ) Tj
+(ni) Tj
+( ) Tj
+(su) Tj
+( ) Tj
+(tr\341fico) Tj
+( ) Tj
+(de) Tj
+( ) Tj
+(red,) Tj
+( ) Tj
+(y) Tj
+ET
+BT
+0.11 0.12 0.14 rg
+1 0 0 1 42.00 641.49 Tm
+/F1 9 Tf
+(act\372a) Tj
+( ) Tj
+(en) Tj
+( ) Tj
+(consecuencia.) Tj
+( ) Tj
+(Corre) Tj
+( ) Tj
+(horas) Tj
+( ) Tj
+(sin) Tj
+( ) Tj
+(supervisi\363n:) Tj
+( ) Tj
+(lo) Tj
+( ) Tj
+(interesante) Tj
+( ) Tj
+(no) Tj
+( ) Tj
+(es) Tj
+( ) Tj
+(automatizar,) Tj
+( ) Tj
+(sino) Tj
+( ) Tj
+(que) Tj
+( ) Tj
+(se) Tj
+( ) Tj
+(recupere) Tj
+( ) Tj
+(solo) Tj
+ET
+BT
+0.11 0.12 0.14 rg
+1 0 0 1 42.00 629.29 Tm
+/F1 9 Tf
+(cuando) Tj
+( ) Tj
+(el) Tj
+( ) Tj
+(mundo) Tj
+( ) Tj
+(cambia) Tj
+( ) Tj
+(debajo.) Tj
+ET
+BT
+0.11 0.12 0.14 rg
+1 0 0 1 42.00 613.09 Tm
+/F2 9 Tf
+(S\370ren) Tj
+( ) Tj
+(Mirror) Tj
+( ) Tj
+(\227) Tj
+( ) Tj
+(Leer) Tj
+( ) Tj
+(un) Tj
+( ) Tj
+(tablero) Tj
+( ) Tj
+(de) Tj
+( ) Tj
+(ajedrez) Tj
+( ) Tj
+(mirando) Tj
+( ) Tj
+(la) Tj
+( ) Tj
+(pantalla) Tj
+ET
+BT
+0.11 0.12 0.14 rg
+1 0 0 1 42.00 600.89 Tm
+/F1 9 Tf
+(Python) Tj
+( ) Tj
+(\267) Tj
+( ) Tj
+(OpenCV) Tj
+( ) Tj
+(\267) Tj
+( ) Tj
+(MSS) Tj
+( ) Tj
+(\267) Tj
+( ) Tj
+(python-chess) Tj
+( ) Tj
+(\267) Tj
+( ) Tj
+(Stockfish) Tj
+ET
+BT
+0.11 0.12 0.14 rg
+1 0 0 1 42.00 588.69 Tm
+/F1 9 Tf
+(Overlay) Tj
+( ) Tj
+(de) Tj
+( ) Tj
+(escritorio) Tj
+( ) Tj
+(que) Tj
+( ) Tj
+(reconstruye) Tj
+( ) Tj
+(el) Tj
+( ) Tj
+(estado) Tj
+( ) Tj
+(de) Tj
+( ) Tj
+(la) Tj
+( ) Tj
+(partida) Tj
+( ) Tj
+(por) Tj
+( ) Tj
+(visi\363n) Tj
+( ) Tj
+(por) Tj
+( ) Tj
+(computadora,) Tj
+( ) Tj
+(sin) Tj
+( ) Tj
+(inyectar) Tj
+( ) Tj
+(c\363digo) Tj
+ET
+BT
+0.11 0.12 0.14 rg
+1 0 0 1 42.00 576.49 Tm
+/F1 9 Tf
+(ni) Tj
+( ) Tj
+(scrapear) Tj
+( ) Tj
+(el) Tj
+( ) Tj
+(DOM,) Tj
+( ) Tj
+(deduciendo) Tj
+( ) Tj
+(orientaci\363n,) Tj
+( ) Tj
+(color) Tj
+( ) Tj
+(y) Tj
+( ) Tj
+(turno) Tj
+( ) Tj
+(por) Tj
+( ) Tj
+(geometr\355a,) Tj
+( ) Tj
+(y) Tj
+( ) Tj
+(analizando) Tj
+( ) Tj
+(la) Tj
+( ) Tj
+(posici\363n) Tj
+( ) Tj
+(con) Tj
+( ) Tj
+(Stockfish) Tj
+ET
+BT
+0.11 0.12 0.14 rg
+1 0 0 1 42.00 564.29 Tm
+/F1 9 Tf
+(en) Tj
+( ) Tj
+(un) Tj
+( ) Tj
+(HUD) Tj
+( ) Tj
+(flotante.) Tj
+ET
+BT
+0.38 0.40 0.44 rg
+/F2 8.6 Tf
+1 0 0 1 42 535.09 Tm
+1.1 Tc (TECNOLOG\315AS) Tj 0 Tc
+ET
+0.80 0.82 0.85 RG 0.6 w
+42 529.59 m 553.28 529.59 l S
+BT
+0.11 0.12 0.14 rg
+1 0 0 1 42.00 513.59 Tm
+/F2 9 Tf
+(Lenguajes) Tj
+/F1 9 Tf
+( ) Tj
+(\267) Tj
+( ) Tj
+(TypeScript,) Tj
+( ) Tj
+(JavaScript,) Tj
+( ) Tj
+(C#,) Tj
+( ) Tj
+(Python,) Tj
+( ) Tj
+(SQL) Tj
+ET
+BT
+0.11 0.12 0.14 rg
+1 0 0 1 42.00 501.39 Tm
+/F2 9 Tf
+(Backend) Tj
+/F1 9 Tf
+( ) Tj
+(\267) Tj
+( ) Tj
+(Node.js,) Tj
+( ) Tj
+(NestJS,) Tj
+( ) Tj
+(.NET,) Tj
+( ) Tj
+(TypeORM,) Tj
+( ) Tj
+(Socket.IO,) Tj
+( ) Tj
+(APIs) Tj
+( ) Tj
+(REST) Tj
+ET
+BT
+0.11 0.12 0.14 rg
+1 0 0 1 42.00 489.19 Tm
+/F2 9 Tf
+(Frontend) Tj
+/F1 9 Tf
+( ) Tj
+(\267) Tj
+( ) Tj
+(SvelteKit,) Tj
+( ) Tj
+(Svelte) Tj
+ET
+BT
+0.11 0.12 0.14 rg
+1 0 0 1 42.00 476.99 Tm
+/F2 9 Tf
+(Datos) Tj
+/F1 9 Tf
+( ) Tj
+(\267) Tj
+( ) Tj
+(MySQL,) Tj
+( ) Tj
+(MongoDB,) Tj
+( ) Tj
+(Redis) Tj
+ET
+BT
+0.11 0.12 0.14 rg
+1 0 0 1 42.00 464.79 Tm
+/F2 9 Tf
+(Infraestructura) Tj
+/F1 9 Tf
+( ) Tj
+(\267) Tj
+( ) Tj
+(Docker,) Tj
+( ) Tj
+(Kubernetes,) Tj
+( ) Tj
+(nginx,) Tj
+( ) Tj
+(Linux) Tj
+( ) Tj
+(\(Debian,) Tj
+( ) Tj
+(Ubuntu,) Tj
+( ) Tj
+(Arch\),) Tj
+( ) Tj
+(GitLab) Tj
+( ) Tj
+(CI/CD,) Tj
+( ) Tj
+(PM2,) Tj
+( ) Tj
+(administraci\363n) Tj
+( ) Tj
+(de) Tj
+( ) Tj
+(VPS) Tj
+ET
+BT
+0.11 0.12 0.14 rg
+1 0 0 1 42.00 452.59 Tm
+/F2 9 Tf
+(Pr\341cticas) Tj
+/F1 9 Tf
+( ) Tj
+(\267) Tj
+( ) Tj
+(SOLID,) Tj
+( ) Tj
+(clean) Tj
+( ) Tj
+(code,) Tj
+( ) Tj
+(programaci\363n) Tj
+( ) Tj
+(defensiva) Tj
+( ) Tj
+(para) Tj
+( ) Tj
+(sistemas) Tj
+( ) Tj
+(24/7,) Tj
+( ) Tj
+(Git,) Tj
+( ) Tj
+(Jira,) Tj
+( ) Tj
+(Postman) Tj
+ET
+BT
+0.38 0.40 0.44 rg
+/F2 8.6 Tf
+1 0 0 1 42 423.39 Tm
+1.1 Tc (FORMACI\323N) Tj 0 Tc
+ET
+0.80 0.82 0.85 RG 0.6 w
+42 417.89 m 553.28 417.89 l S
+BT
+0.11 0.12 0.14 rg
+1 0 0 1 42.00 401.89 Tm
+/F2 9 Tf
+(Tecnicatura) Tj
+( ) Tj
+(en) Tj
+( ) Tj
+(Desarrollo) Tj
+( ) Tj
+(de) Tj
+( ) Tj
+(Software) Tj
+/F1 9 Tf
+( ) Tj
+(\227) Tj
+( ) Tj
+(Centro) Tj
+( ) Tj
+(Universitario) Tj
+( ) Tj
+(Regional) Tj
+( ) Tj
+(Ituzaing\363) Tj
+( ) Tj
+(\267) Tj
+( ) Tj
+(2023) Tj
+( ) Tj
+(\226) Tj
+( ) Tj
+(Presente) Tj
+ET
+BT
+0.38 0.40 0.44 rg
+/F2 8.6 Tf
+1 0 0 1 42 379.69 Tm
+1.1 Tc (IDIOMAS) Tj 0 Tc
+ET
+0.80 0.82 0.85 RG 0.6 w
+42 374.19 m 553.28 374.19 l S
+BT
+0.11 0.12 0.14 rg
+1 0 0 1 42.00 358.19 Tm
+/F1 9 Tf
+(Espa\361ol) Tj
+( ) Tj
+(\(nativo\)) Tj
+( ) Tj
+(\267) Tj
+( ) Tj
+(Ingl\351s) Tj
+( ) Tj
+(\(avanzado\)) Tj
+ET
+BT
+0.38 0.40 0.44 rg
+/F2 8.6 Tf
+1 0 0 1 42 335.99 Tm
+1.1 Tc (CURSOS) Tj 0 Tc
+ET
+0.80 0.82 0.85 RG 0.6 w
+42 330.49 m 553.28 330.49 l S
+BT
+0.11 0.12 0.14 rg
+1 0 0 1 42.00 314.49 Tm
+/F1 9 Tf
+(Platzi,) Tj
+( ) Tj
+(2024) Tj
+( ) Tj
+(\227) Tj
+( ) Tj
+(Programaci\363n) Tj
+( ) Tj
+(con) Tj
+( ) Tj
+(C#,) Tj
+( ) Tj
+(fundamentos) Tj
+( ) Tj
+(de) Tj
+( ) Tj
+(.NET,) Tj
+( ) Tj
+(manejo) Tj
+( ) Tj
+(de) Tj
+( ) Tj
+(datos) Tj
+( ) Tj
+(con) Tj
+( ) Tj
+(LINQ,) Tj
+( ) Tj
+(principios) Tj
+( ) Tj
+(SOLID,) Tj
+( ) Tj
+(programaci\363n) Tj
+ET
+BT
+0.11 0.12 0.14 rg
+1 0 0 1 42.00 302.29 Tm
+/F1 9 Tf
+(orientada) Tj
+( ) Tj
+(a) Tj
+( ) Tj
+(objetos,) Tj
+( ) Tj
+(buenas) Tj
+( ) Tj
+(pr\341cticas) Tj
+( ) Tj
+(y) Tj
+( ) Tj
+(clean) Tj
+( ) Tj
+(code,) Tj
+( ) Tj
+(tipos) Tj
+( ) Tj
+(y) Tj
+( ) Tj
+(funciones) Tj
+( ) Tj
+(avanzadas) Tj
+( ) Tj
+(de) Tj
+( ) Tj
+(TypeScript.) Tj
+ET
+endstream
+endobj
+6 0 obj
+<< /Type /Page /Parent 7 0 R /MediaBox [0 0 595.28 841.89] /Resources << /Font << /F1 1 0 R /F2 2 0 R >> >> /Contents 5 0 R >>
+endobj
+7 0 obj
+<< /Type /Pages /Kids [4 0 R 6 0 R] /Count 2 >>
+endobj
+8 0 obj
+<< /Title (Brian Benegas - Desarrollador Full Stack) /Author (Brian Benegas) /Creator (cv/build.mjs) >>
+endobj
+9 0 obj
+<< /Type /Catalog /Pages 7 0 R >>
+endobj
+xref
+0 10
+0000000000 65535 f 
+0000000015 00000 n 
+0000000112 00000 n 
+0000000214 00000 n 
+0000014156 00000 n 
+0000014298 00000 n 
+0000023172 00000 n 
+0000023314 00000 n 
+0000023377 00000 n 
+0000023496 00000 n 
+trailer
+<< /Size 10 /Root 9 0 R /Info 8 0 R >>
+startxref
+23545
+%%EOF

@@ -276,8 +276,55 @@
     }
   }
 
+  // ── CV por idioma ───────────────────────────────────────────────
+  // El endpoint de subida ya existía, pero no había forma de usarlo desde
+  // el panel: el comando `cv` de la terminal quedaba muerto hasta que
+  // alguien hiciera un curl a mano.
+  const cvLangs = [
+    { code: 'en', label: 'English' },
+    { code: 'es', label: 'Español' }
+  ];
+  let cvState: Record<string, { available: boolean; displayName?: string }> = $state({});
+  let cvUploading: string | null = $state(null);
+  let cvMessage: { kind: 'ok' | 'error'; text: string } | null = $state(null);
+
+  async function loadCvState() {
+    for (const { code } of cvLangs) {
+      try {
+        const res = await fetch(`/api/uploads/cv/info?lang=${code}`);
+        cvState[code] = await res.json();
+      } catch {
+        cvState[code] = { available: false };
+      }
+    }
+  }
+
+  async function uploadCv(lang: string, event: Event) {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) return;
+
+    cvUploading = lang;
+    cvMessage = null;
+    try {
+      const body = new FormData();
+      body.append('file', file);
+      const res = await fetch(`/api/uploads/cv?lang=${lang}`, { method: 'POST', body });
+      const result = await res.json();
+      if (!res.ok) throw new Error(result?.message || 'Error subiendo el CV');
+      cvMessage = { kind: 'ok', text: `CV (${lang}) actualizado: ${result.filename}` };
+      await loadCvState();
+    } catch (e) {
+      cvMessage = { kind: 'error', text: e instanceof Error ? e.message : 'Error subiendo el CV' };
+    } finally {
+      cvUploading = null;
+      input.value = '';
+    }
+  }
+
   onMount(() => {
     loadAsciiBanner();
+    loadCvState();
   });
 </script>
 
@@ -388,6 +435,50 @@
       </div>
     </section>
   {/if}
+
+  <!-- CV descargable por idioma -->
+  <section class="settings-section">
+    <h2>📄 Curriculum Vitae</h2>
+    <p class="cv-hint">
+      El comando <code>cv</code> de la terminal descarga el archivo del idioma activo del sitio.
+      Si un idioma no tiene archivo propio, se sirve el que haya.
+    </p>
+
+    {#if cvMessage}
+      <div class="alert {cvMessage.kind === 'ok' ? 'alert-success' : 'alert-danger'}">{cvMessage.text}</div>
+    {/if}
+
+    <div class="cv-grid">
+      {#each cvLangs as { code, label }}
+        <div class="cv-slot">
+          <div class="cv-slot-head">
+            <strong>{label}</strong>
+            {#if cvState[code]?.available}
+              <span class="cv-badge cv-badge-ok">cargado</span>
+            {:else}
+              <span class="cv-badge">sin archivo</span>
+            {/if}
+          </div>
+
+          {#if cvState[code]?.available}
+            <a class="cv-link" href={`/api/uploads/cv?lang=${code}`} target="_blank" rel="noopener">
+              Ver el PDF actual
+            </a>
+          {/if}
+
+          <label class="cv-upload">
+            <input
+              type="file"
+              accept="application/pdf"
+              disabled={cvUploading !== null}
+              onchange={(e) => uploadCv(code, e)}
+            />
+            <span>{cvUploading === code ? 'Subiendo…' : 'Reemplazar PDF'}</span>
+          </label>
+        </div>
+      {/each}
+    </div>
+  </section>
 
   <!-- Settings por categoría -->
   {#each groupedSettings as [category, categorySettings]}
@@ -560,6 +651,75 @@
     border-radius: 8px;
     padding: 1rem;
     margin-bottom: 1rem;
+  }
+
+  .cv-hint {
+    font-size: 0.82rem;
+    color: var(--theme-text-secondary);
+    margin-bottom: 0.9rem;
+    line-height: 1.5;
+  }
+
+  .cv-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 0.75rem;
+  }
+
+  .cv-slot {
+    border: 1px solid var(--theme-border);
+    border-radius: 6px;
+    padding: 0.75rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .cv-slot-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+  }
+
+  .cv-badge {
+    font-size: 0.7rem;
+    padding: 0.1rem 0.45rem;
+    border-radius: 999px;
+    border: 1px solid var(--theme-border);
+    color: var(--theme-text-secondary);
+  }
+
+  .cv-badge-ok {
+    color: var(--theme-accent);
+    border-color: var(--theme-accent);
+  }
+
+  .cv-link {
+    font-size: 0.8rem;
+    color: var(--theme-accent);
+  }
+
+  .cv-upload {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.45rem 0.6rem;
+    border: 1px dashed var(--theme-border);
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.82rem;
+    color: var(--theme-text-secondary);
+    transition: border-color 0.15s, color 0.15s;
+  }
+
+  .cv-upload:hover {
+    border-color: var(--theme-accent);
+    color: var(--theme-accent);
+  }
+
+  .cv-upload input {
+    display: none;
   }
 
   .settings-section h2 {

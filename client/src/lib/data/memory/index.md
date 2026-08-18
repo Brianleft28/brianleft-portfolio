@@ -22,7 +22,7 @@ Algunos problemas concretos que resolví y que puedo explicar en detalle:
 - **Sistemas 24/7:** pantallas que corrían todo el día acumulaban turnos en un `Set` infinito. Lo cambié por un `Map` acotado tipo LRU que auto-expira a los 60 segundos y deja la huella de RAM plana de por vida.
 - **Tiempo real:** debounce por hash `ID + Estado` para matar eventos de socket duplicados, y saqué los watchdogs artesanales para confiar en el exponential backoff nativo de Socket.IO.
 - **Kiosk-UX:** saqué los modales bloqueantes de una terminal desatendida. Una terminal no puede quedarse esperando un clic para seguir existiendo.
-- **Hardware legado:** aislé impresoras térmicas ESC/POS detrás de un daemon local en vez de acoplar el navegador a los puertos del sistema.
+- **Hardware legado:** aislé impresoras térmicas ESC/POS detrás de un daemon local en .NET en vez de acoplar el navegador a los puertos del sistema.
 - **Arquitectura de repos:** desarmé un monorepo falso donde todos los microservicios compartían un único `.git`, con las colisiones de dependencias y el CI/CD caótico que eso trae.
 - **RAG sin framework:** este mismo portfolio. Ingesta de documentos, extracción de keywords con LLM, recuperación por relevancia y armado de contexto, escritos a mano en TypeScript.
 

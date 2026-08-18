@@ -60,9 +60,19 @@ export class UploadsService {
   }
 
   /**
-   * Guarda el CV y actualiza el setting (por usuario)
+   * Idiomas con CV propio. Sin idioma se usa la clave histórica `cv_filename`,
+   * para no romper los CV ya cargados.
    */
-  async saveCv(file: Express.Multer.File, userId: number): Promise<{ filename: string; path: string }> {
+  private readonly cvLangs = ['en', 'es'];
+
+  private cvSettingKey(lang?: string): string {
+    return lang && this.cvLangs.includes(lang) ? `cv_filename_${lang}` : 'cv_filename';
+  }
+
+  /**
+   * Guarda el CV y actualiza el setting (por usuario e idioma)
+   */
+  async saveCv(file: Express.Multer.File, userId: number, lang?: string): Promise<{ filename: string; path: string }> {
     // Crear directorio por usuario si no existe
     const userDir = join(this.uploadsDir, `user-${userId}`);
     if (!existsSync(userDir)) {
@@ -70,8 +80,10 @@ export class UploadsService {
       mkdirSync(userDir, { recursive: true });
     }
 
+    const settingKey = this.cvSettingKey(lang);
+
     // Eliminar CV anterior si existe
-    const currentCv = await this.getSetting('cv_filename', userId);
+    const currentCv = await this.getSetting(settingKey, userId);
     if (currentCv) {
       const oldPath = join(userDir, currentCv);
       if (existsSync(oldPath)) {
@@ -80,48 +92,59 @@ export class UploadsService {
     }
 
     // Guardar nuevo CV
-    const newFilename = `cv-${Date.now()}.pdf`;
+    const suffix = lang && this.cvLangs.includes(lang) ? `-${lang}` : '';
+    const newFilename = `cv${suffix}-${Date.now()}.pdf`;
     const newPath = join(userDir, newFilename);
-    
+
     const { writeFileSync } = await import('fs');
     writeFileSync(newPath, file.buffer);
 
     // Actualizar setting con nuevo nombre
-    await this.upsertSetting('cv_filename', newFilename, userId, 'files', 'Nombre del archivo CV');
+    await this.upsertSetting(settingKey, newFilename, userId, 'files', `Nombre del archivo CV${suffix}`);
 
     return {
       filename: newFilename,
-      path: `/uploads/cv`,
+      path: lang ? `/uploads/cv?lang=${lang}` : `/uploads/cv`,
     };
   }
 
   /**
    * Obtiene la ruta del CV de un usuario
    */
-  async getCvPath(userId?: number): Promise<{ path: string; displayName: string }> {
-    // Buscar CV del usuario específico o el primero que exista
+  async getCvPath(userId?: number, lang?: string): Promise<{ path: string; displayName: string }> {
+    // Buscar CV del usuario específico o el primero que exista.
+    // Orden: idioma pedido → clave histórica, primero por usuario y después global.
     let filename: string | null = null;
     let displayName: string | null = null;
     let targetUserId = userId;
 
+    const keys = [this.cvSettingKey(lang)];
+    if (!keys.includes('cv_filename')) keys.push('cv_filename');
+
     if (userId) {
-      filename = await this.getSetting('cv_filename', userId);
+      for (const key of keys) {
+        filename = await this.getSetting(key, userId);
+        if (filename) break;
+      }
       displayName = await this.getSetting('cv_display_name', userId);
     }
 
     // Si no hay userId o no tiene CV, buscar el primero disponible
     if (!filename) {
-      const setting = await this.settingsRepository.findOne({ 
-        where: { key: 'cv_filename' },
-        order: { userId: 'ASC' }
-      });
-      if (setting) {
-        filename = setting.value;
-        targetUserId = setting.userId;
-        const displaySetting = await this.settingsRepository.findOne({
-          where: { key: 'cv_display_name', userId: setting.userId }
+      for (const key of keys) {
+        const setting = await this.settingsRepository.findOne({
+          where: { key },
+          order: { userId: 'ASC' }
         });
-        displayName = displaySetting?.value || null;
+        if (setting) {
+          filename = setting.value;
+          targetUserId = setting.userId;
+          const displaySetting = await this.settingsRepository.findOne({
+            where: { key: 'cv_display_name', userId: setting.userId }
+          });
+          displayName = displaySetting?.value || null;
+          break;
+        }
       }
     }
 
@@ -149,30 +172,35 @@ export class UploadsService {
   }
 
   /**
-   * Verifica si existe un CV cargado para un usuario
+   * Verifica si existe un CV cargado.
+   *
+   * Delega en getCvPath a propósito: así "hay CV" significa exactamente
+   * "la descarga va a funcionar", en vez de dos resoluciones que pueden
+   * discrepar y dejar el info diciendo que sí mientras el download tira 404.
    */
-  async hasCv(userId?: number): Promise<boolean> {
-    if (userId) {
-      const filename = await this.getSetting('cv_filename', userId);
-      if (!filename) return false;
-
-      const fullPath = join(this.uploadsDir, `user-${userId}`, filename);
-      if (existsSync(fullPath)) return true;
+  async hasCv(userId?: number, lang?: string): Promise<boolean> {
+    try {
+      await this.getCvPath(userId, lang);
+      return true;
+    } catch {
+      return false;
     }
+  }
 
-    // Verificar CV en directorio global (legacy)
-    const globalSetting = await this.settingsRepository.findOne({ 
-      where: { key: 'cv_filename' }
-    });
-    if (globalSetting?.value) {
-      const fullPath = join(this.uploadsDir, globalSetting.value);
-      if (existsSync(fullPath)) return true;
-      
-      const userPath = join(this.uploadsDir, `user-${globalSetting.userId}`, globalSetting.value);
-      if (existsSync(userPath)) return true;
+  /**
+   * Idiomas que hoy tienen un CV descargable.
+   */
+  async availableCvLangs(userId?: number): Promise<string[]> {
+    const found: string[] = [];
+    for (const lang of this.cvLangs) {
+      const setting = await this.settingsRepository.findOne({
+        where: userId
+          ? { key: `cv_filename_${lang}`, userId }
+          : { key: `cv_filename_${lang}` },
+      });
+      if (setting?.value) found.push(lang);
     }
-    
-    return false;
+    return found;
   }
 
   // ═══════════════════════════════════════════════════════════════

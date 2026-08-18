@@ -1,5 +1,5 @@
 import type { Command, CommandContext, CommandResult } from '../types';
-import { t } from '$lib/i18n/helpers';
+import { t, getCurrentLocale } from '$lib/i18n/helpers';
 
 /**
  * Comando cv - Descarga el curriculum vitae
@@ -10,8 +10,11 @@ export const cv: Command = {
   usage: 'cv [-i] [-h]',
 
   execute(args: string[], ctx: CommandContext): CommandResult {
-    const downloadUrl = '/api/uploads/cv';
-    const infoUrl = '/api/uploads/cv/info';
+    // El CV se sirve en el idioma activo de la terminal; si ese idioma no
+    // tiene archivo cargado, el API cae al que haya sin romper la descarga.
+    const lang = getCurrentLocale();
+    const downloadUrl = `/api/uploads/cv?lang=${lang}`;
+    const infoUrl = `/api/uploads/cv/info?lang=${lang}`;
 
     // Opción -h: mostrar ayuda
     if (args.includes('-h')) {
@@ -51,7 +54,7 @@ export const cv: Command = {
     if (typeof window !== 'undefined') {
       const link = document.createElement('a');
       link.href = downloadUrl;
-      link.download = 'curriculum-vitae.pdf';
+      link.download = lang === 'en' ? 'brian-benegas-resume.pdf' : 'brian-benegas-cv.pdf';
       link.target = '_blank';
       document.body.appendChild(link);
       link.click();
