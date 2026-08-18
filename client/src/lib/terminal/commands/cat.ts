@@ -1,5 +1,5 @@
 import type { Command } from '../types';
-import type { FolderNode, FileNode } from '$lib/data/file-system';
+import type { FileNode } from '$lib/data/file-system';
 
 export const cat: Command = {
 	name: 'cat',
@@ -18,8 +18,9 @@ export const cat: Command = {
   -h, --help    Muestra esta ayuda
 
 <span class="system-header">EJEMPLOS:</span>
-  cat readme.md     Lee archivo markdown
-  cat meta.md       Muestra info del portfolio
+  cat LEEME.md                            Archivo de la carpeta actual
+  cat proyectos/vus/README.md             Ruta relativa
+  cat /home/brian/proyectos/vus/README.md Ruta absoluta
 
 <span class="system-hint">Los archivos .md se renderizan con formato</span>`,
 				isHtml: true
@@ -32,26 +33,23 @@ export const cat: Command = {
 			return { output: '<span class="error-text">cat: falta operando archivo</span>\nUso: cat &lt;archivo&gt;', isHtml: true };
 		}
 
-		const currentNode = ctx.getNodeAtPath(ctx.currentPath);
+		const { node } = ctx.resolve(fileName);
 
-		if (!currentNode || currentNode.type !== 'folder') {
-			return { output: '<span class="error-text">cat: directorio no encontrado</span>', isHtml: true };
-		}
-
-		const folder = currentNode as FolderNode;
-		const file = folder.children.find(
-			(child) => child.type !== 'folder' && child.name.toLowerCase() === fileName.toLowerCase()
-		) as FileNode | undefined;
-
-		if (!file) {
+		if (!node) {
 			return { output: `<span class="error-text">cat: ${fileName}: No existe el archivo</span>`, isHtml: true };
 		}
+
+		if (node.type === 'folder') {
+			return { output: `<span class="error-text">cat: ${fileName}: Es un directorio</span>`, isHtml: true };
+		}
+
+		const file = node as FileNode;
 
 		if (!file.content) {
 			return { output: `<span class="error-text">cat: ${fileName}: Archivo vacío</span>`, isHtml: true };
 		}
 
-		const isMarkdown = fileName.endsWith('.md');
+		const isMarkdown = file.name.toLowerCase().endsWith('.md');
 
 		return {
 			output: file.content,

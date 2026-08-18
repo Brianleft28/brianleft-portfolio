@@ -25,7 +25,7 @@ No existe ningún otro comando: si alguien pregunta por uno que no está acá, n
 | `cat [archivo]` | Ver contenido de un archivo |
 | `cv` (alias `curriculum`, `resume`) | Ver/descargar el CV |
 
-Los proyectos viven en `C:/proyectos/<slug>/README.md`.
+Los proyectos viven en `~/proyectos/<slug>/README.md` (el home es `/home/brian`).
 
 ---
 

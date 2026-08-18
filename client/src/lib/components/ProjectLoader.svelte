@@ -146,7 +146,7 @@
 	<div class="loader-header">
 		<h3>📁 Cargar proyecto desde .md</h3>
 		<p>
-			Se crea la memoria para la IA y la carpeta <code>C:/proyectos/&lt;slug&gt;</code> de la
+			Se crea la memoria para la IA y la carpeta <code>~/proyectos/&lt;slug&gt;</code> de la
 			terminal. Sin keywords, las genera la IA.
 		</p>
 	</div>
@@ -181,7 +181,7 @@
 				<label for="pl-slug">Slug</label>
 				<input id="pl-slug" type="text" bind:value={slug} placeholder={suggestedSlug || 'mi-proyecto'} />
 				{#if effectiveSlug}
-					<span class="hint">C:/proyectos/{effectiveSlug}/README.md</span>
+					<span class="hint">~/proyectos/{effectiveSlug}/README.md</span>
 				{/if}
 			</div>
 		</div>

@@ -28,7 +28,7 @@ export type FileSystemNode = FolderNode | FileNode;
 export const fileSystemData: FolderNode = {
 	id: 'root',
 	type: 'folder',
-	name: 'C:\\',
+	name: '/home/brian',
 	children: [
 		{
 			id: 'proyectos',

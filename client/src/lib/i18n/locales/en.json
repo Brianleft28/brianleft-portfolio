@@ -213,7 +213,7 @@
 	},
 	"components": {
 		"contact": {
-			"title": "contact.exe",
+			"title": "contact",
 			"send_message_to": "Send message to",
 			"name": "Name",
 			"name_placeholder": "Your name",

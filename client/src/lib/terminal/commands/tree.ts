@@ -1,5 +1,6 @@
 import type { Command } from '../types';
 import type { FolderNode, FileSystemNode } from '$lib/data/file-system';
+import { displayPath } from '../paths';
 
 interface TreeStats {
 	folders: number;
@@ -60,11 +61,13 @@ export const tree: Command = {
 			};
 		}
 
-		const currentNode = ctx.getNodeAtPath(ctx.currentPath);
+		const target = args?.find((a) => !a.startsWith('-'));
+		const currentNode = target ? ctx.resolve(target).node : ctx.getNodeAtPath(ctx.currentPath);
+		const label = target ? displayPath(ctx.resolve(target).path) : displayPath(ctx.currentPath);
 
 		if (!currentNode || currentNode.type !== 'folder') {
-			return { 
-				output: `<span class="error-text">tree: ${ctx.currentPath}: No es un directorio</span>`,
+			return {
+				output: `<span class="error-text">tree: ${target || displayPath(ctx.currentPath)}: No es un directorio</span>`,
 				isHtml: true
 			};
 		}
@@ -72,7 +75,7 @@ export const tree: Command = {
 		const folder = currentNode as FolderNode;
 		const stats: TreeStats = { folders: 0, files: 0 };
 
-		let output = `📁 <span class="folder-name">${folder.name}/</span>\n`;
+		let output = `📁 <span class="folder-name">${label}</span>\n`;
 
 		folder.children.forEach((child, index) => {
 			const isLast = index === folder.children.length - 1;

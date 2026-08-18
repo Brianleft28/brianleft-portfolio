@@ -5,7 +5,7 @@ import { t } from '$lib/i18n/helpers';
 export const ls: Command = {
 	name: 'ls',
 	description: t('terminal.ls.description'),
-	usage: 'ls [-h] [-l]',
+	usage: 'ls [-h] [-l] [ruta]',
 	execute(args, ctx) {
 		// Help flag
 		if (args?.includes('-h') || args?.includes('--help')) {
@@ -14,6 +14,7 @@ export const ls: Command = {
 
 <span class="system-header">${t('common.usage').toUpperCase()}:</span>
   ls              ${t('terminal.ls.options.compact')}
+  ls [ruta]       Lista otra carpeta, ej. ls proyectos
   ls -l           ${t('terminal.ls.options.detailed')}
 
 <span class="system-header">${t('common.options').toUpperCase()}:</span>
@@ -27,10 +28,13 @@ export const ls: Command = {
 			};
 		}
 
-		const node = ctx.getNodeAtPath(ctx.currentPath);
+		// Primer argumento que no sea flag: la ruta a listar. Sin él, el directorio actual.
+		const target = args?.find((a) => !a.startsWith('-'));
+		const node = target ? ctx.resolve(target).node : ctx.getNodeAtPath(ctx.currentPath);
+		const label = target || ctx.currentPath;
 
 		if (!node || node.type !== 'folder') {
-			return { output: `<span class="error-text">ls: ${t('terminal.ls.errors.not_accessible')} '${ctx.currentPath}': ${t('terminal.ls.errors.not_directory')}</span>`, isHtml: true };
+			return { output: `<span class="error-text">ls: ${t('terminal.ls.errors.not_accessible')} '${label}': ${t('terminal.ls.errors.not_directory')}</span>`, isHtml: true };
 		}
 
 		const folder = node as FolderNode;

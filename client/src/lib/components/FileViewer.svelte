@@ -3,7 +3,8 @@
     import { markedHighlight } from 'marked-highlight';
     import hljs from 'highlight.js';
     import 'highlight.js/styles/github-dark.css';
-    import { onMount } from 'svelte';
+    import { onMount, tick } from 'svelte';
+    import { mermaidBlock, hasMermaid, renderMermaid } from '$lib/mermaid';
     import ContactForm from './ContactForm.svelte';
 
     import type { FileNode } from '$lib/data/file-system';
@@ -15,17 +16,23 @@
     let { file }: Props = $props();
     let renderedHtml = $state<string>('');
 
-    // Detectar archivos especiales (apps)
+    // Detectar archivos especiales (apps). Se aceptan los nombres con `.exe`
+    // porque son los que quedaron en instalaciones anteriores, de cuando el
+    // sistema simulaba Windows.
     const isContactApp = $derived(
-        file.name.toLowerCase() === 'contacto.exe' || 
-        file.name.toLowerCase() === 'contact.exe'
+        ['contacto', 'contact', 'contacto.exe', 'contact.exe'].includes(
+            file.name.toLowerCase()
+        )
     );
 
-    // Crear instancia de Marked con highlight integrado
+    // Crear instancia de Marked con highlight integrado.
+    // Los bloques ```mermaid se desvían antes de llegar a highlight.js, que no
+    // conoce ese lenguaje y los degradaba a texto plano.
     const marked = new Marked(
         markedHighlight({
             langPrefix: 'hljs language-',
             highlight(code, lang) {
+                if (lang === 'mermaid') return code;
                 const language = hljs.getLanguage(lang) ? lang : 'plaintext';
                 return hljs.highlight(code, { language }).value;
             }
@@ -36,8 +43,23 @@
         }
     );
 
+    marked.use({
+        renderer: {
+            code({ text, lang }) {
+                if (lang === 'mermaid') return mermaidBlock(text);
+                return false; // el resto sigue por el renderer por defecto
+            }
+        }
+    });
+
+    let contentElement = $state<HTMLElement | null>(null);
+
     async function updateContent(content: string) {
         renderedHtml = await marked.parse(content);
+        if (hasMermaid(renderedHtml)) {
+            await tick();
+            await renderMermaid(contentElement);
+        }
     }
 
     onMount(() => {
@@ -56,7 +78,7 @@
 {#if isContactApp}
     <ContactForm />
 {:else}
-    <article class="file-viewer-content">
+    <article class="file-viewer-content" bind:this={contentElement}>
         {@html renderedHtml}
     </article>
 {/if}
@@ -135,6 +157,31 @@
 		padding: 1rem;
 		overflow-x: auto;
 		margin: 1rem 0;
+	}
+
+	/* Diagramas: el SVG manda, no la caja de código */
+	:global(.file-viewer-content pre.mermaid) {
+		background: transparent;
+		border: none;
+		padding: 0.5rem 0;
+		text-align: center;
+		line-height: normal;
+	}
+
+	:global(.file-viewer-content pre.mermaid svg) {
+		max-width: 100%;
+		height: auto;
+	}
+
+	/* Si el diagrama no compila, al menos se lee el código fuente */
+	:global(.file-viewer-content pre.mermaid-error) {
+		background: var(--theme-bg-tertiary);
+		border: 1px solid var(--theme-border);
+		padding: 1rem;
+		text-align: left;
+		font-family: 'Consolas', 'Monaco', monospace;
+		font-size: 0.8rem;
+		white-space: pre-wrap;
 	}
 
 	:global(.file-viewer-content pre code) {

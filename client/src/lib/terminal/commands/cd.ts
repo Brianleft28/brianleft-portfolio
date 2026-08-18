@@ -1,5 +1,5 @@
 import type { Command } from '../types';
-import type { FolderNode } from '$lib/data/file-system';
+import { displayPath } from '../paths';
 
 export const cd: Command = {
 	name: 'cd',
@@ -14,14 +14,11 @@ export const cd: Command = {
 <span class="system-header">USO:</span>
   cd &lt;directorio&gt;
 
-<span class="system-header">OPCIONES:</span>
-  -h, --help    Muestra esta ayuda
-
 <span class="system-header">NAVEGACIÓN:</span>
-  cd ..         Subir un nivel
-  cd /          Ir a raíz (C:\\)
-  cd ~          Ir a raíz (alias)
-  cd memory     Entrar a carpeta memory
+  cd ..                     Subir un nivel
+  cd ~                      Ir al home
+  cd /home/brian/proyectos  Ruta absoluta
+  cd proyectos/vus          Varios niveles de una
 
 <span class="system-hint">Sin argumentos muestra el directorio actual</span>`,
 				isHtml: true
@@ -31,43 +28,29 @@ export const cd: Command = {
 		const target = args[0];
 
 		if (!target) {
-			return { output: `<span class="folder-name">📁 ${ctx.currentPath}</span>`, isHtml: true };
+			return {
+				output: `<span class="folder-name">📁 ${displayPath(ctx.currentPath)}</span>`,
+				isHtml: true
+			};
 		}
 
-		if (target === '/' || target === 'C:\\' || target === '~') {
-			ctx.setPath('C:\\');
-			return { output: '' };
+		const { path, node } = ctx.resolve(target);
+
+		if (!node) {
+			return {
+				output: `<span class="error-text">cd: ${target}: No existe el directorio</span>`,
+				isHtml: true
+			};
 		}
 
-		if (target === '..') {
-			const parts = ctx.currentPath.split('\\').filter((p) => p && p !== 'C:');
-			if (parts.length > 0) {
-				parts.pop();
-				ctx.setPath(parts.length > 0 ? 'C:\\' + parts.join('\\') : 'C:\\');
-			}
-			return { output: '' };
+		if (node.type !== 'folder') {
+			return {
+				output: `<span class="error-text">cd: ${target}: No es un directorio</span>`,
+				isHtml: true
+			};
 		}
 
-		const currentNode = ctx.getNodeAtPath(ctx.currentPath);
-		if (!currentNode || currentNode.type !== 'folder') {
-			return { output: `<span class="error-text">cd: ${ctx.currentPath}: No es un directorio</span>`, isHtml: true };
-		}
-
-		const folder = currentNode as FolderNode;
-		const targetFolder = folder.children.find(
-			(child) => child.type === 'folder' && child.name.toLowerCase() === target.toLowerCase()
-		);
-
-		if (!targetFolder) {
-			return { output: `<span class="error-text">cd: ${target}: No existe el directorio</span>`, isHtml: true };
-		}
-
-		const newPath =
-			ctx.currentPath === 'C:\\'
-				? `C:\\${targetFolder.name}`
-				: `${ctx.currentPath}\\${targetFolder.name}`;
-
-		ctx.setPath(newPath);
+		ctx.setPath(path);
 		return { output: '' };
 	}
 };

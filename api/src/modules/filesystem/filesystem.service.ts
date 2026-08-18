@@ -17,6 +17,13 @@ export interface FileSystemNode {
   children?: FileSystemNode[];
 }
 
+/**
+ * Nombre de la carpeta raíz. El sistema simula un Linux, así que la raíz es el
+ * home del dueño. `C:` es el nombre histórico, de cuando simulaba Windows.
+ */
+export const ROOT_FOLDER_NAME = 'home';
+const LEGACY_ROOT_FOLDER_NAME = 'C:';
+
 @Injectable()
 export class FilesystemService {
   private readonly logger = new Logger(FilesystemService.name);
@@ -59,7 +66,7 @@ export class FilesystemService {
   }
 
   /**
-   * Crea o actualiza un archivo en la raíz `C:` del usuario.
+   * Crea o actualiza un archivo en la raíz del usuario.
    *
    * Lo usa el seeder para versionar la portada del portfolio (`LEEME.md`) como
    * un `.md` del repo en vez de tenerla hardcodeada. Es idempotente.
@@ -69,9 +76,7 @@ export class FilesystemService {
     content: string,
     userId: number,
   ): Promise<{ created: boolean; changed: boolean }> {
-    const root = await this.foldersRepository.findOne({
-      where: { name: 'C:', parentId: IsNull(), userId },
-    });
+    const root = await this.findRootFolder(userId);
 
     if (!root) {
       this.logger.warn(`Usuario ${userId} sin carpeta raíz: se omite "${name}".`);
@@ -181,7 +186,7 @@ export class FilesystemService {
   }
 
   /**
-   * Obtiene una carpeta por path (ej: "C:/proyectos/portfolio") para un usuario
+   * Obtiene una carpeta por path (ej: "home/proyectos/portfolio") para un usuario
    */
   async getFolderByPath(path: string, userId: number): Promise<Folder | null> {
     const parts = path.split('/').filter(Boolean);
@@ -426,9 +431,14 @@ export class FilesystemService {
 
     if (!proyectos) {
       // Crear estructura base si no existe
-      let root = await this.foldersRepository.findOne({ where: { name: 'C:', userId } });
+      let root = await this.findRootFolder(userId);
       if (!root) {
-        root = this.foldersRepository.create({ name: 'C:', parentId: null, order: 0, userId });
+        root = this.foldersRepository.create({
+          name: ROOT_FOLDER_NAME,
+          parentId: null,
+          order: 0,
+          userId,
+        });
         await this.foldersRepository.save(root);
       }
 
@@ -493,13 +503,35 @@ export class FilesystemService {
   }
 
   /**
+   * Busca la carpeta raíz de un usuario.
+   *
+   * El criterio es estructural (`parentId IS NULL`), no el nombre: al renombrar
+   * la raíz de `C:` a `home`, buscarla por nombre habría hecho que la sync no la
+   * encontrara y creara una segunda raíz, partiendo el árbol en dos. Se acepta
+   * cualquiera de los dos nombres para que el despliegue no dependa del orden
+   * entre el código y la migración de datos.
+   */
+  private async findRootFolder(userId: number): Promise<Folder | null> {
+    const roots = await this.foldersRepository.find({
+      where: { parentId: IsNull(), userId },
+      order: { id: 'ASC' },
+    });
+
+    if (roots.length === 0) return null;
+
+    return (
+      roots.find((f) => f.name === ROOT_FOLDER_NAME) ??
+      roots.find((f) => f.name === LEGACY_ROOT_FOLDER_NAME) ??
+      roots[0]
+    );
+  }
+
+  /**
    * Inicializa el filesystem base para un nuevo usuario
    */
   async initializeForUser(userId: number): Promise<void> {
     // Verificar si ya tiene carpeta raíz
-    const existingRoot = await this.foldersRepository.findOne({ 
-      where: { name: 'C:', userId, parentId: IsNull() } 
-    });
+    const existingRoot = await this.findRootFolder(userId);
 
     if (existingRoot) {
       this.logger.log(`Usuario ${userId} ya tiene filesystem inicializado`);
@@ -507,11 +539,11 @@ export class FilesystemService {
     }
 
     // Crear estructura base
-    const root = this.foldersRepository.create({ 
-      name: 'C:', 
-      parentId: null, 
-      order: 0, 
-      userId 
+    const root = this.foldersRepository.create({
+      name: ROOT_FOLDER_NAME,
+      parentId: null,
+      order: 0,
+      userId
     });
     await this.foldersRepository.save(root);
 
@@ -531,9 +563,9 @@ export class FilesystemService {
     });
     await this.foldersRepository.save(apps);
 
-    // Crear archivo contacto.exe en apps
+    // Crear archivo contacto en apps
     const contactoExe = this.filesRepository.create({
-      name: 'contacto.exe',
+      name: 'contacto',
       type: FileType.EXE,
       content: '# Formulario de Contacto\n\nEste es un ejecutable especial que abre el formulario de contacto.',
       folderId: apps.id,

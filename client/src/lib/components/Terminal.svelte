@@ -3,8 +3,11 @@
 	import { isTerminalVisible } from '$lib/stores/ui';
 	import { currentPath, startInChatMode, iaMode } from '$lib/stores/terminal';
 	import { portfolioConfig, aiPersonality, loadConfig, asciiBanner } from '$lib/stores/config';
-	import { fileSystemData, type FileSystemNode, type FolderNode } from '$lib/data/file-system';
-	
+	import { type FileSystemNode, type FolderNode } from '$lib/data/file-system';
+	import { fileTree } from '$lib/stores/filesystem';
+	import { HOME, displayPath, getNodeAt, resolvePath } from '$lib/terminal/paths';
+	import { mermaidBlock, renderMermaid } from '$lib/mermaid';
+
 	// Sistema modular de comandos
 	import { locale } from '$lib/i18n';
 	import { getCommand, getAllCommands, registerAiCommandAlias, isCommandProtected } from '$lib/terminal/commands';
@@ -21,6 +24,9 @@
 		markedHighlight({
 			langPrefix: 'hljs language-',
 			highlight(code, lang) {
+				// mermaid no es un lenguaje de highlight.js: se desvía al renderer
+				// de diagramas en vez de degradarse a texto plano.
+				if (lang === 'mermaid') return code;
 				const language = hljs.getLanguage(lang) ? lang : 'plaintext';
 				return hljs.highlight(code, { language }).value;
 			}
@@ -43,7 +49,12 @@
 	renderer.listitem = (text) => {
 		return `<li>${text.text}</li>`;
 	};
-	
+
+	renderer.code = ({ text, lang }) => {
+		if (lang === 'mermaid') return mermaidBlock(text);
+		return false as unknown as string; // el resto sigue por el renderer por defecto
+	};
+
 	marked.use({ renderer, breaks: true, gfm: true });
 
 	// Función helper para renderizar markdown síncronamente
@@ -161,7 +172,10 @@
 				isChatModeActive = true;
 			}
 
-			if (savedPath) {
+			// Las rutas guardadas antes del cambio a Linux empiezan con `C:\`.
+			// Si no es absoluta al estilo Unix, se descarta y se vuelve al home:
+			// sin esto, quien ya visitó el sitio quedaba en una ruta inexistente.
+			if (savedPath && savedPath.startsWith('/')) {
 				currentPath.set(savedPath);
 			}
 		} catch (e) {
@@ -194,7 +208,7 @@
 		promptHistory = [];
 		historyIndex = -1;
 		isChatModeActive = false;
-		currentPath.set('C:\\');
+		currentPath.set(HOME);
 
 		// Registrar alias dinámico para el comando AI
 		if (aiCommandName && aiCommandName !== 'ai') {
@@ -303,22 +317,24 @@
 		}
 	});
 
-	// Helper para obtener nodo en una ruta
+	// Dibujar los diagramas que hayan entrado por un `cat`. Se hace acá y no en
+	// `renderMarkdown` porque el HTML todavía no está en el DOM cuando marked
+	// devuelve; `renderMermaid` ignora los que ya procesó, así que reprocesar
+	// el historial entero no cuesta nada.
+	$effect(() => {
+		if (!history.length) return;
+		tick().then(() => renderMermaid(terminalElement));
+	});
+
+	// Helpers de navegación. Trabajan sobre el árbol real (`$fileTree`), que es el
+	// mismo que muestra el explorador: antes esto navegaba el árbol estático de
+	// fallback y por eso `ls` dentro de proyectos salía vacío.
 	function getNodeAtPath(path: string): FileSystemNode | undefined {
-		const pathParts = path.split('\\').filter((p) => p && p !== 'C:');
-		let current: FileSystemNode = fileSystemData;
+		return getNodeAt($fileTree, path);
+	}
 
-		for (const part of pathParts) {
-			if (current.type !== 'folder') return undefined;
-			const folder = current as FolderNode;
-			const found = folder.children.find(
-				(child) => child.name.toLowerCase() === part.toLowerCase()
-			);
-			if (!found) return undefined;
-			current = found;
-		}
-
-		return current;
+	function resolveFromCurrent(target: string) {
+		return resolvePath($fileTree, $currentPath, target);
 	}
 
 	// Crear contexto para comandos modulares
@@ -327,6 +343,7 @@
 			currentPath: $currentPath,
 			setPath: (newPath: string) => currentPath.set(newPath),
 			getNodeAtPath,
+			resolve: resolveFromCurrent,
 			aiMode: $iaMode,
 			// `ctx.aiMode` también se actualiza, no sólo el store: es una copia que
 			// el propio comando vuelve a leer en el mismo tick (`ai start` setea el
@@ -423,7 +440,7 @@
 		promptHistory = [];
 		historyIndex = -1;
 		isChatModeActive = false;
-		currentPath.set('C:\\');
+		currentPath.set(HOME);
 		iaMode.set(null);
 
 		// Limpiar localStorage
@@ -569,7 +586,7 @@ Usa <code>admin login</code> para acceder.`);
 					localStorage.removeItem('terminal-history');
 					localStorage.removeItem('terminal-chat-mode');
 				}
-				currentPath.set('C:\\');
+				currentPath.set(HOME);
 				addSystemMessage("Terminal limpiada. Usa 'help' para ver los comandos.");
 			} else if (result.output) {
 				if (result.isMarkdown) {
@@ -738,7 +755,7 @@ Usa <code>admin login</code> para acceder.`);
 	let promptIndicator = $derived(
 		isChatModeActive
 			? `🤖 ${aiDisplayName} [${$iaMode || defaultAiMode}]> `
-			: $currentPath + '> '
+			: displayPath($currentPath) + '> '
 	);
 </script>
 
@@ -878,6 +895,19 @@ Usa <code>admin login</code> para acceder.`);
 		overflow-x: auto;
 		margin: 0.5rem 0;
 		border: 1px solid var(--theme-border);
+	}
+
+	/* Diagramas: sin caja de código, y acotados al ancho de la terminal */
+	:global(.ai-markdown pre.mermaid) {
+		background: transparent;
+		border: none;
+		padding: 0.25rem 0;
+		text-align: center;
+	}
+
+	:global(.ai-markdown pre.mermaid svg) {
+		max-width: 100%;
+		height: auto;
 	}
 
 	:global(.ai-markdown code) {

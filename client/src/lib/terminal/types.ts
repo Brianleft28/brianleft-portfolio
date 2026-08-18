@@ -1,9 +1,16 @@
 import type { FileSystemNode } from '$lib/data/file-system';
 
 export interface CommandContext {
+	/** Ruta absoluta actual, ej. `/home/brian/proyectos`. */
 	currentPath: string;
 	setPath: (path: string) => void;
 	getNodeAtPath: (path: string) => FileSystemNode | undefined;
+	/**
+	 * Resuelve un destino escrito por el visitante —relativo, absoluto, `~`,
+	 * `..` o con varios segmentos— contra el árbol actual.
+	 * Es lo que permite `cat proyectos/vus/README.md` en un solo comando.
+	 */
+	resolve: (target: string) => { path: string; node: FileSystemNode | undefined };
 	aiMode: string | null;
 	setAiMode: (mode: string | null) => void;
 	// Configuración dinámica de IA

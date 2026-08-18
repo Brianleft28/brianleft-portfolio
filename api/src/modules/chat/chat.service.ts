@@ -386,7 +386,7 @@ FORMATO DE RESPUESTA (MUY IMPORTANTE)
 - Si listás proyectos, usá formato: "• NombreProyecto: descripción breve"
 - NUNCA escribas \`[[algo]]\`. Es sintaxis interna de las notas, no se renderiza:
   al visitante le aparecen los corchetes en pantalla. Nombrá el proyecto por su
-  nombre, y si querés que lo lea, decile: \`cat C:/proyectos/<slug>/README.md\`
+  nombre, y si querés que lo lea, decile: \`cat ~/proyectos/<slug>/README.md\`
 
 ${isListRequest ? 'INSTRUCCIÓN: El usuario pide lista de proyectos. Mostralos de forma organizada, sin headers, con viñetas.' : ''}
 

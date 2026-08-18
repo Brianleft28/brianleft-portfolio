@@ -4,8 +4,8 @@
 	import markdownIcon from '$lib/assets/markdown.svg';
 	import FileViewer from '$lib/components/FileViewer.svelte';
 	import type { FolderNode, FileSystemNode, FileNode } from '$lib/data/file-system';
-	import { fileSystemData as staticFileSystem } from '$lib/data/file-system';
-	import { dynamicFilesystem, loadConfig, type FileSystemNode as DynamicFSNode } from '$lib/stores/config';
+	import { loadConfig } from '$lib/stores/config';
+	import { fileTree } from '$lib/stores/filesystem';
 	import { onMount } from 'svelte';
 	import { _ } from 'svelte-i18n';
 
@@ -18,7 +18,6 @@
 
 	let currentPathIds = $state<string[]>([]);
 	let activeFileId = $state<string | null>(null);
-	let dynamicFs = $state<DynamicFSNode[]>([]);
 	let isSelectingReadme = $state(false);
 	let projectSummaries = $state<ProjectSummary[]>([]);
 
@@ -26,10 +25,6 @@
 	onMount(() => {
 		loadConfig();
 		loadProjectSummaries();
-
-		return dynamicFilesystem.subscribe((value) => {
-			dynamicFs = value;
-		});
 	});
 
 	/**
@@ -67,39 +62,9 @@
 		}
 	}
 
-	// Transform dynamic filesystem to match static types
-	function transformDynamicNode(node: DynamicFSNode): FileSystemNode {
-		if (node.type === 'folder') {
-			return {
-				id: String(node.id),
-				name: node.name,
-				type: 'folder',
-				children: (node.children || []).map(transformDynamicNode)
-			} as FolderNode;
-		}
-		return {
-			id: String(node.id),
-			name: node.name,
-			type: node.fileType === 'markdown' ? 'markdown' : 'markdown',
-			content: node.content || ''
-		} as FileNode;
-	}
-
-	// Use dynamic filesystem if available, fallback to static
-	// El API devuelve [{id:1, name:"C:", children:[...]}] - tomamos el primero como raíz
-	let fileSystemData = $derived(() => {
-		if (dynamicFs && dynamicFs.length > 0) {
-			// El primer elemento ES la carpeta raíz C:
-			const rootFolder = dynamicFs[0];
-			return {
-				id: 'root',
-				name: rootFolder.name || 'C:\\',
-				type: 'folder',
-				children: (rootFolder.children || []).map(transformDynamicNode)
-			} as FolderNode;
-		}
-		return staticFileSystem;
-	});
+	// El árbol viene del store compartido con la terminal (`$lib/stores/filesystem`),
+	// para que explorador y terminal no puedan volver a mostrar cosas distintas.
+	let fileSystemData = $derived(() => $fileTree);
 
 	let currentDirectory = $derived(() => {
 		let current: FolderNode = fileSystemData();
@@ -131,7 +96,8 @@
 	// Obtener el resumen del proyecto actual (si estamos en una carpeta de proyecto)
 	let currentProjectSummary = $derived(() => {
 		const dir = currentDirectory();
-		if (!dir || dir.name === 'C:' || dir.name === 'C:\\') return null;
+		// En la raíz no hay proyecto que resumir
+		if (!dir || currentPathIds.length === 0) return null;
 		
 		// Buscar por nombre de carpeta (slug)
 		const folderName = dir.name.toLowerCase().replace(/\s+/g, '-');
@@ -154,7 +120,8 @@
 			}
 		}
 		const fileName = activeItem()?.name || '';
-		return `C:\\${pathNames.join('\\')}${pathNames.length > 0 ? '\\' : ''}${fileName}`;
+		// Mismo formato que el prompt de la terminal: `~` y separadores Unix
+		return ['~', ...pathNames, fileName].filter(Boolean).join('/');
 	});
 
 	function handleItemClick(clickedItem: FileSystemNode) {

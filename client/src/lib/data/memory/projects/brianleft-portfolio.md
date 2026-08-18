@@ -56,7 +56,7 @@ Nada de esto está hardcodeado a mi nombre: el contenido sale de la base y la id
 
 ## 🗂️ El filesystem virtual
 
-`C:/proyectos/<slug>/README.md` no son archivos en disco: son filas en las tablas `folders` y `files`. Un servicio sincroniza esa estructura desde las memorias tipo `PROJECT`, así que **un `.md` en el repo produce, en una sola corrida, una memoria consultable por la IA y una carpeta navegable en la terminal**. Una sola fuente de verdad para dos consumos distintos.
+`~/proyectos/<slug>/README.md` no son archivos en disco: son filas en las tablas `folders` y `files`. Un servicio sincroniza esa estructura desde las memorias tipo `PROJECT`, así que **un `.md` en el repo produce, en una sola corrida, una memoria consultable por la IA y una carpeta navegable en la terminal**. Una sola fuente de verdad para dos consumos distintos.
 
 ## 🛡️ Torvalds Defender: idempotencia del seeder
 

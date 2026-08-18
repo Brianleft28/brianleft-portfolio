@@ -497,7 +497,7 @@
 			<h3>⚠️ Eliminar Proyecto</h3>
 			<p>¿Eliminar el proyecto <strong>{confirmDeleteProject.name}</strong>?</p>
 			<p class="warning">
-				Se borran su memoria, sus keywords y su carpeta en <code>C:/proyectos/</code>. La entrada
+				Se borran su memoria, sus keywords y su carpeta en <code>~/proyectos/</code>. La entrada
 				desaparece del perfil al regenerarse las secciones.
 			</p>
 			<div class="confirm-actions">
