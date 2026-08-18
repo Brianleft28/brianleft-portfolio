@@ -11,8 +11,7 @@ import { Setting } from '../../entities/setting.entity';
 @Injectable()
 export class ChatService {
   private readonly logger = new Logger(ChatService.name);
-  private genAI: GoogleGenerativeAI | null = null;
-  private model: GenerativeModel | null = null;
+  private models = new Map<string, GenerativeModel>();
   private defaultApiKey: string | null = null;
 
   constructor(
@@ -25,34 +24,42 @@ export class ChatService {
     this.defaultApiKey = this.configService.get('GEMINI_API_KEY') || null;
     if (!this.defaultApiKey) {
       this.logger.error('GEMINI_API_KEY no configurada: el asistente no va a poder responder.');
-    } else {
-      this.model = this.initializeModel(this.defaultApiKey);
     }
   }
 
   /**
-   * Inicializa el modelo con una API key específica
+   * Cadena de modelos a usar, en orden de preferencia.
+   *
+   * La cuota del free tier de Gemini es **por modelo**: cuando el primero
+   * devuelve 429 el siguiente suele tener saldo. Sin esta cadena, agotar la
+   * cuota del modelo principal dejaba el asistente muerto hasta el día
+   * siguiente por más que reintentáramos.
    */
-  private initializeModel(apiKey: string): GenerativeModel | null {
+  private getModelChain(): string[] {
+    const primary = this.configService.get('GEMINI_MODEL') || 'gemini-2.5-flash-lite';
+    const fallbacks = (this.configService.get('GEMINI_MODEL_FALLBACK') || '')
+      .split(',')
+      .map((m: string) => m.trim())
+      .filter(Boolean);
+
+    return [...new Set([primary, ...fallbacks])];
+  }
+
+  private getModelFor(name: string): GenerativeModel | null {
+    if (!this.defaultApiKey) return null;
+
+    const cached = this.models.get(name);
+    if (cached) return cached;
+
     try {
-      const genAI = new GoogleGenerativeAI(apiKey);
-      const modelName = this.configService.get('GEMINI_MODEL') || 'gemini-2.5-flash';
-      return genAI.getGenerativeModel({ model: modelName });
+      const genAI = new GoogleGenerativeAI(this.defaultApiKey);
+      const model = genAI.getGenerativeModel({ model: name });
+      this.models.set(name, model);
+      return model;
     } catch (error) {
-      this.logger.error(`Error inicializando modelo: ${error.message}`);
+      this.logger.error(`Error inicializando modelo "${name}": ${error.message}`);
       return null;
     }
-  }
-
-  /**
-   * Obtiene el modelo del servidor, inicializándolo si hiciera falta.
-   */
-  private getModel(): GenerativeModel | null {
-    if (!this.model && this.defaultApiKey) {
-      this.model = this.initializeModel(this.defaultApiKey);
-    }
-
-    return this.model;
   }
 
   /**
@@ -68,9 +75,7 @@ export class ChatService {
     userId: number = 1,
     locale?: string,
   ): AsyncGenerator<string> {
-    const model = this.getModel();
-
-    if (!model) {
+    if (!this.defaultApiKey) {
       this.logger.error('Chat solicitado sin GEMINI_API_KEY configurada.');
       yield 'El asistente no está disponible en este momento.';
       return;
@@ -87,7 +92,7 @@ export class ChatService {
       const fullPrompt = await this.buildFullPrompt(prompt, context, isListRequest, mode, userId, locale);
 
       // Generar respuesta con streaming
-      const result = await this.startStreamWithRetry(model, fullPrompt);
+      const result = await this.startStream(fullPrompt);
 
       for await (const chunk of result.stream) {
         const text = chunk.text();
@@ -100,7 +105,9 @@ export class ChatService {
 
       // Nada de esto es culpa del visitante ni algo que pueda accionar:
       // la key y el modelo son del servidor. Mensajes claros, sin stack traces.
-      if (this.isOverloaded(error)) {
+      if (this.isOutOfQuota(error)) {
+        yield 'El asistente agotó su cupo diario de consultas. Vuelve a estar disponible mañana.';
+      } else if (this.isOverloaded(error)) {
         yield 'El asistente está saturado en este momento. Probá de nuevo en unos segundos.';
       } else if (error.message?.includes('API key') || error.message?.includes('401')) {
         yield 'El asistente no está disponible en este momento.';
@@ -111,43 +118,59 @@ export class ChatService {
   }
 
   /**
-   * Arranca el stream reintentando cuando el modelo está saturado.
+   * Arranca el stream, recorriendo la cadena de modelos.
    *
-   * Gemini devuelve 503 ("high demand") de forma intermitente y bastante
-   * seguido. Sin reintentos, el visitante veía el error crudo de la SDK y
-   * parecía que el asistente estaba roto. Se reintenta sólo el arranque: una
-   * vez que el stream empezó a emitir, cortarlo y reiniciarlo duplicaría texto.
+   * Por cada modelo se reintenta ante saturación (503, transitoria). Ante cuota
+   * agotada (429) no tiene sentido insistir: se salta directo al siguiente
+   * modelo, que tiene su propio cupo. Se reintenta sólo el arranque; una vez que
+   * el stream empezó a emitir, reiniciarlo duplicaría texto.
    */
-  private async startStreamWithRetry(model: GenerativeModel, prompt: string, attempts = 3) {
+  private async startStream(prompt: string) {
+    const chain = this.getModelChain();
     let lastError: any;
 
-    for (let attempt = 1; attempt <= attempts; attempt++) {
-      try {
-        return await model.generateContentStream(prompt);
-      } catch (error) {
-        lastError = error;
+    for (const name of chain) {
+      const model = this.getModelFor(name);
+      if (!model) continue;
 
-        if (!this.isOverloaded(error) || attempt === attempts) break;
+      const attempts = this.isOutOfQuota(lastError) ? 1 : 2;
 
-        const delayMs = 700 * attempt; // 700ms, 1.4s
-        this.logger.warn(
-          `Modelo saturado (intento ${attempt}/${attempts}), reintentando en ${delayMs}ms.`,
-        );
-        await new Promise((resolve) => setTimeout(resolve, delayMs));
+      for (let attempt = 1; attempt <= attempts; attempt++) {
+        try {
+          return await model.generateContentStream(prompt);
+        } catch (error) {
+          lastError = error;
+
+          if (this.isOutOfQuota(error)) {
+            this.logger.warn(`Cuota agotada en "${name}", pasando al siguiente modelo.`);
+            break; // otro intento con el mismo modelo daría el mismo 429
+          }
+
+          if (!this.isOverloaded(error) || attempt === attempts) break;
+
+          this.logger.warn(`"${name}" saturado (intento ${attempt}/${attempts}), reintentando.`);
+          await new Promise((resolve) => setTimeout(resolve, 700 * attempt));
+        }
       }
     }
 
     throw lastError;
   }
 
-  /** ¿El error es por saturación/cuota del modelo y no por nuestra request? */
-  private isOverloaded(error: any): boolean {
+  /** 429: se acabó el cupo del modelo. Reintentar no ayuda, cambiar de modelo sí. */
+  private isOutOfQuota(error: any): boolean {
     const message = String(error?.message ?? '');
+    return message.includes('429') || message.toLowerCase().includes('quota');
+  }
+
+  /** 503: congestión transitoria del lado de Google. Reintentar suele alcanzar. */
+  private isOverloaded(error: any): boolean {
+    const message = String(error?.message ?? '').toLowerCase();
     return (
       message.includes('503') ||
-      message.includes('429') ||
       message.includes('overloaded') ||
-      message.toLowerCase().includes('high demand')
+      message.includes('high demand') ||
+      message.includes('unavailable')
     );
   }
 
@@ -155,7 +178,7 @@ export class ChatService {
    * Genera un resumen estructurado de un contenido
    */
   async generateSummary(content: string): Promise<string> {
-    const model = this.getModel();
+    const model = this.getModelFor(this.getModelChain()[0]);
     if (!model) {
       return 'Resumen no disponible (API key no configurada)';
     }
