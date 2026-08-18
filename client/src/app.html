@@ -2,7 +2,10 @@
 <html lang="%sveltekit.lang%" data-theme="matrix">
 	<head>
 		<meta charset="utf-8" />
-		<link rel="icon" href="%sveltekit.assets%/favicon.png" />
+		<!-- SVG primero: nítido en cualquier tamaño. El PNG queda de fallback. -->
+		<link rel="icon" href="%sveltekit.assets%/favicon.svg" type="image/svg+xml" />
+		<link rel="alternate icon" href="%sveltekit.assets%/favicon.png" />
+		<link rel="apple-touch-icon" href="%sveltekit.assets%/favicon.png" />
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
 		%sveltekit.head%
 		<!-- Bootstrap = static / css -->

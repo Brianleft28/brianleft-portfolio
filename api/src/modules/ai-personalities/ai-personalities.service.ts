@@ -15,19 +15,27 @@ export class AiPersonalitiesService {
    * Busca primero una personalidad del usuario, luego una global
    */
   async findActive(userId: number): Promise<AiPersonality | null> {
-    // Primero buscar personalidad default del usuario
-    let personality = await this.aiPersonalityRepository.findOne({
-      where: { active: true, isDefault: true, userId },
-    });
+    // `activate()` y `setDefault()` escriben banderas distintas, y el panel las
+    // expone como dos acciones separadas. Exigir `active && isDefault` hacía que
+    // activar una personalidad y marcar otra como default dejara al asistente
+    // literalmente sin personalidad. Se degrada en cascada en vez de romperse.
+    const candidates = [
+      { active: true, isDefault: true, userId },
+      { active: true, userId },
+      { isDefault: true, userId },
+      { active: true, isDefault: true, userId: IsNull() },
+      { active: true, userId: IsNull() },
+    ];
 
-    // Si no tiene, buscar personalidad global default
-    if (!personality) {
-      personality = await this.aiPersonalityRepository.findOne({
-        where: { active: true, isDefault: true, userId: IsNull() },
+    for (const where of candidates) {
+      const personality = await this.aiPersonalityRepository.findOne({
+        where,
+        order: { updatedAt: 'DESC' },
       });
+      if (personality) return personality;
     }
 
-    return personality;
+    return null;
   }
 
   /**

@@ -123,6 +123,13 @@
 	let aiDisplayName = $derived($aiPersonality?.displayName || $portfolioConfig?.ai_name || 'AI Assistant');
 	let aiCommandName = $derived($portfolioConfig?.ai_command || 'ai');
 	let ownerName = $derived($portfolioConfig?.owner_name || 'Developer');
+
+	/**
+	 * Modo con el que se abre el chat cuando nadie eligió uno (el botón "Hablá
+	 * con…", o `ai` a secas). Sale de la personalidad marcada como activa en
+	 * /admin/ai: cambiarla ahí cambia con qué modo arranca el asistente.
+	 */
+	let defaultAiMode = $derived($aiPersonality?.mode || 'asistente');
 	
 	// Greeting: prioridad a la personalidad de IA (configurable en Admin > IA & Personalidad)
 	// Fallback a ai_greeting de settings si no hay personalidad configurada
@@ -177,7 +184,7 @@
 
 	onMount(() => {
 		// Cargar configuración primero
-		loadConfig();
+		const configReady = loadConfig();
 
 		// Verificar si hay sesión activa
 		checkAuthStatus();
@@ -197,14 +204,20 @@
 		// Mostrar bienvenida dinámica
 		showWelcome();
 
-		// Verificar si debe iniciar en modo chat (desde el botón)
+		// Verificar si debe iniciar en modo chat (desde el botón).
+		// Se espera a la config: el modo y el saludo salen de la personalidad
+		// activa, y sin esperar se anunciaba el modo por defecto del bundle.
 		if ($startInChatMode) {
-			isChatModeActive = true;
-			addSystemMessage(`<span class="ai-success">✓ ${aiDisplayName} iniciado</span> en modo <span class="mode-name">${$iaMode || 'asistente'}</span>
-<br>${aiGreeting}
-<br><br><span class="system-hint">Cambiar modo: /${aiCommandName} mode &lt;modo&gt; | Usar: ${aiCommandName} modes</span>
-<span class="system-hint">Salir: exit</span>`);
 			startInChatMode.set(false); // Reset
+			configReady.then(() => {
+				isChatModeActive = true;
+				iaMode.set(defaultAiMode);
+				addSystemMessage(`<span class="ai-success">✓ ${aiDisplayName} iniciado</span> en modo <span class="mode-name">${defaultAiMode}</span>
+<br>${aiGreeting}
+<br><br><span class="system-hint">Cambiar modo: ${aiCommandName} mode &lt;modo&gt; | Ver modos: ${aiCommandName} modes</span>
+<span class="system-hint">Salir: exit</span>`);
+				scrollToBottom();
+			});
 		}
 
 		// Listeners para eventos de comandos async
@@ -310,20 +323,30 @@
 
 	// Crear contexto para comandos modulares
 	function createCommandContext(): CommandContext {
-		return {
+		const context: CommandContext = {
 			currentPath: $currentPath,
 			setPath: (newPath: string) => currentPath.set(newPath),
 			getNodeAtPath,
 			aiMode: $iaMode,
-			setAiMode: (mode: string | null) => iaMode.set(mode),
+			// `ctx.aiMode` también se actualiza, no sólo el store: es una copia que
+			// el propio comando vuelve a leer en el mismo tick (`ai start` setea el
+			// modo y después `ai mode` lo verifica). Si sólo escribíamos el store,
+			// el comando seguía viendo el valor viejo.
+			setAiMode: (mode: string | null) => {
+				context.aiMode = mode;
+				iaMode.set(mode);
+			},
 			// Configuración dinámica
 			aiCommandName: aiCommandName,
 			aiDisplayName: aiDisplayName,
+			defaultAiMode: defaultAiMode,
 			ownerName: ownerName,
 			// Autenticación
 			isAuthenticated: isAuthenticated,
 			ask
 		};
+
+		return context;
 	}
 
 	/**
@@ -362,7 +385,7 @@
 			isChatModeActive = true;
 
 			if (!initialPrompt) {
-				const welcomeMsg = `<span class="ai-success">✓ ${aiDisplayName} iniciado</span> en modo <span class="mode-name">${$iaMode || 'asistente'}</span>
+				const welcomeMsg = `<span class="ai-success">✓ ${aiDisplayName} iniciado</span> en modo <span class="mode-name">${$iaMode || defaultAiMode}</span>
 <br>${aiGreeting}
 <br><br><span class="system-hint">Cambiar modo: /${aiCommandName} mode &lt;modo&gt; | Usar: ${aiCommandName} modes</span>
 <span class="system-hint">Salir: exit</span>`;
@@ -501,10 +524,10 @@ Usa <code>admin login</code> para acceder.`);
 				await checkAuthStatus();
 			}
 
-			// Sincronizar estado del modo AI con el componente
-			if (ctx.aiMode !== $iaMode) {
-				iaMode.set(ctx.aiMode);
-			}
+			// Nada de resincronizar el modo acá: `ctx.setAiMode()` ya escribe el
+			// store. La comparación que había comparaba la copia vieja del contexto
+			// contra el store recién escrito y, al diferir, lo *revertía*: por eso
+			// `ai start arquitecto` no cambiaba el indicador ni el modo activo.
 
 			// Activar/desactivar modo chat basado en comando AI
 			// Detectar si es un comando AI (ai, torvalds, assistant, o alias dinámico)
@@ -714,7 +737,7 @@ Usa <code>admin login</code> para acceder.`);
 
 	let promptIndicator = $derived(
 		isChatModeActive
-			? `🤖 ${aiDisplayName} [${$iaMode || 'asistente'}]> `
+			? `🤖 ${aiDisplayName} [${$iaMode || defaultAiMode}]> `
 			: $currentPath + '> '
 	);
 </script>

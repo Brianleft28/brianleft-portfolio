@@ -244,7 +244,8 @@
 			"select_file_details": "Select a file from the left panel to see more details.",
 			"select_file_start": "Select a file to start...",
 			"use_shortcut": "Use",
-			"to_open_console": "to open the console."
+			"to_open_console": "to open the console.",
+			"talk_to_ai": "Talk to my assistant {name}"
 		}
 	}
 }

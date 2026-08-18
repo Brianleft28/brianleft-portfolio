@@ -67,7 +67,7 @@ export const torvalds: Command = {
 
 		// Si no es un subcomando válido, asumir que es una pregunta directa
 		// Activar el modo y devolver señal para procesar la pregunta
-		ctx.setAiMode(ctx.aiMode || 'arquitecto');
+		ctx.setAiMode(ctx.aiMode || ctx.defaultAiMode || 'asistente');
 		return {
 			output: '',
 			startChatWith: args.join(' ') // Señal especial para el Terminal
@@ -107,7 +107,7 @@ function startAi(
 	aiName: string,
 	aiCmd: string
 ) {
-	const selectedMode = mode || 'arquitecto';
+	const selectedMode = mode || ctx.defaultAiMode || 'asistente';
 
 	if (!AI_MODES[selectedMode]) {
 		return {

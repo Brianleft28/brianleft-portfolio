@@ -85,7 +85,9 @@
                 style="background-color: var(--theme-bg-primary); backdrop-filter: blur(5px);"
                 onclick={openTerminalWithAI}
             >
-                <span class="me-2">⚡</span> Hablá con {aiDisplayName} (AI)
+                <span class="me-2">⚡</span> {$t('page.home.talk_to_ai', {
+                    values: { name: aiDisplayName }
+                })}
             </button>
         </div>
     {/if}

@@ -9,6 +9,8 @@ export interface CommandContext {
 	// Configuración dinámica de IA
 	aiCommandName?: string;
 	aiDisplayName?: string;
+	/** Modo con el que arranca el chat si nadie eligió uno (viene de la parametría). */
+	defaultAiMode?: string;
 	ownerName?: string;
 	// Autenticación
 	isAuthenticated?: boolean;

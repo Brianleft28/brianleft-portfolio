@@ -244,7 +244,8 @@
 			"select_file_details": "Seleccioná un archivo del panel izquierdo para ver más detalles.",
 			"select_file_start": "Seleccioná un archivo para comenzar...",
 			"use_shortcut": "Usá",
-			"to_open_console": "para abrir la consola."
+			"to_open_console": "para abrir la consola.",
+			"talk_to_ai": "Hablá con mi asistente {name}"
 		}
 	}
 }

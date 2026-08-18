@@ -38,6 +38,8 @@ export interface AiPersonality {
 	traits: string | null;
 	language: string;
 	voiceStyle: string;
+	/** Modo con el que se abre el chat (`asistente`, `arquitecto`, …). */
+	mode: string;
 	active: boolean;
 	isDefault: boolean;
 }
@@ -84,6 +86,7 @@ const DEFAULT_PERSONALITY: AiPersonality = {
 	traits: null,
 	language: 'es-AR',
 	voiceStyle: 'technical',
+	mode: 'asistente',
 	active: true,
 	isDefault: true
 };
