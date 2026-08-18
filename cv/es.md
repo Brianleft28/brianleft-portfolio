@@ -35,7 +35,7 @@ Desarrollador principal de VUS (Ventanilla Única Simplificada), un sistema llam
 
 ### Pidgeon Solutions — Cofundador
 
-⬜ CONFIRMAR FECHAS · Buenos Aires, Argentina
+Buenos Aires, Argentina
 
 - Cofundé un estudio de servicios de software, junto a otro desarrollador y un diseñador gráfico.
 
@@ -54,10 +54,6 @@ Portfolio que se navega como una consola de Linux y responde preguntas sobre mi 
 **SØREN — Visión por computadora sobre un proceso desatendido**
 Python · OpenCV · Tesseract · Discord Webhooks
 Lee el estado de un proceso externo por OCR y análisis de píxeles, sin tocar su memoria ni su tráfico de red, y actúa en consecuencia. Corre horas sin supervisión: lo interesante no es automatizar, sino que se recupere solo cuando el mundo cambia debajo.
-
-**Søren Mirror — Leer un tablero de ajedrez mirando la pantalla**
-Python · OpenCV · MSS · python-chess · Stockfish
-Overlay de escritorio que reconstruye el estado de la partida por visión por computadora, sin inyectar código ni scrapear el DOM, deduciendo orientación, color y turno por geometría, y analizando la posición con Stockfish en un HUD flotante.
 
 ---
 

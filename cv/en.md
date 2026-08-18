@@ -35,9 +35,9 @@ Primary engineer on VUS, a real-time queue management system running daily acros
 
 ### Pidgeon Solutions — Co-founder
 
-⬜ CONFIRMAR FECHAS · Buenos Aires, Argentina
+Buenos Aires, Argentina
 
-- Co-founded a software services studio, working with a second engineer and a graphic designer.
+- Co-founded a software services studio, working alongside a second engineer and a graphic designer.
 
 ---
 
@@ -54,10 +54,6 @@ Portfolio navigated as a Linux console, answering questions about my work throug
 **SØREN — Computer vision over an unattended process**
 Python · OpenCV · Tesseract · Discord Webhooks
 Reads an external process's state through OCR and pixel analysis, without touching its memory or network traffic, and acts on it. Runs for hours unsupervised; the interesting part is not the automation but recovering on its own when conditions change underneath.
-
-**Søren Mirror — Reading a chess board from screen pixels**
-Python · OpenCV · MSS · python-chess · Stockfish
-Desktop overlay that reconstructs game state by computer vision rather than DOM scraping or code injection, deducing board orientation, colour and turn geometrically, then analysing the position with Stockfish in a floating HUD.
 
 ---
 
