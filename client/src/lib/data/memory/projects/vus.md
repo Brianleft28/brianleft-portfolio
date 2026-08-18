@@ -1,10 +1,10 @@
 ---
 slug: vus
 title: "VUS — Sistema llamador de turnos para atención al público"
-summary: "Un llamador: el sistema que ordena la cola de un edificio con atención al público. El ciudadano saca turno en un tótem, la pantalla lo llama, el operador lo atiende. Seis componentes —tótem, backend, pantallas, impresión térmica, despliegue— que corren todo el día en un municipio y no se pueden caer. En Ituzaingó se lo conoce como VUS, Ventanilla Única Simplificada."
+summary: "Un llamador: el sistema que ordena la cola de un edificio con atención al público. El ciudadano saca turno en un tótem, la pantalla lo llama, el operador lo atiende. Tótem, backend, pantallas, impresión térmica, dashboard en vivo, analítica histórica y despliegue en Kubernetes — corriendo todo el día en un municipio, sin poder caerse. En Ituzaingó se lo conoce como VUS, Ventanilla Única Simplificada."
 priority: 10
-techStack: [NestJS, SvelteKit, TypeScript, MySQL, TypeORM, Socket.io, Node.js, Docker, Kubernetes, PM2, ESC/POS, GitLab CI/CD]
-keywords: [vus, vus app, ventanilla unica, ventanilla unica simplificada, llamador, llamador de turnos, turnero, sistema de turnos, gestion de colas, smart queue management, municipio, ituzaingo, govtech, sector publico, totem, kiosk, autogestion, pantallas, smart tv, sala de espera, operador, box, atencion al publico, impresion termica, esc-pos, print server, nestjs, sveltekit, typeorm, mysql, socket.io, websockets, tiempo real, kubernetes, pm2, vps, gitlab, ci/cd, sargable, memory leak, monorepo]
+techStack: [NestJS, SvelteKit, TypeScript, MySQL, TypeORM, Socket.io, Redis, Chart.js, Node.js, Docker, Kubernetes, PM2, ESC/POS, GitLab CI/CD]
+keywords: [vus, vus app, ventanilla unica, ventanilla unica simplificada, llamador, llamador de turnos, turnero, sistema de turnos, gestion de colas, smart queue management, municipio, ituzaingo, govtech, sector publico, totem, kiosk, autogestion, pantallas, smart tv, sala de espera, operador, box, atencion al publico, impresion termica, esc-pos, print server, nestjs, sveltekit, typeorm, mysql, socket.io, websockets, tiempo real, redis, pub/sub, adapter, pods, kubernetes, escalado horizontal, replicas, dashboard, dashboard en vivo, analitica, metricas, chart.js, graficos, parametria, configuracion, pm2, vps, gitlab, ci/cd, sargable, memory leak, monorepo]
 ---
 
 # Portfolio: VUS — Llamador de turnos
@@ -26,22 +26,29 @@ flowchart TD
     PR --> B([Boleto físico])
 
     API <-->|persistencia| DB[(MySQL)]
+    API <-->|pub/sub entre pods| R[(Redis)]
     API -->|WebSocket| F[VUS Front<br/>SvelteKit]
 
     F --> TV([Smart TVs · sala de espera])
     F --> BOX([Puestos de atención])
+    F --> DASH([Dashboard en vivo])
 
     BOX -->|cambio de estado| API
-    API --> M[(Métricas y analíticas)]
+    DB --> AN([Analítica histórica])
 ```
 
 ## 🧩 Los componentes
 
 - **Tótem** (SvelteKit) — terminal táctil de autogestión. Un toque, un turno, un boleto impreso.
 - **API** (NestJS + TypeORM + MySQL) — el motor: oficinas, turnos, auditoría de estados y broadcast por WebSocket.
-- **Front** (SvelteKit + Socket.IO) — dos frentes en una sola app: los televisores de sala de espera y el panel del operador.
+- **Front** (SvelteKit + Socket.IO) — los televisores de sala de espera y el panel del operador.
+- **Dashboard** (Chart.js) — la foto del momento: qué está pasando **ahora** en el edificio. Se alimenta de los mismos eventos de socket que las pantallas, así que se mueve solo.
+- **Analítica** (Chart.js) — lo contrario del dashboard: consulta histórica sobre datos ya cerrados. Tiempos de atención, volumen por oficina, comportamiento por franja horaria.
 - **Print Server** (Node.js) — daemon local que traduce HTTP/JSON a comandos ESC/POS nativos.
-- **Infraestructura** — despliegue sobre VPS y clústeres con PM2, MySQL y CI/CD en GitLab.
+- **Parametría** — oficinas, servicios y comportamiento del llamador se configuran desde el sistema, sin tocar código ni redeployar. Lo que cambia según la institución es dato, no build.
+- **Infraestructura** — Kubernetes con múltiples pods, Redis, MySQL y CI/CD en GitLab.
+
+Dashboard y analítica comparten la librería de gráficos pero no el problema: uno tiene que reaccionar en milisegundos a un evento y el otro tiene que agregar meses de registros sin tumbar la base. Mezclarlos en una sola vista "que hace las dos cosas" hubiera terminado con consultas pesadas corriendo en tiempo real.
 
 ---
 
@@ -55,6 +62,19 @@ flowchart TD
 - Se reescribió la capa de datos con rangos puros: `createdAt >= CURDATE() AND createdAt < CURDATE() + INTERVAL 1 DAY`.
 - Al volver la consulta **SARGable**, MySQL aplica el índice y resuelve en milisegundos lo que antes tumbaba la API.
 - Se separaron los estados en el canal de Socket.IO para que la conexión TCP efímera no tenga fricción con el ciclo de vida del JWT.
+
+## 🛡️ Torvalds Defender: el llamado que se perdía entre pods
+
+> *"Escalar horizontal un sistema con estado en memoria no lo hace más grande: lo hace inconsistente." — Torvalds*
+
+**El Desafío:** al pasar a Kubernetes con varias réplicas, los llamados empezaron a fallar de forma intermitente y desconcertante: un turno se llamaba y **algunas pantallas no se enteraban**. No era un error, no había excepción, no había nada en los logs.
+
+La causa: Socket.IO mantiene las conexiones en la memoria del proceso. Con un solo pod eso alcanza. Con varios, cada uno conoce únicamente a los clientes conectados a él. Cuando un operador llamaba un turno y su request caía en el pod A, el evento se emitía sólo a los clientes de A — las pantallas conectadas al pod B se quedaban esperando algo que nunca iba a llegar. Y como el balanceador reparte, qué pantalla veía qué llamado dependía del azar.
+
+**La Resolución Defensiva:**
+- Se sumó **Redis como canal pub/sub entre pods**: cada instancia publica sus eventos y está suscrita a los del resto, así que emitir desde cualquier pod alcanza a todos los clientes, sin importar dónde estén conectados.
+- El estado de las conexiones deja de vivir sólo en la memoria de un proceso: los pods pasan a ser realmente intercambiables, que es la premisa que Kubernetes asume y que el código no estaba cumpliendo.
+- Es la lección de fondo: **escalar horizontal no es sólo levantar más réplicas**. Todo lo que estaba implícitamente en memoria —conexiones, sesiones, caché— hay que sacarlo afuera antes, o el sistema empieza a funcionar "a veces".
 
 ## 🛡️ Torvalds Defender: pantallas que viven para siempre
 
