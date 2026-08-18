@@ -15,7 +15,7 @@ Un overlay de escritorio que mira una partida de ajedrez en pantalla, reconstruy
 
 La restricción que define todo el diseño: **no se inyecta código en el navegador ni se lee el DOM**. Sólo píxeles. Eso lo hace independiente de la plataforma —funciona igual con cualquier sitio de ajedrez, o con un tablero en un video— a cambio de tener que resolver a mano cosas que el DOM te daría servidas: dónde está el tablero, de qué color jugás, de quién es el turno.
 
-Es el mismo enfoque que [[soren]]: percibir por visión en vez de acoplarse a las entrañas de un programa ajeno.
+Es el mismo enfoque que SØREN: percibir por visión en vez de acoplarse a las entrañas de un programa ajeno.
 
 ## 📊 De píxeles a FEN
 
