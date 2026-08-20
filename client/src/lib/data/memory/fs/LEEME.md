@@ -1,6 +1,6 @@
 # Bienvenido a mi portfolio interactivo
 
-Soy {{owner_name}}, {{owner_role}}. Este portfolio no es una página: es un entorno que se explora.
+Soy {{owner_name}}, {{owner_role}}. Este portfolio se navega como una terminal: explorá los proyectos con el mouse, o escribí comandos si preferís.
 
 > 🇬🇧 **Reading in English?** Run `lang set en` for the interface, and just ask the
 > assistant in English — it answers in whatever language you write to it:
@@ -9,7 +9,7 @@ Soy {{owner_name}}, {{owner_role}}. Este portfolio no es una página: es un ento
 ## Cómo navegarlo
 
 - **El explorador de archivos**, a la izquierda, para moverte con el mouse.
-- **La terminal**, abajo: abrila con `CTRL + Ñ` (o `Ctrl + K`) y empezá por `ls`.
+- **La terminal**, abajo: abrila con `Ctrl + K` y empezá por `ls`.
 
 Las dos vistas muestran lo mismo. Usá la que te resulte más cómoda.
 

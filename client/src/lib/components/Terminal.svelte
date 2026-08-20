@@ -301,7 +301,7 @@
 <span class="category-header">  ⚙️ Terminal</span>
        <span class="command-highlight">cls</span>         Limpiar consola (Ctrl+L)
        <span class="command-highlight">help</span>        Mostrar ayuda completa
-       <span class="command-highlight">exit</span>        Cerrar terminal (Ctrl+Ñ)
+       <span class="command-highlight">exit</span>        Cerrar terminal (Ctrl+K)
 
 <span class="system-hint">💡 Tip: Usa &lt;comando&gt; -h para ayuda detallada</span>`;
 		addSystemMessage(welcomeMsg);
@@ -575,16 +575,7 @@ Usa <code>admin login</code> para acceder.`);
 
 			// Manejar resultado del comando
 			if (result.clear) {
-				history = [];
-				promptHistory = [];
-				historyIndex = -1;
-				isChatModeActive = false;
-				if (typeof window !== 'undefined') {
-					localStorage.removeItem('terminal-history');
-					localStorage.removeItem('terminal-chat-mode');
-				}
-				currentPath.set(HOME);
-				addSystemMessage("Terminal limpiada. Usa 'help' para ver los comandos.");
+				clearTerminal();
 			} else if (result.output) {
 				if (result.isMarkdown) {
 					addHistoryItem({ type: 'response', text: result.output });
@@ -612,6 +603,7 @@ Usa <code>admin login</code> para acceder.`);
 	let typewriterIndex = $state(0);
 	let typewriterInterval: ReturnType<typeof setInterval> | null = $state(null);
 	let isTyping = $state(false);
+	let isStreaming = $state(false);
 
 	function startTypewriter(responseIndex: number) {
 		if (typewriterInterval) clearInterval(typewriterInterval);
@@ -626,7 +618,7 @@ Usa <code>admin login</code> para acceder.`);
 				typewriterIndex += chunkSize;
 				history = history;
 				scrollToBottom();
-			} else if (!isLoading) {
+			} else if (!isStreaming) {
 				// Streaming terminó y ya mostramos todo
 				stopTypewriter();
 			}
@@ -641,13 +633,29 @@ Usa <code>admin login</code> para acceder.`);
 		isTyping = false;
 	}
 
+	function clearTerminal() {
+		history = [];
+		promptHistory = [];
+		historyIndex = -1;
+		isChatModeActive = false;
+		if (typeof window !== 'undefined') {
+			localStorage.removeItem('terminal-history');
+			localStorage.removeItem('terminal-chat-mode');
+		}
+		currentPath.set(HOME);
+		addSystemMessage("Terminal limpiada. Usa 'help' para ver los comandos.");
+	}
+
 	async function handleAIChat(prompt: string) {
 		const responseIndex = history.length;
 		addHistoryItem({ type: 'response', text: '' });
-		
-		// Reset buffer para typewriter
+
+		// Reset buffer. `isStreaming = true` ANTES de arrancar el typewriter: si no,
+		// su primer tick corre con el buffer vacío y se auto-mata antes de que llegue
+		// el primer chunk de red, dejando la respuesta en blanco (fallaba en silencio).
 		typewriterBuffer = '';
 		typewriterIndex = 0;
+		isStreaming = true;
 		startTypewriter(responseIndex);
 
 		try {
@@ -665,38 +673,40 @@ Usa <code>admin login</code> para acceder.`);
 			});
 
 			if (!response.ok || !response.body) {
-				throw new Error($t('terminal.chat.invalid_response'));
+				// El body trae un mensaje útil (p. ej. el 403 del free tier con el
+				// contacto). Mostrarlo en vez de tragárselo.
+				const errText = (await response.text().catch(() => '')).trim();
+				typewriterBuffer = errText || $t('terminal.chat.kernel_panic');
+			} else {
+				const reader = response.body.getReader();
+				const decoder = new TextDecoder();
+
+				while (true) {
+					const { done, value } = await reader.read();
+					if (done) break;
+					typewriterBuffer += decoder.decode(value, { stream: true });
+				}
 			}
 
-			const reader = response.body.getReader();
-			const decoder = new TextDecoder();
+			// El stream terminó: recién ahora el typewriter puede detenerse al llegar
+			// al final del buffer.
+			isStreaming = false;
 
-			while (true) {
-				const { done, value } = await reader.read();
-				if (done) break;
-
-				const chunk = decoder.decode(value, { stream: true });
-				// Acumular en buffer, el typewriter lo va mostrando
-				typewriterBuffer += chunk;
-			}
-
-			// Esperar a que el typewriter termine de mostrar todo
 			while (typewriterIndex < typewriterBuffer.length) {
-				await new Promise(resolve => setTimeout(resolve, 50));
+				await new Promise((resolve) => setTimeout(resolve, 50));
 			}
-			
 			stopTypewriter();
 
-			// Limpiar espacios excesivos al final
-			history[responseIndex].text = history[responseIndex].text
-				.replace(/\n{3,}/g, '\n\n')
-				.trim();
+			let finalText = history[responseIndex].text.replace(/\n{3,}/g, '\n\n').trim();
+			// Nunca dejar un bloque vacío: si no vino nada, decirlo.
+			if (!finalText) finalText = $t('terminal.chat.no_response');
+			history[responseIndex].text = finalText;
 			history = history;
 		} catch (error) {
+			isStreaming = false;
 			stopTypewriter();
 			console.error('Error en el chat con IA:', error);
-			history[responseIndex].text =
-				$t('terminal.chat.kernel_panic');
+			history[responseIndex].text = $t('terminal.chat.kernel_panic');
 			history = history;
 		}
 	}
@@ -704,6 +714,13 @@ Usa <code>admin login</code> para acceder.`);
 	function handleInputKeyDown(event: KeyboardEvent) {
 		if (event.key === 'Enter') {
 			handleSubmit();
+			return;
+		}
+
+		// Ctrl+L limpia la consola (atajo que `cls` documenta y antes no estaba cableado).
+		if (event.ctrlKey && (event.key === 'l' || event.key === 'L')) {
+			event.preventDefault();
+			clearTerminal();
 			return;
 		}
 

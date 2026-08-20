@@ -208,6 +208,7 @@
 		"chat": {
 			"invalid_response": "La respuesta de la API no fue válida.",
 			"kernel_panic": "Kernel Panic: no se pudo conectar con el núcleo cognitivo.",
+			"no_response": "El asistente no devolvió respuesta. Probá de nuevo en un momento.",
 			"close": "Cerrar terminal"
 		}
 	},

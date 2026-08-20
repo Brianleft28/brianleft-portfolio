@@ -208,6 +208,7 @@
 		"chat": {
 			"invalid_response": "The API response was not valid.",
 			"kernel_panic": "Kernel Panic: could not reach the cognitive core.",
+			"no_response": "The assistant returned no response. Please try again in a moment.",
 			"close": "Close terminal"
 		}
 	},
