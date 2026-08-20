@@ -148,27 +148,10 @@
 		return item.name.toLowerCase().replace(/\s+/g, '-');
 	}
 
-	// Lista de proyectos derivada del árbol, que YA viaja en el SSR (lo siembra
-	// +layout.svelte). Por eso estos <a href="/proyectos/..."> salen en el HTML
-	// del servidor —verificable con `curl / | grep href=\"/proyectos/`— y no
-	// dependen de que hidrate el JS. Le dan a Google enlaces internos reales y al
-	// visitante una forma visible de llegar a las páginas dedicadas.
-	function findProyectosFolder(node: FileSystemNode | undefined): FolderNode | null {
-		if (!node || node.type !== 'folder') return null;
-		if (node.name.toLowerCase() === 'proyectos') return node;
-		for (const child of node.children) {
-			const found = findProyectosFolder(child);
-			if (found) return found;
-		}
-		return null;
+	// Slug de una carpeta de proyecto para su URL /proyectos/[slug].
+	function slugify(name: string): string {
+		return name.toLowerCase().replace(/\s+/g, '-');
 	}
-
-	let projectLinks = $derived(() => {
-		const folder = findProyectosFolder(fileSystemData());
-		return (folder?.children ?? [])
-			.filter((c) => c.type === 'folder')
-			.map((c) => ({ slug: c.name.toLowerCase().replace(/\s+/g, '-'), name: c.name }));
-	});
 
 	// Slug del proyecto en el que estamos parados (para el botón "Abrir página").
 	// Es el segmento del path que cuelga directo de `proyectos`.
@@ -252,30 +235,6 @@
 	<div class="row flex-grow-1 overflow-hidden" style="min-height: 0;">
 		<!-- Izquierda -->
 		<div class="col-md-5 pe-md-4 h-100 overflow-auto">
-			<!-- Accesos directos a las páginas dedicadas. SIEMPRE en el SSR (el árbol
-			     viaja en el HTML), así Google los descubre por enlace interno y el
-			     visitante tiene un camino claro a /proyectos/[slug]. Son links reales:
-			     navegan a la página, no abren inline. -->
-			{#if projectLinks().length > 0}
-				<div class="project-links mb-2">
-					<div
-						class="text-uppercase text-muted mb-2"
-						style="font-size: 0.7rem; letter-spacing: 0.08em;"
-					>
-						{$_('page.home.projects')}
-					</div>
-					{#each projectLinks() as p (p.slug)}
-						<a
-							href="/proyectos/{p.slug}"
-							class="d-block btn btn-link text-decoration-none p-0 mb-1"
-							data-sveltekit-preload-data="hover"
-						>
-							<span class="me-1">↗</span>{p.name}
-						</a>
-					{/each}
-				</div>
-				<hr class="my-2" />
-			{/if}
 			{#if currentPathIds.length > 0}
 				<div class="d-flex align-items-center mb-2">
 					<img src={folderIcon} alt="folder icon" width="18" height="18" class="me-2" />
@@ -298,38 +257,61 @@
 			{/if}
 			<div>
 				{#each currentDirectoryItems() as item (item.id)}
-					<div class="d-flex align-items-center mb-2">
-						<img
-							src={item.type === 'folder' ? folderIcon : markdownIcon}
-							alt="{item.type} icon"
-							width="18"
-							height="18"
-							class="me-2"
-						/>
-						{#if projectSlugFor(item)}
-							<!-- Link real para el crawler y para "abrir en pestaña nueva";
-							     el click normal se queda en la navegación SPA. -->
-							<a
-								href="/proyectos/{projectSlugFor(item)}"
-								class:active={item.id === activeFileId}
-								class="btn btn-link text-decoration-none p-0"
-								onclick={(e) => {
-									e.preventDefault();
-									handleItemClick(item);
-								}}
-							>
-								{item.name}
-							</a>
-						{:else}
+					{#if item.type === 'folder' && item.name.toLowerCase() === 'proyectos'}
+						<!-- Carpeta proyectos EXPANDIDA dentro del árbol. Cada hijo lleva su ↗ a
+						     /proyectos/[slug]: son <a href> que viajan en el SSR (criterio duro:
+						     grep 'href="/proyectos/' = 6). El click en el nombre sigue abriendo
+						     inline, sin cambios. -->
+						<div class="d-flex align-items-center mb-2">
+							<img src={folderIcon} alt="folder icon" width="18" height="18" class="me-2" />
 							<button
-								class:active={item.id === activeFileId}
 								class="btn btn-link text-decoration-none p-0"
-								onclick={() => handleItemClick(item)}
-							>
-								{item.name}
-							</button>
-						{/if}
-					</div>
+								onclick={() => handleItemClick(item)}>{item.name}</button>
+						</div>
+						<div class="proyectos-children ms-3 ps-2 mb-2">
+							{#each (item.type === 'folder' ? item.children : []).filter((c) => c.type === 'folder') as proj (proj.id)}
+								<div class="d-flex align-items-center justify-content-between mb-2">
+									<span class="d-flex align-items-center text-truncate">
+										<img src={folderIcon} alt="folder icon" width="16" height="16" class="me-2" />
+										<button
+											class:active={proj.id === activeFileId}
+											class="btn btn-link text-decoration-none p-0 text-truncate"
+											onclick={() => handleItemClick(proj)}>{proj.name}</button>
+									</span>
+									<a
+										href="/proyectos/{slugify(proj.name)}"
+										class="btn btn-link text-decoration-none p-0 ms-2"
+										title={$_('page.home.open_page')}
+										data-sveltekit-preload-data="hover">↗</a>
+								</div>
+							{/each}
+						</div>
+					{:else}
+						<div class="d-flex align-items-center mb-2">
+							<img
+								src={item.type === 'folder' ? folderIcon : markdownIcon}
+								alt="{item.type} icon"
+								width="18"
+								height="18"
+								class="me-2"
+							/>
+							{#if projectSlugFor(item)}
+								<a
+									href="/proyectos/{projectSlugFor(item)}"
+									class:active={item.id === activeFileId}
+									class="btn btn-link text-decoration-none p-0"
+									onclick={(e) => {
+										e.preventDefault();
+										handleItemClick(item);
+									}}>{item.name}</a>
+							{:else}
+								<button
+									class:active={item.id === activeFileId}
+									class="btn btn-link text-decoration-none p-0"
+									onclick={() => handleItemClick(item)}>{item.name}</button>
+							{/if}
+						</div>
+					{/if}
 				{/each}
 			</div>
 		</div>
@@ -406,6 +388,14 @@
 	</div>
 </div>
 <style>
+.proyectos-children {
+        border-left: 1px solid var(--theme-border);
+    }
+
+    .proyectos-children .btn-link {
+        font-size: 0.9rem;
+    }
+
     /* Estilos para resumen de proyecto */
     .project-summary {
         color: var(--theme-text-primary);

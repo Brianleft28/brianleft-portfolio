@@ -52,7 +52,7 @@ export class SettingsService {
   /**
    * Actualiza un setting por ID (verificando ownership)
    */
-  async update(id: number, value: string, userId: number): Promise<Setting> {
+  async update(id: number, value: string, userId: number, valueEn?: string): Promise<Setting> {
     const setting = await this.settingsRepository.findOne({ where: { id, userId } });
 
     if (!setting) {
@@ -60,7 +60,11 @@ export class SettingsService {
     }
 
     setting.value = value;
-    setting.valueEn = await this.translateIfProse(setting.key, value);
+    // Si el caller pasa `valueEn` explícito, se respeta (el inglés es contenido
+    // curado, no siempre una traducción literal del español). Sólo se cae a la
+    // traducción automática cuando no viene.
+    setting.valueEn =
+      valueEn !== undefined ? valueEn : await this.translateIfProse(setting.key, value);
     const savedSetting = await this.settingsRepository.save(setting);
 
     // Si es un campo relacionado con nombre o rol, regenerar ASCII banner

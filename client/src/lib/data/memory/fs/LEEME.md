@@ -9,7 +9,7 @@ Soy {{owner_name}}, {{owner_role}}. Este portfolio no es una página: es un ento
 ## Cómo navegarlo
 
 - **El explorador de archivos**, a la izquierda, para moverte con el mouse.
-- **La terminal**, abajo: abrila con `CTRL + Ñ` y empezá por `ls`.
+- **La terminal**, abajo: abrila con `CTRL + Ñ` (o `Ctrl + K`) y empezá por `ls`.
 
 Las dos vistas muestran lo mismo. Usá la que te resulte más cómoda.
 

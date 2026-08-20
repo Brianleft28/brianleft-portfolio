@@ -120,8 +120,9 @@ export class SettingsController {
     @Param('id', ParseIntPipe) id: number, 
     @Body('value') value: string,
     @UserId() userId: number,
+    @Body('valueEn') valueEn?: string,
   ) {
-    return this.settingsService.update(id, value, userId);
+    return this.settingsService.update(id, value, userId, valueEn);
   }
 
   /**

@@ -9,7 +9,7 @@ I'm {{owner_name}}, {{owner_role}}. This portfolio isn't a page: it's an environ
 ## How to navigate
 
 - **The file explorer**, on the left, to move around with your mouse.
-- **The terminal**, below: open it with `CTRL + Ñ` and start with `ls`.
+- **The terminal**, below: open it with `CTRL + Ñ` (or `Ctrl + K`) and start with `ls`.
 
 Both views show the same content. Use whichever you find more comfortable.
 
