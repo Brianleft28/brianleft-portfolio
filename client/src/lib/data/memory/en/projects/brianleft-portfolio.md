@@ -10,6 +10,20 @@ keywords: [portfolio, brianleft, brianleft-portfolio, terminal, terminal virtual
 
 This site is the project. It's not a landing page with sections: it's a **virtual terminal** with its own filesystem that visitors navigate using `cd`, `ls`, `cat`, and `tree`, along with a conversational assistant that answers questions about my work using a custom-built **RAG (Retrieval Augmented Generation)** pipeline.
 
+## Not a chatbot over my files: a parametrizable system
+
+**The challenge:** a portfolio goes stale the day you publish it. Changing a role, fixing a bio, adjusting how the assistant answers — if every change is a commit and a deploy, you don't do it. And if the system ever has to serve someone else, hardcoded content makes that impossible.
+
+**The resolution:** everything you see and everything the assistant knows is data, not code. An admin panel governs three layers:
+
+- **Parameters.** Identity, branding, SEO, the terminal prompt, and even the name of the assistant's command live in the database. There isn't a single string of my identity in the code: the site is *white-label* by design (GPL-3.0), and the same instance can serve another portfolio, on another domain, without touching a line.
+- **Content and retrieval.** Projects are loaded as Markdown and synced into the virtual filesystem visitors navigate. Each one carries a set of **hand-curated keywords** that drives the RAG retrieval: the index is editable content, not an opaque embedding. If the assistant answers wrong about a project, you fix it by editing data, not retraining anything. The CV lives per language, with a fallback if one is missing.
+- **Assistant behavior.** Personalities are data: fixed-prompt modes defined in code, and editable personalities with their own `systemPrompt`, voice style, language (`es-AR`, not "neutral Spanish"), and greeting. Changing how the assistant sounds is configuration, not a deploy.
+
+**The consequence:** a change in content, language, or personality never goes through CI/CD. The RAG pipeline is written by hand — that's the other half of the argument — but what makes it maintainable is that everything it consumes is administrable.
+
+## The RAG pipeline, written by hand
+
 The technical premise lies in that last part. Today, tools like n8n and similar exist to solve AI workflows by dragging nodes: reading documents, extracting keywords, searching for relevant data, building the prompt, calling the model, returning the stream. Here, every single one of those steps is written in TypeScript, is inspectable, and runs inside the same app. It's not a visual pipeline: it's code I can debug, test, and explain line by line.
 
 All content exists in **Spanish and English** without being written twice: it is drafted once, translated via a script that commits the output to the repo for review, and every layer—the filesystem, the RAG search engine, system parameters, page metadata—resolves the visitor's language, falling back to Spanish whenever a translation is missing.
