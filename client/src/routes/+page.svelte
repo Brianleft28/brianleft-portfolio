@@ -148,6 +148,45 @@
 		return item.name.toLowerCase().replace(/\s+/g, '-');
 	}
 
+	// Lista de proyectos derivada del árbol, que YA viaja en el SSR (lo siembra
+	// +layout.svelte). Por eso estos <a href="/proyectos/..."> salen en el HTML
+	// del servidor —verificable con `curl / | grep href=\"/proyectos/`— y no
+	// dependen de que hidrate el JS. Le dan a Google enlaces internos reales y al
+	// visitante una forma visible de llegar a las páginas dedicadas.
+	function findProyectosFolder(node: FileSystemNode | undefined): FolderNode | null {
+		if (!node || node.type !== 'folder') return null;
+		if (node.name.toLowerCase() === 'proyectos') return node;
+		for (const child of node.children) {
+			const found = findProyectosFolder(child);
+			if (found) return found;
+		}
+		return null;
+	}
+
+	let projectLinks = $derived(() => {
+		const folder = findProyectosFolder(fileSystemData());
+		return (folder?.children ?? [])
+			.filter((c) => c.type === 'folder')
+			.map((c) => ({ slug: c.name.toLowerCase().replace(/\s+/g, '-'), name: c.name }));
+	});
+
+	// Slug del proyecto en el que estamos parados (para el botón "Abrir página").
+	// Es el segmento del path que cuelga directo de `proyectos`.
+	let currentProjectSlug = $derived(() => {
+		let names: string[] = [];
+		let current: FolderNode = fileSystemData();
+		for (const id of currentPathIds) {
+			const n = current.children?.find((c) => c.id === id);
+			if (n && n.type === 'folder') {
+				names.push(n.name);
+				current = n;
+			}
+		}
+		const i = names.findIndex((n) => n.toLowerCase() === 'proyectos');
+		if (i >= 0 && names[i + 1]) return names[i + 1].toLowerCase().replace(/\s+/g, '-');
+		return null;
+	});
+
 	function handleItemClick(clickedItem: FileSystemNode) {
 		if (clickedItem.type === 'folder') {
 			currentPathIds = [...currentPathIds, clickedItem.id];
@@ -213,6 +252,30 @@
 	<div class="row flex-grow-1 overflow-hidden" style="min-height: 0;">
 		<!-- Izquierda -->
 		<div class="col-md-5 pe-md-4 h-100 overflow-auto">
+			<!-- Accesos directos a las páginas dedicadas. SIEMPRE en el SSR (el árbol
+			     viaja en el HTML), así Google los descubre por enlace interno y el
+			     visitante tiene un camino claro a /proyectos/[slug]. Son links reales:
+			     navegan a la página, no abren inline. -->
+			{#if projectLinks().length > 0}
+				<div class="project-links mb-2">
+					<div
+						class="text-uppercase text-muted mb-2"
+						style="font-size: 0.7rem; letter-spacing: 0.08em;"
+					>
+						{$_('page.home.projects')}
+					</div>
+					{#each projectLinks() as p (p.slug)}
+						<a
+							href="/proyectos/{p.slug}"
+							class="d-block btn btn-link text-decoration-none p-0 mb-1"
+							data-sveltekit-preload-data="hover"
+						>
+							<span class="me-1">↗</span>{p.name}
+						</a>
+					{/each}
+				</div>
+				<hr class="my-2" />
+			{/if}
 			{#if currentPathIds.length > 0}
 				<div class="d-flex align-items-center mb-2">
 					<img src={folderIcon} alt="folder icon" width="18" height="18" class="me-2" />
@@ -284,15 +347,27 @@
 					<span class="text-light"
 						>{activeItem()?.name || $_('page.home.no_file_selected')}</span
 					>
-					{#if activeItem()}
-						<button
-							class="btn-close-neon"
-							onclick={() => (activeFileId = null)}
-							aria-label={$_('page.home.close_file')}
-						>
-							✕
-						</button>
-					{/if}
+					<div class="d-flex align-items-center gap-2">
+						{#if activeItem() && currentProjectSlug()}
+							<!-- Puente de la vista inline a la página dedicada/compartible. -->
+							<a
+								href="/proyectos/{currentProjectSlug()}"
+								class="btn btn-sm btn-outline-info py-0"
+								style="font-size: 0.72rem;"
+							>
+								{$_('page.home.open_page')} ↗
+							</a>
+						{/if}
+						{#if activeItem()}
+							<button
+								class="btn-close-neon"
+								onclick={() => (activeFileId = null)}
+								aria-label={$_('page.home.close_file')}
+							>
+								✕
+							</button>
+						{/if}
+					</div>
 				</div>
 
 				<div

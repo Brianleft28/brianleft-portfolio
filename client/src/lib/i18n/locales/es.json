@@ -280,6 +280,8 @@
 		"home": {
 			"index_of": "Índice de",
 			"download_cv": "Descargar CV",
+			"projects": "Proyectos",
+			"open_page": "Abrir página",
 			"main_directory": "[directorio principal]",
 			"no_file_selected": "Sin archivo seleccionado",
 			"close_file": "Cerrar archivo",
