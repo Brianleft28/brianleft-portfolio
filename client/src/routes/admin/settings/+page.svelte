@@ -614,7 +614,7 @@
   .settings-page {
     /* La parametría son decenas de campos cortos: en una columna de 900px se
        leía como una lista interminable y sobraba media pantalla a los costados. */
-    max-width: 1720px;
+    max-width: none;
     margin: 0 auto;
     padding-bottom: 80px;
     font-family: 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;

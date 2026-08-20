@@ -51,22 +51,18 @@
 		display: flex;
 		justify-content: center;
 		align-items: center;
-		padding: 1.5rem;
 		box-sizing: border-box;
 	}
 
 	.admin-container {
 		background: var(--theme-bg-tertiary);
-		border: 1px solid var(--theme-accent);
-		border-radius: 8px;
+		border: none;
+		border-bottom: 1px solid var(--theme-accent);
 		width: 100%;
-		max-width: 1200px;
-		height: calc(100dvh - 3rem);
+		max-width: none;
+		height: 100dvh;
 		display: flex;
 		flex-direction: column;
-		box-shadow:
-			0 0 20px var(--theme-accent-glow),
-			inset 0 0 60px var(--theme-accent-subtle);
 		overflow: hidden;
 	}
 
@@ -77,7 +73,7 @@
 		padding: 0.75rem 1rem;
 		background: var(--theme-bg-secondary);
 		border-bottom: 1px solid var(--theme-accent);
-		border-radius: 8px 8px 0 0;
+		border-radius: 0;
 		flex-shrink: 0;
 	}
 
