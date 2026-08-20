@@ -4,8 +4,10 @@ import { t } from '$lib/i18n/helpers';
 
 export const help: Command = {
 	name: 'help',
-	description: t('terminal.help.description'),
-	usage: 'help [-h] [comando]',
+	get description() {
+		return t('terminal.help.description');
+	},
+	usage: 'help [-h] [command]',
 	execute(args, ctx) {
 		const commands = getAllCommands();
 		const aiCmd = ctx?.aiCommandName || 'ai';
@@ -18,11 +20,11 @@ export const help: Command = {
 
 <span class="system-header">${t('common.usage').toUpperCase()}:</span>
   help              ${t('terminal.help.commands.help')}
-  help &lt;comando&gt;    Info detallada de un comando
+  help &lt;${t('common.command')}&gt;    ${t('terminal.help.detailed_info')}
 
 <span class="system-header">${t('common.examples').toUpperCase()}:</span>
-  help ls           Ayuda sobre ls
-  help ${aiCmd}     Ayuda sobre ${aiName}`,
+  help ls           ${t('terminal.help.about', { name: 'ls' })}
+  help ${aiCmd}     ${t('terminal.help.about', { name: aiName })}`,
 				isHtml: true
 			};
 		}
@@ -32,18 +34,18 @@ export const help: Command = {
 			const cmd = commands.find((c) => c.name === cmdArg);
 			if (!cmd) {
 				return {
-					output: `<span class="error-text">help: comando '${cmdArg}' no encontrado</span>`,
+					output: `<span class="error-text">help: ${t('terminal.help.not_found', { name: cmdArg })}</span>`,
 					isHtml: true
 				};
 			}
 			return {
-				output: `<span class="command-highlight">${cmd.name}</span> - ${cmd.description}\n\n<span class="system-header">${t('common.usage').toUpperCase()}:</span> ${cmd.usage || cmd.name}\n\n<span class="system-hint">${t('common.tip')}: ${cmd.name} -h para más opciones</span>`,
+				output: `<span class="command-highlight">${cmd.name}</span> - ${cmd.description}\n\n<span class="system-header">${t('common.usage').toUpperCase()}:</span> ${cmd.usage || cmd.name}\n\n<span class="system-hint">${t('common.tip')}: ${t('terminal.help.more_options', { name: cmd.name })}</span>`,
 				isHtml: true
 			};
 		}
 
 		const lines = [
-			`<span class="system-header">📚 COMANDOS DISPONIBLES</span>`,
+			`<span class="system-header">📚 ${t('terminal.help.available')}</span>`,
 			'',
 			`<span class="category-header">📁 ${t('terminal.help.categories.navigation')}</span>`,
 			`   <span class="command-highlight">cd</span>        ${t('terminal.help.commands.cd')}`,
@@ -61,14 +63,16 @@ export const help: Command = {
 			'',
 			`<span class="category-header">🎨 ${t('terminal.help.categories.customization')}</span>`,
 			`   <span class="command-highlight">theme</span>     ${t('terminal.help.commands.theme')}`,
+			`   <span class="command-highlight">lang</span>      ${t('terminal.help.commands.lang')}`,
 			'',
 			`<span class="category-header">⚙️ ${t('terminal.help.categories.terminal')}</span>`,
+			`   <span class="command-highlight">whoami</span>    ${t('terminal.help.commands.whoami')}`,
 			`   <span class="command-highlight">cls</span>       ${t('terminal.help.commands.clear')}`,
 			`   <span class="command-highlight">help</span>      ${t('terminal.help.commands.help')}`,
 			`   <span class="command-highlight">exit</span>      ${t('terminal.help.commands.exit')}`,
 			'',
-			`<span class="system-hint">💡 help &lt;comando&gt; para info detallada</span>`,
-			`<span class="system-hint">💡 &lt;comando&gt; -h para opciones</span>`
+			`<span class="system-hint">💡 ${t('terminal.help.hint_detail')}</span>`,
+			`<span class="system-hint">💡 ${t('terminal.help.hint_options')}</span>`
 		];
 
 		return { output: lines.join('\n'), isHtml: true };

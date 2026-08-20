@@ -193,6 +193,17 @@
     return JSON.stringify(updates);
   }
 
+  /**
+   * ¿Este campo necesita el doble de ancho?
+   *
+   * Es el mismo criterio con el que abajo se elige entre `<input>` y
+   * `<textarea>`: si el valor es largo o estructurado, en una columna angosta
+   * no se puede editar.
+   */
+  function isWideField(setting: { type: string; value: string }): boolean {
+    return setting.type === 'json' || setting.type === 'text' || setting.value.length > 100;
+  }
+
   function formatKeyForDisplay(key: string): string {
     return key
       .replace(/^(owner_|contact_|social_|branding_)/, '')
@@ -490,7 +501,11 @@
       
       <div class="settings-list">
         {#each visibleSettings as setting (setting.id)}
-          <div class="setting-row" class:modified={editedSettings.has(setting.key)}>
+          <div
+            class="setting-row"
+            class:modified={editedSettings.has(setting.key)}
+            class:wide={isWideField(setting)}
+          >
             <div class="setting-info">
               <label for={setting.key}>{formatKeyForDisplay(setting.key)}</label>
               {#if setting.description}
@@ -597,7 +612,9 @@
 
 <style>
   .settings-page {
-    max-width: 900px;
+    /* La parametría son decenas de campos cortos: en una columna de 900px se
+       leía como una lista interminable y sobraba media pantalla a los costados. */
+    max-width: 1720px;
     margin: 0 auto;
     padding-bottom: 80px;
     font-family: 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
@@ -731,20 +748,38 @@
     font-weight: 600;
   }
 
+  /* Grilla fluida: tres o cuatro columnas en un monitor, dos en una notebook,
+     una en el teléfono. El número de columnas lo decide el ancho disponible y
+     no un breakpoint, así que no hay que mantener una lista de tamaños. */
   .settings-list {
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(330px, 1fr));
+    gap: 0.75rem 1.25rem;
+    align-items: start;
   }
 
+  /* Cada campo pasa a ser una tarjeta con la etiqueta arriba: en una columna
+     angosta, etiqueta y valor lado a lado no entran. */
   .setting-row {
-    display: grid;
-    grid-template-columns: 200px 1fr;
-    gap: 1rem;
-    align-items: start;
-    padding: 0.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    padding: 0.6rem 0.7rem;
     border-radius: 4px;
+    border: 1px solid transparent;
     transition: background 0.2s;
+  }
+
+  /* Los campos largos —textareas, JSON— ocupan el doble para seguir siendo
+     usables. `auto-fill` deja el hueco si no entran. */
+  .setting-row.wide {
+    grid-column: span 2;
+  }
+
+  @media (max-width: 760px) {
+    .setting-row.wide {
+      grid-column: span 1;
+    }
   }
 
   .setting-row:hover {
@@ -753,7 +788,7 @@
 
   .setting-row.modified {
     background: var(--theme-accent-subtle);
-    border-left: 2px solid var(--theme-accent);
+    border-color: var(--theme-accent);
   }
 
   .setting-info {
@@ -1058,10 +1093,6 @@
   }
 
   @media (max-width: 700px) {
-    .setting-row {
-      grid-template-columns: 1fr;
-    }
-    
     .account-grid {
       grid-template-columns: 1fr;
     }

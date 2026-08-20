@@ -22,18 +22,20 @@ interface GeminiResponse {
 }
 
 async function generateKeywordsWithGemini(content: string, title: string): Promise<string[]> {
-  const prompt = `Genera 15 keywords para RAG en español sobre este contenido.
+  const prompt = `Genera 20 keywords para RAG sobre este contenido: 12 en español y 8 en ingles.
 Reglas:
 - 1-3 palabras cada keyword
-- Minusculas sin acentos  
+- Minusculas sin acentos
 - Incluir tecnologias, conceptos tecnicos
 - Sin nombres de personas
+- Las keywords se buscan como subcadena dentro de la pregunta del visitante, asi
+  que evita palabras demasiado cortas o genericas que matcheen cualquier cosa
 
 Titulo: ${title}
 Contenido: ${content.substring(0, 3000)}
 
-Responde SOLO un array JSON sin markdown ni explicaciones:
-["keyword1","keyword2","keyword3","keyword4","keyword5","keyword6","keyword7","keyword8","keyword9","keyword10","keyword11","keyword12","keyword13","keyword14","keyword15"]`;
+Responde SOLO un array JSON sin markdown ni explicaciones, con las 20 juntas:
+["keyword1","keyword2","..."]`;
 
   const response = await fetch(
     `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`,
@@ -72,7 +74,7 @@ Responde SOLO un array JSON sin markdown ni explicaciones:
     return keywords
       .map(k => k.toLowerCase().trim().normalize('NFD').replace(/[\u0300-\u036f]/g, ''))
       .filter(k => k.length > 1 && k.length < 50)
-      .slice(0, 15);
+      .slice(0, 20);
   } catch (e) {
     console.error('Error parseando JSON:', jsonMatch[0].substring(0, 100));
     return [];

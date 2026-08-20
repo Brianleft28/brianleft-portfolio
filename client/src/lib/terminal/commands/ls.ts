@@ -4,7 +4,9 @@ import { t } from '$lib/i18n/helpers';
 
 export const ls: Command = {
 	name: 'ls',
-	description: t('terminal.ls.description'),
+	get description() {
+		return t('terminal.ls.description');
+	},
 	usage: 'ls [-h] [-l] [ruta]',
 	execute(args, ctx) {
 		// Help flag

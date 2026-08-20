@@ -1,4 +1,5 @@
 import type { Command, CommandContext, CommandResult } from '../types';
+import { t } from '$lib/i18n/helpers';
 
 /**
  * Comando oculto del dueño del portfolio.
@@ -13,7 +14,9 @@ import type { Command, CommandContext, CommandResult } from '../types';
  */
 const adminCommand: Command = {
 	name: 'admin',
-	description: 'Panel del dueño',
+	get description() {
+		return t('terminal.admin.description');
+	},
 	usage: 'admin [logout]',
 
 	async execute(args: string[], context: CommandContext): Promise<CommandResult> {

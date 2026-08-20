@@ -19,7 +19,8 @@
 		"examples": "Examples",
 		"options": "Options",
 		"tip": "Tip",
-		"alias": "Alias"
+		"alias": "Alias",
+		"command": "command"
 	},
 	"terminal": {
 		"help": {
@@ -44,8 +45,17 @@
 				"theme": "Change color theme",
 				"clear": "Clear console (Ctrl+L)",
 				"help": "Show this help",
-				"exit": "Close terminal (Ctrl+Ñ)"
-			}
+				"exit": "Close terminal (Ctrl+Ñ)",
+				"lang": "Change language",
+				"whoami": "Show current user info"
+			},
+			"available": "AVAILABLE COMMANDS",
+			"detailed_info": "Detailed info about a command",
+			"about": "Help on {name}",
+			"not_found": "command “{name}” not found",
+			"hint_detail": "help &lt;command&gt; for detailed info",
+			"hint_options": "&lt;command&gt; -h for options",
+			"more_options": "{name} -h for more options"
 		},
 		"whoami": {
 			"description": "View current user info",
@@ -102,7 +112,8 @@
 				"not_accessible": "cannot access",
 				"not_directory": "Not a directory"
 			},
-			"empty_directory": "(empty directory)"
+			"empty_directory": "(empty directory)",
+			"alias_ll": "Detailed listing (alias for ls -l)"
 		},
 		"theme": {
 			"description": "Change terminal and site visual theme",
@@ -168,6 +179,36 @@
 				"unknown": "Unknown subcommand",
 				"unknown_current": "Unknown current language"
 			}
+		},
+		"cat": {
+			"description": "Show a file’s contents (renders .md)"
+		},
+		"cd": {
+			"description": "Change directory"
+		},
+		"cls": {
+			"description": "Clear the console (Ctrl+L)"
+		},
+		"pwd": {
+			"description": "Print the current directory"
+		},
+		"tree": {
+			"description": "Show the directory tree"
+		},
+		"admin": {
+			"description": "Owner panel"
+		},
+		"ai": {
+			"description": "AI assistant with specialised modes",
+			"modes": {
+				"arquitecto": "Systems design and software architecture",
+				"asistente": "General assistant for questions about the portfolio"
+			}
+		},
+		"chat": {
+			"invalid_response": "The API response was not valid.",
+			"kernel_panic": "Kernel Panic: could not reach the cognitive core.",
+			"close": "Close terminal"
 		}
 	},
 	"admin": {
@@ -238,6 +279,7 @@
 	"page": {
 		"home": {
 			"index_of": "Index of",
+			"download_cv": "Download CV",
 			"main_directory": "[main directory]",
 			"no_file_selected": "No file selected",
 			"close_file": "Close file",

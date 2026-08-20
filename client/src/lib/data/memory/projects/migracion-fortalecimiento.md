@@ -4,12 +4,10 @@ title: "Migración Fortalecimiento — Excel a base, todos los meses, con datos 
 summary: "Herramienta en Node.js que migra el padrón mensual de beneficiarios desde planillas Excel a la base del municipio. El problema real no es leer un .xlsx: es que el proceso es recurrente, los datos son personales y una corrida mal hecha ensucia el padrón de un programa social."
 priority: 7
 techStack: [Node.js, JavaScript, Excel, MySQL]
-keywords: [migracion, migracion fortalecimiento, fortalecimiento, beneficiarios, padron, beneficios ciudadanos, excel, xlsx, planillas, etl, carga de datos, node, nodejs, javascript, cli, municipio, govtech, sector publico, datos personales, datos sensibles, programa social]
+keywords: [migracion, migracion fortalecimiento, fortalecimiento, beneficiarios, padron, beneficios ciudadanos, excel, xlsx, planillas, etl, carga de datos, node, nodejs, javascript, cli, municipio, govtech, sector publico, datos personales, datos sensibles, programa social, data migration, spreadsheets, data loading, social program, beneficiaries, personal data, sensitive data, public sector, local government, registry]
 ---
 
-# Portfolio: Migración Fortalecimiento
-
-## 🤖 Contexto para IA Conversacional
+# Migración Fortalecimiento
 
 Todos los meses llega un padrón actualizado de beneficiarios de un programa social en planillas Excel, y hay que reflejarlo en la tabla `beneficios_ciudadanos` del municipio. Esta herramienta en Node.js hace esa migración.
 
@@ -31,9 +29,7 @@ flowchart LR
 
 Separación por responsabilidad, no por comodidad: capa de conexión a base, entidades del dominio (el registro de migración y el beneficio ciudadano por separado), la lógica de transformación concentrada en `DataMigrator`, y un `index` que sólo orquesta. Las planillas se organizan en subdirectorios por tipo (`formatted`, `fortalecimiento`) y la CLI te hace elegir cuál correr, en vez de asumir.
 
-## 🛡️ Torvalds Defender: los datos no entran al repositorio
-
-> *"El .gitignore es la última línea de defensa, no la primera. Pero tiene que estar." — Torvalds*
+## Los datos no entran al repositorio
 
 **El Desafío:** el insumo del proceso es un listado de personas reales con sus datos. En un proyecto donde las planillas viven al lado del código, tarde o temprano una entra a un commit — y una vez que entró al historial de git, sacarla es una cirugía.
 
@@ -42,7 +38,7 @@ Separación por responsabilidad, no por comodidad: capa de conexión a base, ent
 - Quien clona tiene que **crear la estructura a mano**. Es fricción deliberada: obliga a pensar dónde van los datos antes de tener dónde ponerlos.
 - El repositorio queda portable —se puede compartir, revisar o publicar— sin arrastrar información de nadie.
 
-## 🛡️ Torvalds Defender: elegir, no adivinar
+## Elegir, no adivinar
 
 **El Desafío:** un proceso mensual que corre solo sobre "el archivo que esté en la carpeta" es una bomba: alcanza con que quede la planilla del mes pasado para reprocesarla en silencio.
 

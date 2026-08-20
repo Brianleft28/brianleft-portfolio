@@ -342,15 +342,24 @@
 				<h3>➕ Nuevo Proyecto</h3>
 
 				<div class="info-box">
-					<h4>🧠 Retroalimentación de Memoria Automática</h4>
-					<p>Al crear un proyecto, el sistema automáticamente:</p>
+					<h4>🧠 Qué pasa cuando cargás un proyecto</h4>
+					<p>En una sola operación, y en este orden:</p>
 					<ul>
-						<li>✓ Genera un <strong>resumen con IA</strong> del contenido</li>
-						<li>✓ Genera <strong>keywords con IA</strong> para búsqueda semántica</li>
-						<li>✓ Regenera las secciones de proyectos de <code>index</code> y <code>memory</code></li>
-						<li>✓ Crea la memoria específica del proyecto en la BD</li>
-						<li>✓ Crea el archivo .md en la carpeta seleccionada</li>
+						<li>✓ <strong>Detecta el stack</strong> a partir del contenido</li>
+						<li>✓ Genera un <strong>resumen con IA</strong></li>
+						<li>✓ Genera <strong>keywords con IA</strong>, si no se las pasás vos</li>
+						<li>
+							✓ <strong>Traduce el contenido y el resumen al inglés</strong> y los guarda
+							aparte, para que el visitante que tenga el sitio en inglés lo lea traducido
+						</li>
+						<li>✓ Crea la <strong>memoria</strong> del proyecto: desde ese momento el asistente puede responder sobre él</li>
+						<li>✓ Crea el <code>.md</code> en la carpeta elegida, navegable desde la terminal</li>
+						<li>✓ Regenera las secciones de proyectos de <code>index</code> y <code>memory</code>, en los dos idiomas</li>
 					</ul>
+					<p class="info-note">
+						Si la traducción falla —por ejemplo si se agotó la cuota diaria del modelo— el
+						proyecto se carga igual y se sirve en español. Se puede reintentar editándolo.
+					</p>
 				</div>
 
 				<form method="POST" action="?/createProject" use:enhance={() => {
@@ -1028,6 +1037,12 @@
 		border-radius: 6px;
 		padding: 1rem 1.2rem;
 		margin-bottom: 1.5rem;
+	}
+
+	.info-note {
+		margin: 0.6rem 0 0;
+		font-size: 0.82rem;
+		opacity: 0.75;
 	}
 
 	.info-box h4 {

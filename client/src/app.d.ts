@@ -4,6 +4,8 @@ declare global {
 	namespace App {
 		// interface Error {}
 		interface Locals {
+			/** Idioma resuelto para esta request (cookie o Accept-Language). */
+			locale: string;
 			user: {
 				authenticated: boolean;
 				userId?: number;

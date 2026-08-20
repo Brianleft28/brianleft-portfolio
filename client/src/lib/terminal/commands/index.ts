@@ -12,6 +12,7 @@ import { tree } from './tree';
 import { torvalds } from './torvalds';
 import { theme } from './theme';
 import { whoami } from './whoami';
+import { t } from '$lib/i18n/helpers';
 
 /**
  * Comandos públicos: son los que enumera `getAllCommands()` y, por lo tanto,
@@ -45,7 +46,9 @@ commandRegistry.set('assistant', torvalds);
 // ll es ls -l (alias especial)
 const llCommand: Command = {
 	name: 'll',
-	description: 'Lista detallada (alias de ls -l)',
+	get description() {
+		return t('terminal.ls.alias_ll');
+	},
 	usage: 'll',
 	execute(args, ctx) {
 		return ls.execute(['-l', ...(args || [])], ctx);

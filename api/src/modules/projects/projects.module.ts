@@ -5,10 +5,17 @@ import { ProjectsController } from './projects.controller';
 import { FilesystemModule } from '../filesystem/filesystem.module';
 import { MemoryModule } from '../memory/memory.module';
 import { ChatModule } from '../chat/chat.module';
+import { TranslationModule } from '../translation/translation.module';
 import { Memory } from '../../entities/memory.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Memory]), FilesystemModule, MemoryModule, ChatModule],
+  imports: [
+    TypeOrmModule.forFeature([Memory]),
+    FilesystemModule,
+    MemoryModule,
+    ChatModule,
+    TranslationModule,
+  ],
   controllers: [ProjectsController],
   providers: [ProjectsService],
   exports: [ProjectsService],

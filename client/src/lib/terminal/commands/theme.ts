@@ -140,7 +140,9 @@ function formatHelp(): string {
 
 export const theme: Command = {
 	name: 'theme',
-	description: t('terminal.theme.description'),
+	get description() {
+		return t('terminal.theme.description');
+	},
 	usage: 'theme [list|set <nombre>|-h]',
 	execute: (args: string[], context: CommandContext): CommandResult => {
 		const currentTheme = getCurrentTheme();

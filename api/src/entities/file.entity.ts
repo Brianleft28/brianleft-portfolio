@@ -34,6 +34,13 @@ export class File {
   @Column({ type: 'longtext', nullable: true })
   content: string | null;
 
+  /**
+   * Versión en inglés del contenido, generada desde `${MEMORY_PATH}/en/**` y
+   * revisada a mano. `null` = todavía sin traducir: el árbol cae al español.
+   */
+  @Column({ name: 'content_en', type: 'longtext', nullable: true })
+  contentEn: string | null;
+
   @Column({ name: 'folder_id' })
   folderId: number;
 

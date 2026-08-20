@@ -6,7 +6,9 @@ import { t } from '$lib/i18n/helpers';
  */
 export const whoami: Command = {
 	name: 'whoami',
-	description: t('terminal.whoami.description'),
+	get description() {
+		return t('terminal.whoami.description');
+	},
 	usage: 'whoami',
 
 	async execute() {

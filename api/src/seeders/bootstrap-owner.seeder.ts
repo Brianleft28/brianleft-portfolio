@@ -11,6 +11,7 @@ import { FilesystemService } from '../modules/filesystem/filesystem.service';
 import { SettingsService } from '../modules/settings/settings.service';
 import { AiPersonalitiesService } from '../modules/ai-personalities/ai-personalities.service';
 import { MemoryService } from '../modules/memory/memory.service';
+import { readTranslation } from './memory.seeder';
 
 /**
  * Crea el usuario dueño del portfolio y su estructura base.
@@ -107,7 +108,8 @@ export async function bootstrapOwner(app: INestApplicationContext): Promise<User
  * servir el árbol, contra la parametría.
  */
 async function syncRootFiles(app: INestApplicationContext, userId: number): Promise<void> {
-  const fsPath = path.join(process.env.MEMORY_PATH || '/app/data/memory', 'fs');
+  const memoryPath = process.env.MEMORY_PATH || '/app/data/memory';
+  const fsPath = path.join(memoryPath, 'fs');
 
   if (!fs.existsSync(fsPath)) {
     console.warn(`⚠️  No existe ${fsPath}: no hay archivos de raíz para cargar.`);
@@ -121,7 +123,13 @@ async function syncRootFiles(app: INestApplicationContext, userId: number): Prom
 
   for (const file of files) {
     const content = fs.readFileSync(path.join(fsPath, file), 'utf-8');
-    const { created, changed } = await filesystemService.upsertRootFile(file, content, userId);
+    const contentEn = readTranslation(memoryPath, path.join('fs', file));
+    const { created, changed } = await filesystemService.upsertRootFile(
+      file,
+      content,
+      userId,
+      contentEn,
+    );
 
     if (created) console.log(`   ├─ "${file}" creado en la raíz del filesystem.`);
     else if (changed) console.log(`   ├─ "${file}" actualizado desde el archivo.`);
@@ -188,6 +196,7 @@ async function syncOwnerIndex(dataSource: DataSource, userId: number): Promise<v
   }
 
   const content = fs.readFileSync(indexFile, 'utf-8');
+  const contentEn = readTranslation(memoryPath, 'index.md');
   const memoryRepo = dataSource.getRepository(Memory);
   const existing = await memoryRepo.findOne({ where: { slug: 'index', userId } });
 
@@ -198,6 +207,7 @@ async function syncOwnerIndex(dataSource: DataSource, userId: number): Promise<v
         slug: 'index',
         title: 'Perfil profesional',
         content,
+        contentEn,
         priority: 8,
         userId,
       }),
@@ -208,12 +218,15 @@ async function syncOwnerIndex(dataSource: DataSource, userId: number): Promise<v
 
   // La comparación ignora el bloque de proyectos: lo escribe `seedProjects()`
   // después, así que siempre diferiría del archivo fuente.
-  if (withoutGeneratedProjects(existing.content) === withoutGeneratedProjects(content)) {
+  if (
+    withoutGeneratedProjects(existing.content) === withoutGeneratedProjects(content) &&
+    existing.contentEn === contentEn
+  ) {
     console.log('⏭️  Memoria INDEX del dueño ya coincide con index.md.');
     return;
   }
 
-  await memoryRepo.update(existing.id, { content, type: MemoryType.INDEX });
+  await memoryRepo.update(existing.id, { content, contentEn, type: MemoryType.INDEX });
   console.log('📝 Memoria INDEX del dueño actualizada desde index.md.');
 }
 

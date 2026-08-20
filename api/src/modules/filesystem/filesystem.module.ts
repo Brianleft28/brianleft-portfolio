@@ -7,9 +7,13 @@ import { MemoryKeyword } from '../../entities/memory-keyword.entity';
 import { Setting } from '../../entities/setting.entity';
 import { FilesystemService } from './filesystem.service';
 import { FilesystemController } from './filesystem.controller';
+import { TranslationModule } from '../translation/translation.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Folder, File, Memory, MemoryKeyword, Setting])],
+  imports: [
+    TypeOrmModule.forFeature([Folder, File, Memory, MemoryKeyword, Setting]),
+    TranslationModule,
+  ],
   controllers: [FilesystemController],
   providers: [FilesystemService],
   exports: [FilesystemService],

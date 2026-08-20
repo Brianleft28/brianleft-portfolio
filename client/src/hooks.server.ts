@@ -1,7 +1,7 @@
 import type { Handle, HandleFetch, RequestEvent } from '@sveltejs/kit';
 import { SESSION_COOKIE_NAME, sessionCookieOptions } from '$lib/server/auth';
 import { env } from '$env/dynamic/private';
-import '$lib/i18n';
+import { DEFAULT_LOCALE, LOCALE_KEY, normalizeLocale } from '$lib/i18n';
 
 // Dinámico y no estático: docker-compose pasa PUBLIC_API_URL como env de runtime,
 // no como build arg, así que $env/static/public la hornearía vacía en la imagen.
@@ -109,10 +109,34 @@ async function renewSession(event: RequestEvent): Promise<string | null> {
 }
 
 /**
+ * Idioma de esta request: lo que el visitante eligió (cookie que escribe
+ * `setLocale`) y, si nunca eligió, lo que pide su navegador.
+ *
+ * El server no ve localStorage. Sin esto el SSR siempre salía en español y el
+ * visitante en inglés veía el flash de idioma equivocado hasta que hidrataba.
+ */
+function localeFromRequest(event: RequestEvent): string {
+	const chosen = normalizeLocale(event.cookies.get(LOCALE_KEY));
+	if (chosen) return chosen;
+
+	// `es-AR,es;q=0.9,en;q=0.8` → el primero que sepamos hablar.
+	const header = event.request.headers.get('accept-language') ?? '';
+	for (const part of header.split(',')) {
+		const lang = normalizeLocale(part.split(';')[0].trim());
+		if (lang) return lang;
+	}
+
+	return DEFAULT_LOCALE;
+}
+
+/**
  * Intercepta las peticiones que llegan al servidor de SvelteKit
  */
 export const handle: Handle = async ({ event, resolve }) => {
 	const { url, cookies, fetch } = event;
+
+	const lang = localeFromRequest(event);
+	event.locals.locale = lang;
 
 	// Verificar autenticación para rutas de admin
 	const sessionToken = cookies.get(SESSION_COOKIE_NAME);
@@ -201,6 +225,10 @@ export const handle: Handle = async ({ event, resolve }) => {
 		}
 	}
 
-	// Para el resto de las peticiones, continuar normalmente
-	return resolve(event);
+	// Para el resto de las peticiones, continuar normalmente.
+	// `%sveltekit.lang%` no es un placeholder que SvelteKit resuelva solo: sin esta
+	// sustitución el HTML se servía con `<html lang="%sveltekit.lang%">` literal.
+	return resolve(event, {
+		transformPageChunk: ({ html }) => html.replace('%sveltekit.lang%', lang)
+	});
 };

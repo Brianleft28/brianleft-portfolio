@@ -25,7 +25,7 @@
 
 Portfolio interactivo que simula un "Sistema Operativo" web con:
 - **Terminal funcional** con comandos Unix-like
-- **Asistente IA** (TorvaldsAi) integrado con Google Gemini
+- **Asistente IA** integrado con Google Gemini
 - **Sistema de archivos virtual** navegable
 - **100% parametrizable** para reventa/personalización
 

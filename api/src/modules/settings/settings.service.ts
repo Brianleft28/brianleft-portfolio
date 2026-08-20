@@ -3,12 +3,15 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Setting } from '../../entities/setting.entity';
 import * as figlet from 'figlet';
+import { TRANSLATABLE_SETTINGS, readableValue } from '../../common/placeholders';
+import { TranslationService } from '../translation/translation.service';
 
 @Injectable()
 export class SettingsService {
   constructor(
     @InjectRepository(Setting)
     private settingsRepository: Repository<Setting>,
+    private translationService: TranslationService,
   ) {}
 
   /**
@@ -57,6 +60,7 @@ export class SettingsService {
     }
 
     setting.value = value;
+    setting.valueEn = await this.translateIfProse(setting.key, value);
     const savedSetting = await this.settingsRepository.save(setting);
 
     // Si es un campo relacionado con nombre o rol, regenerar ASCII banner
@@ -82,6 +86,20 @@ export class SettingsService {
   }
 
   /**
+   * Versión en inglés del valor, si esta clave es prosa.
+   *
+   * Editar el rol o la bio desde el panel invalida la traducción vieja, así que
+   * se rehace en el momento. Si falla queda en `null` y el visitante en inglés
+   * ve el español, que es el fallback de todo el contenido.
+   */
+  private async translateIfProse(key: string, value: string): Promise<string | null> {
+    if (!TRANSLATABLE_SETTINGS.includes(key)) return null;
+
+    const source = readableValue(value);
+    return source.trim() ? this.translationService.lineToEnglish(source) : null;
+  }
+
+  /**
    * Actualiza un setting por key de un usuario
    */
   async updateByKey(key: string, value: string, userId: number): Promise<Setting> {
@@ -92,6 +110,7 @@ export class SettingsService {
     }
 
     setting.value = value;
+    setting.valueEn = await this.translateIfProse(key, value);
     const savedSetting = await this.settingsRepository.save(setting);
 
     // Si es un campo relacionado con nombre o rol, regenerar ASCII banner

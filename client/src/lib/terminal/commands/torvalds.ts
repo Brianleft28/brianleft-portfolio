@@ -1,17 +1,22 @@
 import type { Command, CommandContext, AiMode } from '../types';
+import { t } from '$lib/i18n/helpers';
 
 // Modos por defecto - se pueden sobrescribir desde config
 // White Label: sin referencias a "torvalds"
 export const DEFAULT_AI_MODES: Record<string, AiMode> = {
 	arquitecto: {
 		name: 'arquitecto',
-		description: 'Diseño de sistemas y arquitectura de software',
+		get description() {
+			return t('terminal.ai.modes.arquitecto');
+		},
 		systemPrompt:
 			'Sos un arquitecto de software senior. Analizás proyectos con mentalidad de escalabilidad y buenas prácticas. Hablás en español de forma técnica pero accesible.'
 	},
 	asistente: {
 		name: 'asistente',
-		description: 'Asistente general para consultas sobre el portfolio',
+		get description() {
+			return t('terminal.ai.modes.asistente');
+		},
 		systemPrompt:
 			'Sos un asistente profesional del portfolio. Respondés consultas sobre proyectos y experiencia de forma clara y directa. Hablás en español argentino.'
 	}
@@ -30,7 +35,9 @@ export function getAiModes(): Record<string, AiMode> {
 
 export const torvalds: Command = {
 	name: 'ai',
-	description: 'Asistente AI con modos especializados',
+	get description() {
+		return t('terminal.ai.description');
+	},
 	usage: 'ai [subcomando] [args] o ai <pregunta directa>',
 
 	execute(args, ctx) {

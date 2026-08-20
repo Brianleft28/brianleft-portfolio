@@ -19,7 +19,8 @@
 		"examples": "Ejemplos",
 		"options": "Opciones",
 		"tip": "Tip",
-		"alias": "Alias"
+		"alias": "Alias",
+		"command": "comando"
 	},
 	"terminal": {
 		"help": {
@@ -44,8 +45,17 @@
 				"theme": "Cambiar tema de colores",
 				"clear": "Limpiar consola (Ctrl+L)",
 				"help": "Mostrar esta ayuda",
-				"exit": "Cerrar terminal (Ctrl+Ñ)"
-			}
+				"exit": "Cerrar terminal (Ctrl+Ñ)",
+				"lang": "Cambiar idioma",
+				"whoami": "Ver información del usuario"
+			},
+			"available": "COMANDOS DISPONIBLES",
+			"detailed_info": "Info detallada de un comando",
+			"about": "Ayuda sobre {name}",
+			"not_found": "comando “{name}” no encontrado",
+			"hint_detail": "help &lt;comando&gt; para info detallada",
+			"hint_options": "&lt;comando&gt; -h para opciones",
+			"more_options": "{name} -h para más opciones"
 		},
 		"whoami": {
 			"description": "Ver información del usuario actual",
@@ -102,7 +112,8 @@
 				"not_accessible": "no se puede acceder a",
 				"not_directory": "No es un directorio"
 			},
-			"empty_directory": "(directorio vacío)"
+			"empty_directory": "(directorio vacío)",
+			"alias_ll": "Lista detallada (alias de ls -l)"
 		},
 		"theme": {
 			"description": "Cambia el tema visual de la terminal y el sitio",
@@ -168,6 +179,36 @@
 				"unknown": "Subcomando desconocido",
 				"unknown_current": "Idioma actual desconocido"
 			}
+		},
+		"cat": {
+			"description": "Muestra el contenido de un archivo (renderiza .md)"
+		},
+		"cd": {
+			"description": "Cambia de directorio"
+		},
+		"cls": {
+			"description": "Limpia la consola (Ctrl+L)"
+		},
+		"pwd": {
+			"description": "Muestra el directorio actual"
+		},
+		"tree": {
+			"description": "Muestra la estructura de árbol"
+		},
+		"admin": {
+			"description": "Panel del dueño"
+		},
+		"ai": {
+			"description": "Asistente AI con modos especializados",
+			"modes": {
+				"arquitecto": "Diseño de sistemas y arquitectura de software",
+				"asistente": "Asistente general para consultas sobre el portfolio"
+			}
+		},
+		"chat": {
+			"invalid_response": "La respuesta de la API no fue válida.",
+			"kernel_panic": "Kernel Panic: no se pudo conectar con el núcleo cognitivo.",
+			"close": "Cerrar terminal"
 		}
 	},
 	"admin": {
@@ -238,6 +279,7 @@
 	"page": {
 		"home": {
 			"index_of": "Índice de",
+			"download_cv": "Descargar CV",
 			"main_directory": "[directorio principal]",
 			"no_file_selected": "Sin archivo seleccionado",
 			"close_file": "Cerrar archivo",

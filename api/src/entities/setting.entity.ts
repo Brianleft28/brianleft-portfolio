@@ -27,6 +27,13 @@ export class Setting {
   @Column({ type: 'text' })
   value: string;
 
+  /**
+   * El mismo valor en inglés, cuando es prosa (ver `TRANSLATABLE_SETTINGS`).
+   * `null` = sin traducir y se sirve el español, igual que el resto del contenido.
+   */
+  @Column({ name: 'value_en', type: 'text', nullable: true })
+  valueEn: string | null;
+
   @Column({ type: 'varchar', length: 50, default: 'string' })
   type: 'string' | 'number' | 'boolean' | 'json';
 

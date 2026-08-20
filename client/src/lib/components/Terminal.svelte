@@ -10,6 +10,7 @@
 
 	// Sistema modular de comandos
 	import { locale } from '$lib/i18n';
+	import { t } from 'svelte-i18n';
 	import { getCommand, getAllCommands, registerAiCommandAlias, isCommandProtected } from '$lib/terminal/commands';
 	import type { CommandContext } from '$lib/terminal/types';
 
@@ -39,16 +40,12 @@
 		const titleAttr = title ? ` title="${title}"` : '';
 		return `<a href="${href}" target="_blank" rel="noopener noreferrer"${titleAttr}>${text}</a>`;
 	};
-	
-	// Mejor renderizado de listas
-	renderer.list = (body, ordered) => {
-		const tag = ordered ? 'ol' : 'ul';
-		return `<${tag} class="terminal-list">${body.items.map(item => item.raw).join('')}</${tag}>`;
-	};
-	
-	renderer.listitem = (text) => {
-		return `<li>${text.text}</li>`;
-	};
+
+	// Las listas las arma `marked`. Había un renderer propio acá que volcaba
+	// `item.raw` —el markdown sin parsear— adentro del <ul>, así que en toda
+	// respuesta con viñetas se leía `- **Slug:** ...` tal cual, sin negritas,
+	// sin código inline y sin <li>. El estilo se aplica por CSS sobre
+	// `.ai-markdown ul/li`, que ya existía.
 
 	renderer.code = ({ text, lang }) => {
 		if (lang === 'mermaid') return mermaidBlock(text);
@@ -668,7 +665,7 @@ Usa <code>admin login</code> para acceder.`);
 			});
 
 			if (!response.ok || !response.body) {
-				throw new Error('La respuesta de la API no fue válida.');
+				throw new Error($t('terminal.chat.invalid_response'));
 			}
 
 			const reader = response.body.getReader();
@@ -699,7 +696,7 @@ Usa <code>admin login</code> para acceder.`);
 			stopTypewriter();
 			console.error('Error en el chat con IA:', error);
 			history[responseIndex].text =
-				'Kernel Panic: No se pudo conectar con el núcleo cognitivo.';
+				$t('terminal.chat.kernel_panic');
 			history = history;
 		}
 	}
@@ -771,7 +768,7 @@ Usa <code>admin login</code> para acceder.`);
 	}}
 >
 	<div class="d-flex justify-content-end me-2 mt-2 p-2">
-		<button class="btn-close-neon" onclick={handleClose} aria-label="Cerrar Terminal">✕</button
+		<button class="btn-close-neon" onclick={handleClose} aria-label={$t('terminal.chat.close')}>✕</button
 		>
 	</div>
 
@@ -922,8 +919,7 @@ Usa <code>admin login</code> para acceder.`);
 	}
 
 	:global(.ai-markdown ul),
-	:global(.ai-markdown ol),
-	:global(.terminal-list) {
+	:global(.ai-markdown ol) {
 		display: block;
 		clear: both;
 		margin: 0.5rem 0;
@@ -931,8 +927,7 @@ Usa <code>admin login</code> para acceder.`);
 		list-style-position: outside;
 	}
 
-	:global(.ai-markdown ul),
-	:global(.terminal-list) {
+	:global(.ai-markdown ul) {
 		list-style-type: disc;
 	}
 
@@ -940,25 +935,21 @@ Usa <code>admin login</code> para acceder.`);
 		list-style-type: decimal;
 	}
 
-	:global(.ai-markdown li),
-	:global(.terminal-list li) {
+	:global(.ai-markdown li) {
 		margin-bottom: 0.25rem;
 		color: var(--theme-text-primary);
 		line-height: 1.5;
 	}
 
-	:global(.ai-markdown li::marker),
-	:global(.terminal-list li::marker) {
+	:global(.ai-markdown li::marker) {
 		color: var(--theme-prompt); /* Verde como el prompt */
 	}
 
-	:global(.ai-markdown li strong),
-	:global(.terminal-list li strong) {
+	:global(.ai-markdown li strong) {
 		color: var(--theme-secondary); /* Color de acento para negritas en listas */
 	}
 
-	:global(.ai-markdown li code),
-	:global(.terminal-list li code) {
+	:global(.ai-markdown li code) {
 		background: var(--theme-bg-secondary);
 		color: var(--theme-warning); /* Naranja para código inline */
 		padding: 0.1rem 0.4rem;

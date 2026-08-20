@@ -1,8 +1,11 @@
 import type { Command } from '../types';
+import { t } from '$lib/i18n/helpers';
 
 export const cls: Command = {
 	name: 'cls',
-	description: 'Limpia la consola (Ctrl+L)',
+	get description() {
+		return t('terminal.cls.description');
+	},
 	usage: 'cls [-h]',
 	execute(args) {
 		// Help flag

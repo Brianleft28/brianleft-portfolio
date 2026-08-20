@@ -4,6 +4,8 @@ import { Repository, In, IsNull } from 'typeorm';
 import { Memory, MemoryType } from '../../entities/memory.entity';
 import { MemoryKeyword } from '../../entities/memory-keyword.entity';
 import { Setting } from '../../entities/setting.entity';
+import { applyPlaceholders, buildPlaceholders } from '../../common/placeholders';
+import { DEFAULT_LOCALE, Locale } from '../../common/locale';
 import { CreateMemoryDto, UpdateMemoryDto } from './dto';
 import { detectTechStack, replaceSection } from '../projects/project-sections';
 import { GoogleGenerativeAI } from '@google/generative-ai';
@@ -15,10 +17,62 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
  */
 const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
 
+/**
+ * Portada de la base de conocimiento (`memory`), en los dos idiomas.
+ *
+ * Es un andamio: el bloque de proyectos lo reescribe
+ * `regenerateProjectSections()` entre los marcadores. La versión en inglés
+ * existe porque este documento no se versiona como `.md` —su contenido se
+ * genera— así que no hay nada en `${MEMORY_PATH}/en/` de dónde traducirlo.
+ */
+const DOCS_SCAFFOLD_ES = `# Base de Conocimiento — {{owner_name}}
+
+## Acerca de este documento
+
+Este documento sirve como índice de proyectos y conocimiento para la IA del portfolio.
+Los proyectos se agregan automáticamente cuando los creas desde el panel de administración.
+
+---
+
+## Proyectos
+
+_Aún no hay proyectos registrados. Crea tu primer proyecto desde /admin/projects._
+
+---
+
+## [DATOS DE CONTACTO]
+
+- Email: {{owner_email}}
+- GitHub: {{social_github}}
+- LinkedIn: {{social_linkedin}}
+`;
+
+const DOCS_SCAFFOLD_EN = `# Knowledge Base — {{owner_name}}
+
+## About this document
+
+This is the project and knowledge index for the portfolio's AI.
+Projects are added automatically when you create them from the admin panel.
+
+---
+
+## Projects
+
+_No projects registered yet._
+
+---
+
+## [CONTACT DETAILS]
+
+- Email: {{owner_email}}
+- GitHub: {{social_github}}
+- LinkedIn: {{social_linkedin}}
+`;
+
 @Injectable()
 export class MemoryService {
   // Cache por userId
-  private settingsCache: Map<number, Map<string, string>> = new Map();
+  private settingsCache: Map<number, Setting[]> = new Map();
   private settingsCacheTime: Map<number, number> = new Map();
   private readonly CACHE_TTL = 60000; // 1 minuto
 
@@ -39,33 +93,25 @@ export class MemoryService {
     const cacheTime = this.settingsCacheTime.get(userId) || 0;
     const userCache = this.settingsCache.get(userId);
     
-    if (now - cacheTime < this.CACHE_TTL && userCache && userCache.size > 0) {
+    if (now - cacheTime < this.CACHE_TTL && userCache && userCache.length > 0) {
       return; // Cache válido
     }
 
+    // Se cachean los settings crudos, no un mapa ya resuelto: el mapa se arma
+    // por idioma, y el mismo caché sirve para el español y para el inglés.
     const settings = await this.settingsRepository.find({ where: { userId } });
-    const newCache = new Map<string, string>();
-    
-    for (const setting of settings) {
-      newCache.set(setting.key, setting.value);
-    }
-    
-    this.settingsCache.set(userId, newCache);
+    this.settingsCache.set(userId, settings);
     this.settingsCacheTime.set(userId, now);
   }
 
   /**
    * Reemplaza placeholders {{key}} con valores de settings
    */
-  private replacePlaceholders(content: string, userId: number): string {
-    if (!content) return content;
-    
-    const cache = this.settingsCache.get(userId);
-    if (!cache) return content;
-    
-    return content.replace(/\{\{(\w+)\}\}/g, (match, key) => {
-      return cache.get(key) || match;
-    });
+  private replacePlaceholders(content: string, userId: number, lang: Locale = DEFAULT_LOCALE): string {
+    const settings = this.settingsCache.get(userId);
+    if (!content || !settings) return content;
+
+    return applyPlaceholders(content, buildPlaceholders(settings, lang));
   }
 
   /**
@@ -75,8 +121,11 @@ export class MemoryService {
     return {
       ...memory,
       content: this.replacePlaceholders(memory.content, userId),
+      contentEn: memory.contentEn ? this.replacePlaceholders(memory.contentEn, userId, 'en') : null,
       title: this.replacePlaceholders(memory.title, userId),
+      titleEn: memory.titleEn ? this.replacePlaceholders(memory.titleEn, userId, 'en') : null,
       summary: memory.summary ? this.replacePlaceholders(memory.summary, userId) : null,
+      summaryEn: memory.summaryEn ? this.replacePlaceholders(memory.summaryEn, userId, 'en') : null,
     };
   }
 
@@ -294,57 +343,86 @@ export class MemoryService {
 
     projects.sort((a, b) => b.priority - a.priority || a.slug.localeCompare(b.slug));
 
+    // Cada proyecto aporta su versión traducida si la tiene, y cae al español
+    // si no. Antes estas secciones se escribían sólo en español: el perfil en
+    // inglés se quedaba sin la lista de proyectos —lo más importante que tiene—
+    // y la base de conocimiento que el asistente lee siempre no se traducía nunca.
     const docs = projects.map((project) => ({
       slug: project.slug,
       title: project.title,
+      titleEn: project.titleEn || project.title,
       summary: project.summary || '',
+      summaryEn: project.summaryEn || project.summary || '',
       techStack: techStackBySlug[project.slug] || detectTechStack(project.content),
     }));
 
-    await this.rewriteSection(
-      { slug: 'memory', userId },
-      '## Proyectos',
+    const stack = (d: (typeof docs)[number]) => d.techStack.join(', ') || '—';
+
+    const knowledgeBlock = (lang: 'es' | 'en') =>
       docs
         .map((d) =>
           [
-            `### ${d.title}`,
+            `### ${lang === 'en' ? d.titleEn : d.title}`,
             '',
-            d.summary,
+            lang === 'en' ? d.summaryEn : d.summary,
             '',
             `- **Slug:** \`${d.slug}\``,
-            `- **Stack:** ${d.techStack.join(', ') || '—'}`,
+            `- **Stack:** ${stack(d)}`,
           ].join('\n'),
         )
-        .join('\n\n'),
+        .join('\n\n');
+
+    const profileBlock = (lang: 'es' | 'en') =>
+      docs
+        .map((d) => {
+          const title = lang === 'en' ? d.titleEn : d.title;
+          const short = title.split('—')[0].trim().toLowerCase();
+          const suggested =
+            lang === 'en'
+              ? `**Suggested questions:** "tell me about ${short}", "how does ${short} work", ` +
+                `"what technologies does ${short} use".`
+              : `**Preguntas sugeridas:** "contame de ${short}", "cómo funciona ${short}", ` +
+                `"qué tecnologías usa ${short}".`;
+
+          return [
+            `### ${title}`,
+            '',
+            `- **Stack:** ${stack(d)}`,
+            '',
+            lang === 'en' ? d.summaryEn : d.summary,
+            '',
+            suggested,
+          ].join('\n');
+        })
+        .join('\n\n---\n\n');
+
+    await this.rewriteSection(
+      { slug: 'memory', userId },
+      { heading: '## Proyectos', block: knowledgeBlock('es') },
+      { heading: '## Projects', block: knowledgeBlock('en'), scaffold: DOCS_SCAFFOLD_EN },
     );
 
     await this.rewriteSection(
       { slug: 'index', userId },
-      '## Proyectos Destacados',
-      docs
-        .map((d) => {
-          const short = d.title.split('—')[0].trim().toLowerCase();
-          return [
-            `### ${d.title}`,
-            '',
-            `- **Stack:** ${d.techStack.join(', ') || '—'}`,
-            '',
-            d.summary,
-            '',
-            `**Preguntas sugeridas:** "contame de ${short}", "cómo funciona ${short}", ` +
-              `"qué tecnologías usa ${short}".`,
-          ].join('\n');
-        })
-        .join('\n\n---\n\n'),
+      { heading: '## Proyectos Destacados', block: profileBlock('es') },
+      { heading: '## Featured Projects', block: profileBlock('en') },
     );
 
     console.log(`[MemoryService] Secciones de proyectos regeneradas (${docs.length} proyectos).`);
   }
 
+  /**
+   * Reescribe un bloque generado, en los dos idiomas.
+   *
+   * El inglés se escribe sólo si hay dónde: o la memoria ya tiene traducción
+   * (viene de `${MEMORY_PATH}/en/**`), o se le pasa un `scaffold` para arrancar.
+   * Si no hay ninguno de los dos, se deja en `null` y el contenido cae al
+   * español, igual que el resto del sistema.
+   */
   private async rewriteSection(
     where: { slug: string; userId: number },
-    heading: string,
-    block: string,
+    spanish: { heading: string; block: string },
+    english: { heading: string; block: string; scaffold?: string },
   ): Promise<void> {
     const memory = await this.memoriesRepository.findOne({ where });
     if (!memory) {
@@ -352,9 +430,16 @@ export class MemoryService {
       return;
     }
 
-    await this.memoriesRepository.update(memory.id, {
-      content: replaceSection(memory.content, heading, block),
-    });
+    const changes: Partial<Memory> = {
+      content: replaceSection(memory.content, spanish.heading, spanish.block),
+    };
+
+    const englishBase = memory.contentEn ?? english.scaffold;
+    if (englishBase) {
+      changes.contentEn = replaceSection(englishBase, english.heading, english.block);
+    }
+
+    await this.memoriesRepository.update(memory.id, changes);
   }
 
   /**
@@ -497,7 +582,7 @@ Respondé SOLO con el resumen, sin introducción ni formato markdown.`;
       const genAI = new GoogleGenerativeAI(apiKey);
       const model = genAI.getGenerativeModel({ model: GEMINI_MODEL });
 
-      const prompt = `Dado el siguiente proyecto de software, generá exactamente 15 keywords/tags relevantes para búsqueda.
+      const prompt = `Dado el siguiente proyecto de software, generá exactamente 20 keywords/tags relevantes para búsqueda.
 
 Proyecto: "${title}"
 
@@ -505,14 +590,16 @@ Contenido:
 ${content?.slice(0, 2500) || 'Sin contenido'}
 
 REGLAS:
-- Exactamente 15 keywords separadas por comas
+- Exactamente 20 keywords separadas por comas: 12 en español y 8 en inglés
 - Incluir: nombre del proyecto, tecnologías, tipo de proyecto, conceptos clave
 - Keywords en minúsculas
 - Sin caracteres especiales excepto guiones
 - Priorizar términos técnicos específicos
 - Incluir variantes (ej: "auth" y "autenticación")
+- Se buscan como subcadena dentro de la pregunta del visitante: nada demasiado
+  corto o genérico que matchee cualquier cosa
 
-Respondé SOLO con las 15 keywords separadas por comas, nada más.`;
+Respondé SOLO con las 20 keywords separadas por comas, nada más.`;
 
       const result = await model.generateContent(prompt);
       const response = result.response.text().trim();
@@ -521,7 +608,7 @@ Respondé SOLO con las 15 keywords separadas por comas, nada más.`;
         .split(',')
         .map(k => k.trim().toLowerCase().replace(/[^a-z0-9áéíóúñü\s-]/g, ''))
         .filter(k => k.length > 1 && k.length < 50)
-        .slice(0, 15);
+        .slice(0, 20);
 
       return keywords.length >= 5 ? keywords : this.generateBasicKeywords(title);
     } catch (error) {
@@ -690,33 +777,12 @@ Documento optimizado para consumo por IA. Los placeholders {{variable}} se reemp
     });
 
     if (!existingDocs) {
-      const docsContent = `# Base de Conocimiento — {{owner_name}}
-
-## Acerca de este documento
-
-Este documento sirve como índice de proyectos y conocimiento para la IA del portfolio.
-Los proyectos se agregan automáticamente cuando los creas desde el panel de administración.
-
----
-
-## Proyectos
-
-_Aún no hay proyectos registrados. Crea tu primer proyecto desde /admin/projects._
-
----
-
-## [DATOS DE CONTACTO]
-
-- Email: {{owner_email}}
-- GitHub: {{social_github}}
-- LinkedIn: {{social_linkedin}}
-`;
-
       const docsMemory = this.memoriesRepository.create({
         type: MemoryType.DOCS,
         slug: 'memory',
         title: `Base de Conocimiento`,
-        content: docsContent,
+        content: DOCS_SCAFFOLD_ES,
+        contentEn: DOCS_SCAFFOLD_EN,
         summary: `Índice de proyectos y conocimiento de ${displayName}`,
         priority: 5,
         userId,

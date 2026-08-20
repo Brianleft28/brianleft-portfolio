@@ -52,6 +52,18 @@
         }
     });
 
+    /**
+     * Primer parseo, sincrónico y en el cuerpo del componente.
+     *
+     * `onMount` y `$effect` no corren durante el render del servidor, así que
+     * si el markdown se parseara sólo ahí el HTML servido saldría con el visor
+     * vacío. Es exactamente lo que hacía que el sitio tuviera 202 caracteres de
+     * texto indexable. Los dibujos de mermaid sí quedan para el cliente.
+     */
+    if (!isContactApp) {
+        renderedHtml = marked.parse(file.content || '*Archivo sin contenido*') as string;
+    }
+
     let contentElement = $state<HTMLElement | null>(null);
 
     async function updateContent(content: string) {

@@ -141,20 +141,19 @@ Accesible en `/admin` con autenticación JWT:
 
 ## Sistema de Internacionalización (i18n)
 
-El portfolio soporta múltiples idiomas mediante `svelte-i18n`:
+La internacionalización tiene **dos capas** y conviene no confundirlas: los textos de la
+interfaz, y el contenido del portfolio.
 
-### Estructura de archivos
+### Capa 1 — Interfaz (`svelte-i18n`)
 
 ```
 client/src/lib/i18n/
-├── index.ts          # Configuración principal
-├── helpers.ts        # Funciones t(), getCurrentLocale(), setLocale()
+├── index.ts          # register(), init(), t(), setLocale()  ← única implementación
+├── helpers.ts        # reexporta desde index.ts, por compatibilidad
 └── locales/
-    ├── es.json       # Español (default)
+    ├── es.json       # Español (default y fallback)
     └── en.json       # English
 ```
-
-### Uso en componentes Svelte
 
 ```svelte
 <script>
@@ -164,13 +163,31 @@ client/src/lib/i18n/
 <h1>{$_('admin.settings.title')}</h1>
 ```
 
-### Uso en archivos TypeScript
+En archivos `.ts` se usa `t()` de `$lib/i18n`, que es sincrónico.
 
-```typescript
-import { t } from '$lib/i18n/helpers';
+> ⚠️ **Nunca llamar a `t()` en el cuerpo de un módulo.** Los diccionarios se cargan con
+> `import()` dinámico, así que el idioma vale `null` hasta que la descarga termina y
+> formatear en esa ventana tira una excepción. Los comandos de la terminal declaran su
+> descripción como **getter** (`get description() { return t(...) }`) justamente por eso,
+> y de paso así siguen el cambio de idioma en caliente. El `load` de `+layout.ts` espera
+> el diccionario antes del primer render.
 
-const message = t('terminal.help.description');
-```
+### Capa 2 — Contenido
+
+El contenido no se traduce en vivo: se genera antes y se revisa.
+
+1. Los `.md` se escriben una vez, en español, bajo `client/src/lib/data/memory/`.
+2. `npm run translate` (en `api/`) los traduce y escribe el espejo en `.../memory/en/`,
+   con la misma ruta relativa. Es idempotente: sólo toca lo que cambió.
+3. El seeder carga cada traducción en las columnas `content_en` / `title_en` /
+   `summary_en`, y la parametría en `value_en`.
+4. La API resuelve el idioma con `?lang=`: `/filesystem?lang=en`, `/settings/public?lang=en`.
+   El chat recibe `locale` y arma el contexto con el material ya traducido.
+
+**Todo lo que falte cae al español.** Una traducción ausente nunca deja el sitio vacío.
+
+Lo que se sube desde el panel de administración sí se traduce automáticamente al guardar,
+porque ahí no hay un commit de por medio donde revisarlo.
 
 ### Idiomas disponibles
 
@@ -181,7 +198,10 @@ const message = t('terminal.help.description');
 
 **Comando terminal:** `lang list` / `lang set en` / `lang es`
 
-**Persistencia:** El idioma se guarda en `localStorage` del navegador.
+**Persistencia:** `localStorage` **y una cookie**. La cookie no es redundante: es lo único
+que ve el servidor, y sin ella el SSR renderizaría siempre en español —incluido el
+`<title>` y los metadatos que leen Google y LinkedIn—. Si no hay ninguna de las dos, se
+usa el `Accept-Language` del navegador.
 
 ## Variables de Entorno
 

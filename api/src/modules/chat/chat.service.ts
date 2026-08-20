@@ -2,11 +2,13 @@ import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { GoogleGenerativeAI, GenerativeModel } from '@google/generative-ai';
 import { MemoryService } from '../memory/memory.service';
-import { MemoryType } from '../../entities/memory.entity';
 import { AiPersonalitiesService } from '../ai-personalities/ai-personalities.service';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Setting } from '../../entities/setting.entity';
+import { Memory, MemoryType } from '../../entities/memory.entity';
+import { normalizeLocale, Locale } from '../../common/locale';
+import { buildPlaceholders } from '../../common/placeholders';
 
 @Injectable()
 export class ChatService {
@@ -85,8 +87,8 @@ export class ChatService {
       // Detectar si pide lista de proyectos
       const isListRequest = this.isProjectListRequest(prompt);
 
-      // Obtener contexto relevante
-      const context = await this.buildContext(prompt, isListRequest, userId);
+      // Obtener contexto relevante, en el idioma del visitante
+      const context = await this.buildContext(prompt, isListRequest, userId, normalizeLocale(locale));
 
       // Construir prompt completo (ahora es async, con modo)
       const fullPrompt = await this.buildFullPrompt(prompt, context, isListRequest, mode, userId, locale);
@@ -216,6 +218,14 @@ RESUMEN:`;
       'mostrar proyectos',
       'ver proyectos',
       'todos los proyectos',
+      // La misma pregunta en inglés no entraba por acá y el visitante recibía
+      // una respuesta suelta en vez del listado.
+      'projects',
+      'list',
+      'what projects',
+      'which projects',
+      'show me',
+      'all projects',
     ];
 
     const promptLower = prompt.toLowerCase();
@@ -226,10 +236,15 @@ RESUMEN:`;
    * Construye el contexto para el prompt
    * Usa memory.md como fuente principal de conocimiento sobre proyectos
    */
-  private async buildContext(prompt: string, isListRequest: boolean, userId: number): Promise<string> {
+  private async buildContext(
+    prompt: string,
+    isListRequest: boolean,
+    userId: number,
+    locale: Locale,
+  ): Promise<string> {
     // SIEMPRE cargar memory.md como base de conocimiento
     const memoryDoc = await this.memoryService.findBySlug('memory', userId);
-    const baseContext = memoryDoc?.content || '';
+    const baseContext = memoryDoc ? this.pickContent(memoryDoc, locale) : '';
 
     // Buscar memorias relevantes adicionales.
     // Ojo: esto corre también para `isListRequest`. Antes ese branch devolvía
@@ -237,21 +252,37 @@ RESUMEN:`;
     // comandos" se quedaba sin la referencia real y el modelo la inventaba.
     const memories = await this.memoryService.findRelevant(prompt, userId);
 
+    // Sin esto no hay forma de saber, ante una respuesta rara, si falló la
+    // recuperación o el modelo. Una pregunta en inglés que no matchea ninguna
+    // keyword se ve acá como una lista vacía.
+    this.logger.debug(
+      `RAG [${locale}] "${prompt.slice(0, 60)}" → [${memories.map((m) => m.slug).join(', ') || 'sin match'}]`,
+    );
+
     if (isListRequest) {
-      const extra = memories.map((m) => m.content).join('\n\n---\n\n');
+      const extra = memories.map((m) => this.pickContent(m, locale)).join('\n\n---\n\n');
       return extra ? `${baseContext}\n\n---\n\n${extra}` : baseContext;
     }
 
     if (memories.length === 0) {
       // Si no hay match específico, usar memory.md + meta
       const metaMemory = await this.memoryService.findByType(MemoryType.META, userId);
-      const metaContext = metaMemory.map((m) => m.content).join('\n\n');
+      const metaContext = metaMemory.map((m) => this.pickContent(m, locale)).join('\n\n');
       return `${baseContext}\n\n---\n\n${metaContext}`;
     }
 
     // Combinar memory.md con memorias específicas encontradas
-    const specificContext = memories.map((m) => m.content).join('\n\n---\n\n');
+    const specificContext = memories.map((m) => this.pickContent(m, locale)).join('\n\n---\n\n');
     return `${baseContext}\n\n---\n\n${specificContext}`;
+  }
+
+  /**
+   * Contenido de una memoria en el idioma pedido, cayendo al español cuando no
+   * hay traducción. Darle el material ya en inglés al modelo es más barato y
+   * más fiel que pedirle que traduzca mientras responde.
+   */
+  private pickContent(memory: Memory, locale: Locale): string {
+    return (locale === 'en' ? memory.contentEn : null) || memory.content || '';
   }
 
   /**
@@ -269,7 +300,11 @@ RESUMEN:`;
   ): Promise<string> {
     // Cargar settings para placeholders (del usuario específico)
     const settings = await this.settingsRepository.find({ where: { userId } });
-    const settingsMap = new Map(settings.map((s) => [s.key, s.value]));
+
+    // Mismo criterio que el filesystem: la parametría se resuelve en el idioma
+    // del visitante, y los valores que el panel guarda como JSON entran como
+    // texto —antes `owner_bio` metía `{"short":…}` crudo en el system prompt.
+    const settingsMap = buildPlaceholders(settings, normalizeLocale(locale));
 
     // Variables del owner
     const ownerFirstName = settingsMap.get('owner_first_name') || '';
@@ -375,6 +410,16 @@ HONESTIDAD (INNEGOCIABLE)
 - Es un portfolio profesional: una experiencia inventada acá es una mentira en
   una entrevista.
 
+ALCANCE
+- Sos el asistente del portfolio de ${ownerName}: hablás de sus proyectos, de
+  cómo trabaja y de cómo contactarlo.
+- Ante una consulta de programación general —cómo se escribe una función
+  recursiva, cómo se usa tal librería, resolverle un ejercicio a alguien—
+  decílo en una línea y ofrecé lo que sí podés contar. No escribas tutoriales
+  ni ejemplos de código genéricos: este no es un asistente de programación.
+- Sí explicás una tecnología cuando aparece en algo que él hizo, y siempre
+  atada a ese proyecto concreto.
+
 FORMATO DE RESPUESTA (MUY IMPORTANTE)
 - NUNCA uses headers markdown (# o ##). Esto es una terminal, no un documento.
 - Usá texto plano con saltos de línea para separar secciones
@@ -396,6 +441,7 @@ ${context}
 PREGUNTA DEL USUARIO
 ${userPrompt}
 
+${this.getFinalDirectives(locale, ownerName)}
 TU RESPUESTA (sin headers, formato terminal):`;
 
     return systemPrompt;
@@ -412,6 +458,38 @@ TU RESPUESTA (sin headers, formato terminal):`;
    * @param language variante configurada en la personalidad, para el caso por defecto
    * @param preferredLocale idioma de la interfaz del visitante (`es`, `en`), si se conoce
    */
+  /**
+   * Las dos reglas que tienen que ganar, puestas después de la pregunta.
+   *
+   * La posición no es un detalle: las personalidades guardadas en la base
+   * arrancan con "REGLAS: 1. Respondé en español" y "explicá el concepto", y
+   * eso le ganaba a cualquier matiz de más arriba — una pregunta en inglés
+   * recibía respuesta en español, y un "how do I write a recursive function in
+   * Python" recibía el tutorial igual, con la aclaración recién al final.
+   */
+  private getFinalDirectives(preferredLocale: string | undefined, ownerName: string): string {
+    return `${this.getLanguageDirective(preferredLocale)}
+ALCANCE DE ESTA RESPUESTA — manda sobre cualquier regla anterior:
+- Si la pregunta es de programación general y no tiene que ver con ${ownerName} ni con sus proyectos, NO la respondas: decí en una o dos oraciones que sos el asistente de su portfolio, y ofrecé de qué sí podés hablar.
+- En ese caso no incluyas ejemplos de código, ni pseudocódigo, ni explicaciones del concepto. Ni siquiera cortos.
+- Sí explicás una tecnología cuando aparece en algo que ${ownerName} hizo, y siempre atada a ese proyecto.
+`;
+  }
+
+  private getLanguageDirective(preferredLocale?: string): string {
+    const named: Record<string, string> = { es: 'español', en: 'inglés' };
+    const preferred = named[preferredLocale ?? ''];
+
+    return `IDIOMA DE ESTA RESPUESTA — manda sobre cualquier regla de idioma anterior, incluida la de tu personalidad:
+- Respondé en el MISMO idioma en que está escrita la pregunta de arriba. Si está en inglés, respondés en inglés.${
+      preferred
+        ? `\n- El visitante tiene la interfaz en ${preferred}: si la pregunta no deja claro el idioma, respondé en ${preferred}.`
+        : ''
+    }
+- El idioma del material que leíste no importa: la respuesta va en el idioma de la pregunta.
+`;
+  }
+
   private getLanguageInstruction(language?: string, preferredLocale?: string): string {
     const defaultVariants: Record<string, string> = {
       'es-AR': 'español argentino (vos, usás, tenés), natural pero profesional',
@@ -428,7 +506,7 @@ TU RESPUESTA (sin headers, formato terminal):`;
     return `\n## IDIOMA
 - Respondé SIEMPRE en el mismo idioma en que te escribieron. Si te preguntan en inglés, respondé en inglés; en portugués, en portugués.${preference}
 - Si no hay señal clara, usá ${fallback}.
-- El material que leés está en español. Traducilo al responder: no lo copies tal cual ni te disculpes por el idioma de las fuentes.
+- Parte del material puede llegarte en español aunque te escriban en inglés: traducilo al responder, no lo copies tal cual ni te disculpes por el idioma de las fuentes.
 - Los nombres propios, slugs y comandos no se traducen.`;
   }
 

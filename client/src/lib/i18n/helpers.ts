@@ -1,28 +1,6 @@
-import { get } from 'svelte/store';
-import { _, locale } from 'svelte-i18n';
-
 /**
- * Obtiene una traducción de forma sincrónica.
- * Útil para archivos .ts que no pueden usar la sintaxis reactiva de Svelte.
+ * Los comandos de la terminal importan desde acá por historia. La
+ * implementación vive en `./index.ts`, que además es el módulo que corre
+ * `init()`: importar helpers garantiza que i18n esté inicializado.
  */
-export function t(key: string, values?: Record<string, unknown>): string {
-	const translate = get(_);
-	return translate(key, { values }) as string;
-}
-
-/**
- * Obtiene el idioma actual
- */
-export function getCurrentLocale(): string {
-	return get(locale) || 'es';
-}
-
-/**
- * Cambia el idioma
- */
-export function setLocale(lang: string): void {
-	locale.set(lang);
-	if (typeof localStorage !== 'undefined') {
-		localStorage.setItem('portfolio-locale', lang);
-	}
-}
+export { t, getCurrentLocale, setLocale, normalizeLocale, SUPPORTED_LOCALES, DEFAULT_LOCALE } from './index';

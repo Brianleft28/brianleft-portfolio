@@ -15,10 +15,16 @@ const SYSTEM_KEYWORDS: Record<string, string[]> = {
   COMANDOS: [
     'comando', 'comandos', 'terminal', 'consola', 'ayuda', 'help', 'usar',
     'como se usa', 'que puedo hacer', 'navegar', 'atajos', 'listar comandos',
+    // Inglés: el match es por substring contra el prompt del visitante, así que
+    // una pregunta en inglés no tocaba ninguna keyword y el contexto llegaba vacío.
+    'command', 'commands', 'console', 'how do i', 'what can i do', 'shortcuts',
+    'list commands', 'available commands', 'navigate',
   ],
   meta: [
     'portfolio', 'este sitio', 'esta terminal', 'como funciona', 'asistente',
     'arquitectura del sitio', 'memoria', 'rag',
+    'this site', 'this terminal', 'how does it work', 'how it works',
+    'assistant', 'site architecture', 'memory',
   ],
 };
 
@@ -53,6 +59,7 @@ export async function seedMemories(dataSource: DataSource): Promise<void> {
   for (const file of files) {
     const metaFilePath = path.join(memoryPath, file);
     const content = fs.readFileSync(metaFilePath, 'utf-8');
+    const contentEn = readTranslation(memoryPath, file);
     const slug = file.replace('.md', '');
     const title = extractTitle(content) || slug;
     
@@ -71,10 +78,15 @@ export async function seedMemories(dataSource: DataSource): Promise<void> {
       // Los .md del repo son la fuente de verdad: si cambian, la memoria se
       // actualiza. Antes sólo se creaba, así que editar `meta.md` no tenía
       // ningún efecto y la IA seguía sirviendo la versión vieja para siempre.
-      if (existing.content === content && existing.title === title && existing.type === type) {
+      if (
+        existing.content === content &&
+        existing.contentEn === contentEn &&
+        existing.title === title &&
+        existing.type === type
+      ) {
         console.log(`⏭️ Memoria global "${slug}" sin cambios.`);
       } else {
-        await memoryRepo.update(existing.id, { content, title, type });
+        await memoryRepo.update(existing.id, { content, contentEn, title, type });
         console.log(`♻️  Memoria global "${slug}" actualizada desde el archivo.`);
       }
       await syncKeywords(dataSource, existing.id, slug);
@@ -84,6 +96,7 @@ export async function seedMemories(dataSource: DataSource): Promise<void> {
         slug,
         title,
         content,
+        contentEn,
         priority: 10,
         userId: null, // GLOBAL - disponible para todos los usuarios
       });
@@ -94,6 +107,17 @@ export async function seedMemories(dataSource: DataSource): Promise<void> {
   }
 
   console.log('🎉 Seeding de memorias base completado.');
+}
+
+/**
+ * Traducción de un doc, si existe: `${MEMORY_PATH}/en/<misma ruta relativa>`.
+ *
+ * Devuelve `null` cuando todavía no se tradujo, y todo lo que lee esa columna
+ * cae al español. Es lo que permite ir traduciendo de a poco sin romper nada.
+ */
+export function readTranslation(memoryPath: string, relativePath: string): string | null {
+  const translated = path.join(memoryPath, 'en', relativePath);
+  return fs.existsSync(translated) ? fs.readFileSync(translated, 'utf-8') : null;
 }
 
 /** Regraba las keywords de una memoria del sistema desde `SYSTEM_KEYWORDS`. */

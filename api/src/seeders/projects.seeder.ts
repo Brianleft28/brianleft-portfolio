@@ -7,6 +7,7 @@ import { Memory, MemoryType } from '../entities/memory.entity';
 import { MemoryKeyword } from '../entities/memory-keyword.entity';
 import { MemoryService } from '../modules/memory/memory.service';
 import { FilesystemService } from '../modules/filesystem/filesystem.service';
+import { readTranslation } from './memory.seeder';
 
 interface ProjectDoc {
   slug: string;
@@ -16,6 +17,10 @@ interface ProjectDoc {
   techStack: string[];
   keywords: string[];
   content: string;
+  /** `en/projects/<archivo>`, si ya se tradujo. `null` = se sirve en español. */
+  contentEn: string | null;
+  titleEn: string | null;
+  summaryEn: string | null;
   file: string;
 }
 
@@ -67,6 +72,11 @@ export async function seedProjects(
 
     const slug = str(data.slug) || file.replace(/\.md$/, '');
     const title = str(data.title) || extractTitle(body) || slug;
+    // La traducción es el mismo `.md` con el frontmatter traducido: de ahí sale
+    // el summary en inglés, y el cuerpo va a `content_en`.
+    const raw_en = readTranslation(memoryPath, path.join('projects', file));
+    const translated = raw_en ? parseFrontmatter(raw_en) : null;
+
     const doc: ProjectDoc = {
       slug,
       title,
@@ -75,6 +85,9 @@ export async function seedProjects(
       techStack: list(data.techStack),
       keywords: normalizeKeywords(list(data.keywords)),
       content: body,
+      contentEn: translated?.body ?? null,
+      titleEn: translated ? str(translated.data.title) || null : null,
+      summaryEn: translated ? str(translated.data.summary) || null : null,
       file,
     };
 
@@ -98,7 +111,10 @@ export async function seedProjects(
         type: MemoryType.PROJECT,
         title: doc.title,
         content: doc.content,
+        contentEn: doc.contentEn,
+        titleEn: doc.titleEn ?? existing.titleEn,
         summary: doc.summary || existing.summary,
+        summaryEn: doc.summaryEn ?? existing.summaryEn,
         priority: doc.priority,
         active: true,
       });
@@ -118,6 +134,15 @@ export async function seedProjects(
         },
         userId,
       );
+      // `CreateMemoryDto` no expone las traducciones: se completan aparte para
+      // no ensanchar la API pública del panel con campos que sólo usa el seeder.
+      if (doc.contentEn || doc.summaryEn || doc.titleEn) {
+        await memoryRepo.update(created.id, {
+          contentEn: doc.contentEn,
+          titleEn: doc.titleEn,
+          summaryEn: doc.summaryEn,
+        });
+      }
       console.log(
         `✅ Proyecto "${doc.slug}" creado (id ${created.id}, ${doc.keywords.length} keywords).`,
       );

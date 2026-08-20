@@ -40,6 +40,12 @@ export interface CommandResult {
 
 export interface Command {
     name: string;
+    /**
+     * Traducida, así que se declara como getter (`get description() { ... }`) y
+     * no como valor: evaluar `t()` al importar el módulo tiraba
+     * "Cannot format a message..." con el diccionario a medio cargar, y dejaba
+     * la descripción congelada en el idioma de ese momento.
+     */
     description: string;
     usage?: string;
     requiresAuth?: boolean; // Si true, solo disponible para usuarios logueados

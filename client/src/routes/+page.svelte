@@ -7,7 +7,7 @@
 	import { loadConfig } from '$lib/stores/config';
 	import { fileTree } from '$lib/stores/filesystem';
 	import { onMount } from 'svelte';
-	import { _ } from 'svelte-i18n';
+	import { _, locale } from 'svelte-i18n';
 
 	// Tipos para resúmenes de proyectos
 	interface ProjectSummary {
@@ -16,8 +16,22 @@
 		summary: string;
 	}
 
+	/** Nombres que valen como portada de una carpeta, en los dos idiomas. */
+	const COVER_NAMES = ['leeme.md', 'readme.md', 'leeme', 'readme'];
+
+	function findCoverId(folder: FolderNode | undefined): string | null {
+		const cover = folder?.children?.find(
+			(child) => child.type !== 'folder' && COVER_NAMES.includes(child.name.toLowerCase())
+		);
+		return cover?.id ?? null;
+	}
+
 	let currentPathIds = $state<string[]>([]);
-	let activeFileId = $state<string | null>(null);
+
+	// Arranca resuelto y no en `null`: el `$effect` que elige la portada no corre
+	// durante el render del servidor, así que el HTML salía sin ningún archivo
+	// abierto — es decir, sin contenido para un crawler.
+	let activeFileId = $state<string | null>(findCoverId($fileTree));
 	let isSelectingReadme = $state(false);
 	let projectSummaries = $state<ProjectSummary[]>([]);
 
@@ -124,6 +138,16 @@
 		return ['~', ...pathNames, fileName].filter(Boolean).join('/');
 	});
 
+	// Si el ítem es una carpeta de proyecto (estamos dentro de `proyectos/`),
+	// devuelve su slug para linkear a la página crawleable /proyectos/[slug].
+	// Devuelve null para el resto (archivos, otras carpetas): esos siguen siendo
+	// navegación in-page pura.
+	function projectSlugFor(item: FileSystemNode): string | null {
+		if (item.type !== 'folder') return null;
+		if (currentDirectory().name.toLowerCase() !== 'proyectos') return null;
+		return item.name.toLowerCase().replace(/\s+/g, '-');
+	}
+
 	function handleItemClick(clickedItem: FileSystemNode) {
 		if (clickedItem.type === 'folder') {
 			currentPathIds = [...currentPathIds, clickedItem.id];
@@ -144,17 +168,7 @@
 		}
 		
 		isSelectingReadme = true;
-		const readmeNames = ['leeme.md', 'readme.md', 'leeme', 'readme'];
-		const readmeFile = folder.children.find((child) => 
-			child.type !== 'folder' && 
-			readmeNames.includes(child.name.toLowerCase())
-		);
-		
-		if (readmeFile) {
-			activeFileId = readmeFile.id;
-		} else {
-			activeFileId = null;
-		}
+		activeFileId = findCoverId(folder);
 		
 		// Reset flag después de un breve delay
 		setTimeout(() => {
@@ -181,7 +195,18 @@
 <div class="container-fluid py-2 font-monospace d-flex flex-column" style="height: 100vh; overflow: hidden;">
     <!-- Indice -->
     <header class="row flex-shrink-0">
-        <h3 class="col-12 mb-3">{$_('page.home.index_of')} {currentPathString()}</h3>
+        <div class="col-12 mb-3 d-flex justify-content-between align-items-center flex-wrap gap-2">
+            <h3 class="mb-0">{$_('page.home.index_of')} {currentPathString()}</h3>
+            <!-- Descarga directa del CV para el visitante que no abre la terminal.
+                 Reusa el endpoint del comando `cv`. `download` fuerza la bajada. -->
+            <a
+                href="/api/uploads/cv?lang={$locale === 'en' ? 'en' : 'es'}"
+                download
+                class="btn btn-sm btn-outline-success"
+            >
+                ⬇ {$_('page.home.download_cv')}
+            </a>
+        </div>
         <hr />
     </header>
 
@@ -218,13 +243,29 @@
 							height="18"
 							class="me-2"
 						/>
-						<button
-							class:active={item.id === activeFileId}
-							class="btn btn-link text-decoration-none p-0"
-							onclick={() => handleItemClick(item)}
-						>
-							{item.name}
-						</button>
+						{#if projectSlugFor(item)}
+							<!-- Link real para el crawler y para "abrir en pestaña nueva";
+							     el click normal se queda en la navegación SPA. -->
+							<a
+								href="/proyectos/{projectSlugFor(item)}"
+								class:active={item.id === activeFileId}
+								class="btn btn-link text-decoration-none p-0"
+								onclick={(e) => {
+									e.preventDefault();
+									handleItemClick(item);
+								}}
+							>
+								{item.name}
+							</a>
+						{:else}
+							<button
+								class:active={item.id === activeFileId}
+								class="btn btn-link text-decoration-none p-0"
+								onclick={() => handleItemClick(item)}
+							>
+								{item.name}
+							</button>
+						{/if}
 					</div>
 				{/each}
 			</div>
@@ -280,7 +321,7 @@
 							<img src={folderMainIcon} alt="Logo" width="64" />
 							<p class="mt-3 text-muted">{$_('page.home.select_file_start')}</p>
 							<small class="text-muted"
-								>{$_('page.home.use_shortcut')} <kbd>Ctrl</kbd> + <kbd>Ñ</kbd> {$_('page.home.to_open_console')}</small
+								>{$_('page.home.use_shortcut')} <kbd>Ctrl</kbd> + <kbd>K</kbd> {$_('page.home.to_open_console')}</small
 							>
 						</div>
 					{/if}

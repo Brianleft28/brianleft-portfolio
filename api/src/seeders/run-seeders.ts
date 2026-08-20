@@ -8,9 +8,11 @@ import * as path from 'path';
 dotenv.config({ path: path.join(__dirname, '../../../.env') });
 
 import { AppModule } from '../app.module';
+import { ensureSchema } from './schema.seeder';
 import { seedMemories } from './memory.seeder';
 import { bootstrapOwner } from './bootstrap-owner.seeder';
 import { seedProjects } from './projects.seeder';
+import { translateSettings } from './settings-translation.seeder';
 
 /**
  * Seeder de arranque del portfolio.
@@ -20,9 +22,11 @@ import { seedProjects } from './projects.seeder';
  * en vez de duplicar esa lógica con un DataSource crudo.
  *
  * Orden:
+ *   0. Columnas que faltan (en producción `synchronize` está apagado)
  *   1. Memorias globales (meta.md y demás docs del sistema, userId = null)
  *   2. Usuario dueño + su filesystem, settings, personalidades de IA y memorias base
  *   3. Proyectos versionados en `${MEMORY_PATH}/projects/*.md`
+ *   4. Traducción al inglés de la parametría que falte
  *
  * Todo el proceso es idempotente: se puede reejecutar sin duplicar nada.
  */
@@ -36,6 +40,8 @@ async function runSeeders() {
   try {
     const dataSource = app.get(DataSource);
     console.log('✅ Conexión a base de datos establecida\n');
+
+    await ensureSchema(dataSource);
 
     console.log('═══════════════════════════════════════');
     console.log('📚 MEMORIAS GLOBALES DEL SISTEMA');
@@ -51,6 +57,11 @@ async function runSeeders() {
     console.log('🗂️  PROYECTOS');
     console.log('═══════════════════════════════════════');
     await seedProjects(app, owner.id);
+
+    console.log('\n═══════════════════════════════════════');
+    console.log('🌐 PARAMETRÍA EN INGLÉS');
+    console.log('═══════════════════════════════════════');
+    await translateSettings(app, owner.id);
 
     console.log('\n✅ Seeder completado exitosamente');
     console.log('   Siguiente paso: completar el perfil en /admin/settings');

@@ -1,6 +1,7 @@
 import type { Command } from '../types';
 import type { FolderNode, FileSystemNode } from '$lib/data/file-system';
 import { displayPath } from '../paths';
+import { t } from '$lib/i18n/helpers';
 
 interface TreeStats {
 	folders: number;
@@ -38,7 +39,9 @@ function buildTree(
 
 export const tree: Command = {
 	name: 'tree',
-	description: 'Muestra estructura de árbol',
+	get description() {
+		return t('terminal.tree.description');
+	},
 	usage: 'tree [-h]',
 	execute(args, ctx) {
 		// Help flag

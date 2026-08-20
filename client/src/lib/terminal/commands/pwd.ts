@@ -1,8 +1,11 @@
 import type { Command } from '../types';
+import { t } from '$lib/i18n/helpers';
 
 export const pwd: Command = {
 	name: 'pwd',
-	description: 'Muestra el directorio actual',
+	get description() {
+		return t('terminal.pwd.description');
+	},
 	usage: 'pwd [-h]',
 	execute(args, ctx) {
 		// Help flag

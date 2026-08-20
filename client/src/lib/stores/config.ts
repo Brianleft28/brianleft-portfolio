@@ -1,4 +1,5 @@
 import { writable, derived } from 'svelte/store';
+import { getCurrentLocale } from '$lib/i18n';
 
 export interface PortfolioConfig {
 	// Owner info
@@ -14,6 +15,8 @@ export interface PortfolioConfig {
 	// Social
 	social_github: string;
 	social_linkedin: string;
+	/** URL pública del sitio; se usa como base para canonical y og:url. */
+	social_website: string;
 	// Branding
 	branding_primary_color: string;
 	branding_ascii_banner: string;
@@ -65,6 +68,7 @@ const DEFAULT_CONFIG: PortfolioConfig = {
 	contact_email: 'dev@example.com',
 	social_github: '',
 	social_linkedin: '',
+	social_website: '',
 	branding_primary_color: '#4ec9b0',
 	branding_ascii_banner: '',
 	branding_site_title: '',
@@ -102,18 +106,69 @@ export const aiName = derived(aiPersonality, ($p) => $p.displayName);
 export const aiCommand = derived(portfolioConfig, ($c) => $c.ai_command || 'ai');
 export const asciiBanner = derived(portfolioConfig, ($c) => $c.branding_ascii_banner || '');
 
+/**
+ * Árbol del filesystem, por idioma.
+ *
+ * Se pide aparte del resto de la config porque es lo único que cambia cuando el
+ * visitante cambia de idioma. Antes se pedía una sola vez, sin `lang`, en el
+ * `onMount` del layout: el árbol se quedaba para siempre en el idioma de entrada.
+ *
+ * La promesa se cachea por idioma, así que el pedido inicial y el que dispara la
+ * suscripción a `locale` no se duplican.
+ */
+let filesystemRequest: { lang: string; promise: Promise<void> } | null = null;
+
+export function loadFilesystem(lang: string = getCurrentLocale()): Promise<void> {
+	if (filesystemRequest?.lang === lang) return filesystemRequest.promise;
+
+	const promise = fetchFilesystem(lang).catch((error) => {
+		console.error('[Config] Error cargando el filesystem:', error);
+		filesystemRequest = null; // que un fallo de red se pueda reintentar
+	});
+
+	filesystemRequest = { lang, promise };
+	return promise;
+}
+
+async function fetchFilesystem(lang: string): Promise<void> {
+	const response = await fetch(`/api/filesystem?lang=${lang}`);
+	if (!response.ok) return;
+
+	const data = await response.json();
+	// La API devuelve el árbol como array plano. Esto esperaba `{tree: [...]}`,
+	// que nunca matcheaba: el filesystem dinámico quedaba vacío y la home caía
+	// al estático de `file-system.ts` — sin proyectos y con el texto de
+	// instalación white-label. Se aceptan las dos formas por las dudas.
+	const tree = Array.isArray(data) ? data : data?.tree;
+	if (Array.isArray(tree) && tree.length > 0) {
+		dynamicFilesystem.set(tree);
+	}
+}
+
 // Cargar configuración desde API
 export async function loadConfig(): Promise<void> {
+	// Sin await: viaja en paralelo con el resto y se espera al final.
+	const filesystem = loadFilesystem();
+
 	try {
-		const [settingsRes, personalityRes, filesystemRes, bannerRes] = await Promise.all([
-			fetch('/api/settings'),
+		const [settingsRes, personalityRes, bannerRes] = await Promise.all([
+			// Endpoint público: `/api/settings` está detrás de JwtAuthGuard y devuelve
+			// 401 al visitante anónimo, por eso el sitio se quedaba con los defaults
+			// ("Developer"). `/settings/public` sí es abierto y trae la parametría real.
+			fetch(`/api/settings/public?lang=${getCurrentLocale()}`),
 			fetch('/api/ai-personalities/active'),
-			fetch('/api/filesystem'),
 			fetch('/api/settings/banner')
 		]);
 
 		if (settingsRes.ok) {
-			const settings = await settingsRes.json();
+			// El endpoint público devuelve un array [{key, value}], no un objeto:
+			// lo reducimos a mapa antes de mezclarlo con la config.
+			const raw = await settingsRes.json();
+			const settings = Array.isArray(raw)
+				? Object.fromEntries(
+						raw.map((s: { key: string; value: string }) => [s.key, s.value])
+					)
+				: raw;
 			portfolioConfig.update((current) => ({
 				...current,
 				...settings,
@@ -139,22 +194,13 @@ export async function loadConfig(): Promise<void> {
 			}
 		}
 
-		if (filesystemRes.ok) {
-			const data = await filesystemRes.json();
-			// La API devuelve el árbol como array plano. Esto esperaba `{tree: [...]}`,
-			// que nunca matcheaba: el filesystem dinámico quedaba vacío y la home caía
-			// al estático de `file-system.ts` — sin proyectos y con el texto de
-			// instalación white-label. Se aceptan las dos formas por las dudas.
-			const tree = Array.isArray(data) ? data : data?.tree;
-			if (Array.isArray(tree) && tree.length > 0) {
-				dynamicFilesystem.set(tree);
-			}
-		}
 	} catch (error) {
 		console.error('[Config] Error loading:', error);
 		// Mantener defaults
 		portfolioConfig.update((c) => ({ ...c, _loaded: true }));
 	}
+
+	await filesystem;
 }
 
 // Helper para obtener valor sync

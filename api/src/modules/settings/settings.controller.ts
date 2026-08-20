@@ -13,6 +13,9 @@ import {
 import { JwtAuthGuard } from '../../guards/jwt-auth.guard';
 import { SettingsService } from './settings.service';
 import { UserId } from '../../decorators';
+import { ApiQuery } from '@nestjs/swagger';
+import { normalizeLocale } from '../../common/locale';
+import { Setting } from '../../entities/setting.entity';
 
 @Controller('settings')
 export class SettingsController {
@@ -23,12 +26,18 @@ export class SettingsController {
    */
   @Get()
   @UseGuards(JwtAuthGuard)
-  async findAll(@Query('category') category?: string, @UserId() userId?: number) {
+  @ApiQuery({ name: 'lang', required: false, enum: ['es', 'en'] })
+  async findAll(
+    @Query('category') category?: string,
+    @UserId() userId?: number,
+    @Query('lang') lang?: string,
+  ) {
     const targetUserId = userId || 1;
-    if (category) {
-      return this.settingsService.findByCategory(category, targetUserId);
-    }
-    return this.settingsService.findAll(targetUserId);
+    const settings = category
+      ? await this.settingsService.findByCategory(category, targetUserId)
+      : await this.settingsService.findAll(targetUserId);
+
+    return settings.map((s) => resolveForLocale(s, normalizeLocale(lang)));
   }
 
   /**
@@ -36,11 +45,14 @@ export class SettingsController {
    * Devuelve todos los settings necesarios para el frontend
    */
   @Get('public')
-  async findPublic(@Query('userId') userId?: number) {
+  @ApiQuery({ name: 'lang', required: false, enum: ['es', 'en'] })
+  async findPublic(@Query('userId') userId?: number, @Query('lang') lang?: string) {
     const publicCategories = ['branding', 'social', 'owner', 'ai', 'contact'];
     const settings = await this.settingsService.findAll(userId || 1);
 
-    return settings.filter((s) => s.category && publicCategories.includes(s.category));
+    return settings
+      .filter((s) => s.category && publicCategories.includes(s.category))
+      .map((s) => resolveForLocale(s, normalizeLocale(lang)));
   }
 
   /**
@@ -140,4 +152,17 @@ export class SettingsController {
     await this.settingsService.delete(id, userId);
     return { success: true, message: 'Setting eliminado' };
   }
+}
+
+/**
+ * Deja el `value` ya resuelto en el idioma pedido.
+ *
+ * El panel edita el español; `value_en` es la traducción. Sin esto el
+ * `<title>` de la versión en inglés decía "Arquitecto de sistemas" mientras el
+ * cuerpo de la página decía "Systems Architect". Se sigue devolviendo `valueEn`
+ * aparte para que el panel de administración pueda mostrar las dos.
+ */
+function resolveForLocale(setting: Setting, lang: string): Setting {
+  const value = (lang === 'en' ? setting.valueEn : null) ?? setting.value;
+  return { ...setting, value };
 }

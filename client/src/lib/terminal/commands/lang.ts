@@ -17,10 +17,12 @@ const AVAILABLE_LANGUAGES: LanguageDefinition[] = [
  */
 export const lang: Command = {
 	name: 'lang',
-	description: t('terminal.lang.description'),
+	get description() {
+		return t('terminal.lang.description');
+	},
 	usage: 'lang [list|set <código>|-h]',
 
-	execute(args): CommandResult {
+	async execute(args): Promise<CommandResult> {
 		const currentLang = getCurrentLocale();
 
 		// Sin argumentos: mostrar idioma actual
@@ -64,8 +66,8 @@ ${t('common.usage')}: <span class="command-highlight">lang set &lt;${t('terminal
 				};
 			}
 
-			// Cambiar idioma
-			setLocale(langCode);
+			// Cambiar idioma. Se espera para que el mensaje de abajo ya salga en el nuevo.
+			await setLocale(langCode);
 
 			// Notificar cambio
 			if (typeof window !== 'undefined') {
@@ -85,7 +87,7 @@ ${t('common.usage')}: <span class="command-highlight">lang set &lt;${t('terminal
 		// Atajo: si pasan directamente un código de idioma
 		const directLang = AVAILABLE_LANGUAGES.find(l => l.code === subcommand);
 		if (directLang) {
-			setLocale(subcommand);
+			await setLocale(subcommand);
 
 			if (typeof window !== 'undefined') {
 				window.dispatchEvent(new CustomEvent('locale:change', { detail: { locale: subcommand } }));

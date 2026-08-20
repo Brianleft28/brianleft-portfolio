@@ -4,12 +4,10 @@ title: "SØREN — Visión por computadora sobre un proceso desatendido"
 summary: "Side project en Python que lee el estado de un juego por OCR y análisis de píxeles, sin tocar su memoria ni su red, y actúa en consecuencia. Corre horas sin supervisión: la parte interesante no es automatizar, es que se recupere solo cuando el mundo cambia debajo."
 priority: 5
 techStack: [Python, OpenCV, OCR, Tesseract, Discord Webhooks, Tkinter]
-keywords: [soren, pizzan-t, pizzant, side project, python, vision por computadora, computer vision, ocr, analisis de pixeles, automatizacion, bot, watchdog, guardian, maquina de estados, state machine, deteccion, discord, webhooks, observabilidad, proceso desatendido, pokemmo]
+keywords: [soren, pizzan-t, pizzant, side project, python, vision por computadora, computer vision, ocr, analisis de pixeles, automatizacion, bot, watchdog, guardian, maquina de estados, state machine, deteccion, discord, webhooks, observabilidad, proceso desatendido, pokemmo, automation, unattended, unattended process, pixel analysis, monitoring, alerting, discord bot, hobby project]
 ---
 
-# Portfolio: SØREN
-
-## 🤖 Contexto para IA Conversacional
+# SØREN
 
 `SØREN` (repo: `pizzan-t`) es un side project en Python que automatiza una tarea repetitiva dentro de un juego: detectar encuentros raros en pantalla y reaccionar. Lo cuento en el portfolio no por el dominio —es un juego— sino por el problema de ingeniería, que es el mismo que aparece en un tótem municipal o en una pantalla de sala de espera: **un proceso que corre horas sin nadie mirando y que no puede quedarse colgado**.
 
@@ -37,9 +35,7 @@ Cada modo de operación (hordas, ditto, individual) es su propia máquina de est
 
 Lo que sí es común a todos: el escaneo del campo completo. Un modo optimizado que sólo mirara donde "debería" aparecer lo importante se pierde los casos raros, que son justamente los que importan.
 
-## 🛡️ Torvalds Defender: el guardián
-
-> *"Todo proceso desatendido termina colgado. La pregunta es si se da cuenta." — Torvalds*
+## El guardián
 
 **El Desafío:** un ciclo de percepción-acción se traba de formas que no se pueden enumerar de antemano: un diálogo inesperado, una animación más larga, la ventana que pierde el foco. El proceso queda vivo pero sin avanzar, y como no crashea, nada avisa. Descubrías tres horas después que estaba parado desde el minuto veinte.
 
@@ -48,9 +44,7 @@ Lo que sí es común a todos: el escaneo del campo completo. Un modo optimizado 
 - La detección es por **ausencia de progreso**, no por lista de errores conocidos: cubre los modos de falla que todavía no vi.
 - Es la misma idea que aplico en sistemas 24/7: no confiar en que las cosas fallen ruidosamente.
 
-## 🛡️ Torvalds Defender: observabilidad de lo que no mirás
-
-> *"Un proceso sin telemetría es una caja negra con buenas intenciones." — Torvalds*
+## Observabilidad de lo que no mirás
 
 **El Desafío:** si el valor del proceso es correr sin que lo mires, no te podés enterar de lo que hizo mirándolo.
 
@@ -59,7 +53,7 @@ Lo que sí es común a todos: el escaneo del campo completo. Un modo optimizado 
 - Notificaciones por webhook de Discord ante cada evento relevante: el proceso te busca a vos, no al revés.
 - Un panel de control mínimo para arrancar, parar y cambiar de modo sin tocar el código.
 
-## 🛡️ Torvalds Defender: temporización que no es un metrónomo
+## Temporización que no es un metrónomo
 
 **El Desafío:** un bucle que actúa cada exactamente N milisegundos es trivialmente distinguible de una persona, y además es frágil: asume que el mundo responde siempre en el mismo tiempo.
 

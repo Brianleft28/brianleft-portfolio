@@ -2,6 +2,7 @@ import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { FilesystemService } from '../filesystem/filesystem.service';
 import { MemoryService } from '../memory/memory.service';
 import { ChatService } from '../chat/chat.service';
+import { TranslationService } from '../translation/translation.service';
 import { MemoryType } from '../../entities/memory.entity';
 import { FileType } from '../../entities/file.entity';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -42,6 +43,7 @@ export class ProjectsService {
     private filesystemService: FilesystemService,
     private memoryService: MemoryService,
     private chatService: ChatService,
+    private translationService: TranslationService,
     @InjectRepository(Memory)
     private memoryRepository: Repository<Memory>,
   ) {}
@@ -76,7 +78,15 @@ export class ProjectsService {
       this.logger.log(`Keywords generadas con IA: ${keywords.join(', ')}`);
     }
 
-    // 4. Crear memoria del proyecto
+    // 4. Traducir al inglés. Un proyecto cargado desde el panel no pasa por
+    //    `npm run translate`, así que si no se traduce acá se queda en español
+    //    para siempre. Si falla, `contentEn` queda en null y todo cae al español.
+    const [contentEn, summaryEn] = await Promise.all([
+      this.translationService.toEnglish(dto.content),
+      this.translationService.lineToEnglish(structuredSummary.description),
+    ]);
+
+    // 5. Crear memoria del proyecto
     const memory = await this.memoryService.create({
       type: MemoryType.PROJECT,
       slug: dto.slug,
@@ -85,9 +95,15 @@ export class ProjectsService {
       summary: structuredSummary.description,
       keywords: keywords,
     }, userId);
+
+    // `CreateMemoryDto` no expone las traducciones: se completan aparte para no
+    // ensanchar la API del panel con campos que nadie manda a mano.
+    if (contentEn || summaryEn) {
+      await this.memoryRepository.update(memory.id, { contentEn, summaryEn });
+    }
     this.logger.log(`Memoria creada: ${memory.id}`);
 
-    // 5. Crear archivo en filesystem (si se especifica carpeta)
+    // 6. Crear archivo en filesystem (si se especifica carpeta)
     let file = null;
     if (dto.folderId) {
       file = await this.filesystemService.createFile({
@@ -95,11 +111,11 @@ export class ProjectsService {
         type: FileType.MARKDOWN,
         content: dto.content,
         folderId: dto.folderId,
-      }, userId);
+      }, userId, contentEn);
       this.logger.log(`Archivo creado: ${file.id}`);
     }
 
-    // 6. Regenerar las secciones de proyectos de index y memory.
+    // 7. Regenerar las secciones de proyectos de index y memory.
     //    Se regeneran completas (no se appendea) para que este camino y el del
     //    seeder produzcan exactamente el mismo bloque y nada se duplique.
     await this.memoryService.regenerateProjectSections(userId);
@@ -218,6 +234,14 @@ export class ProjectsService {
     if (dto.content !== undefined) changes.content = dto.content;
     if (dto.summary !== undefined) changes.summary = dto.summary;
     if (dto.priority !== undefined) changes.priority = dto.priority;
+
+    // Si cambió el texto, la traducción vieja ya no lo describe: se rehace.
+    if (dto.content !== undefined) {
+      changes.contentEn = await this.translationService.toEnglish(dto.content);
+    }
+    if (dto.summary !== undefined) {
+      changes.summaryEn = await this.translationService.lineToEnglish(dto.summary);
+    }
 
     if (Object.keys(changes).length > 0) {
       await this.memoryRepository.update(memory.id, changes);

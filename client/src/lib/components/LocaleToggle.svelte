@@ -1,12 +1,9 @@
 <script lang="ts">
 	import { locale } from 'svelte-i18n';
+	import { setLocale } from '$lib/i18n';
 
 	function toggleLocale() {
-		const newLocale = $locale === 'es' ? 'en' : 'es';
-		locale.set(newLocale);
-		if (typeof localStorage !== 'undefined') {
-			localStorage.setItem('portfolio-locale', newLocale);
-		}
+		setLocale($locale === 'es' ? 'en' : 'es');
 	}
 </script>
 

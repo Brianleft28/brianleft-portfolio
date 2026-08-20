@@ -21,7 +21,8 @@
     "migration:run": "npm run typeorm -- migration:run -d src/config/data-source.ts",
     "migration:revert": "npm run typeorm -- migration:revert -d src/config/data-source.ts",
     "seed": "node dist/seeders/run-seeders",
-    "seed:dev": "ts-node src/seeders/run-seeders.ts"
+    "seed:dev": "ts-node src/seeders/run-seeders.ts",
+    "translate": "ts-node src/scripts/translate-docs.ts"
   },
   "dependencies": {
     "@google/generative-ai": "^0.21.0",

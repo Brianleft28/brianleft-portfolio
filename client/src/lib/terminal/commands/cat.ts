@@ -1,9 +1,12 @@
 import type { Command } from '../types';
 import type { FileNode } from '$lib/data/file-system';
+import { t } from '$lib/i18n/helpers';
 
 export const cat: Command = {
 	name: 'cat',
-	description: 'Muestra contenido de archivo (renderiza .md)',
+	get description() {
+		return t('terminal.cat.description');
+	},
 	usage: 'cat [-h] <archivo>',
 	execute(args, ctx) {
 		// Help flag

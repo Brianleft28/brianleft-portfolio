@@ -4,6 +4,7 @@ import { FilesystemService } from './filesystem.service';
 import { CreateFolderDto, CreateFileDto, UpdateFileDto } from './dto';
 import { JwtAuthGuard } from '../../guards/jwt-auth.guard';
 import { UserId } from '../../decorators';
+import { normalizeLocale } from '../../common/locale';
 
 @ApiTags('filesystem')
 @Controller('filesystem')
@@ -13,10 +14,11 @@ export class FilesystemController {
   @Get()
   @ApiOperation({ summary: 'Obtener árbol completo del filesystem (público - usa userId por defecto)' })
   @ApiQuery({ name: 'userId', required: false, type: Number })
+  @ApiQuery({ name: 'lang', required: false, enum: ['es', 'en'] })
   @ApiResponse({ status: 200, description: 'Árbol de carpetas y archivos' })
-  async getTree(@Query('userId') userId?: number) {
+  async getTree(@Query('userId') userId?: number, @Query('lang') lang?: string) {
     // Para acceso público, usar userId=1 (admin) por defecto
-    return this.filesystemService.getTree(userId || 1);
+    return this.filesystemService.getTree(userId || 1, normalizeLocale(lang));
   }
 
   @Get('folders')

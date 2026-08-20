@@ -7,6 +7,9 @@ import { Memory, MemoryType } from '../../entities/memory.entity';
 import { MemoryKeyword } from '../../entities/memory-keyword.entity';
 import { Setting } from '../../entities/setting.entity';
 import { CreateFolderDto, CreateFileDto, UpdateFileDto } from './dto';
+import { DEFAULT_LOCALE, Locale } from '../../common/locale';
+import { TranslationService } from '../translation/translation.service';
+import { applyPlaceholders, buildPlaceholders } from '../../common/placeholders';
 
 export interface FileSystemNode {
   id: number;
@@ -39,12 +42,17 @@ export class FilesystemService {
     private keywordsRepository: Repository<MemoryKeyword>,
     @InjectRepository(Setting)
     private settingsRepository: Repository<Setting>,
+    private translationService: TranslationService,
   ) {}
 
   /**
-   * Obtiene el árbol completo del filesystem para un usuario
+   * Obtiene el árbol completo del filesystem para un usuario, en un idioma.
+   *
+   * El idioma sólo afecta al contenido de los archivos: los nombres y las rutas
+   * son los mismos en los dos, así que `cat proyectos/vus/README.md` funciona
+   * igual y las rutas que menciona la IA no cambian según quién pregunte.
    */
-  async getTree(userId: number): Promise<FileSystemNode[]> {
+  async getTree(userId: number, lang: Locale = DEFAULT_LOCALE): Promise<FileSystemNode[]> {
     // Obtener carpetas raíz (sin parent) del usuario
     const rootFolders = await this.foldersRepository.find({
       where: { parentId: IsNull(), userId },
@@ -54,12 +62,12 @@ export class FilesystemService {
     // Los archivos del filesystem admiten los mismos placeholders {{...}} que las
     // memorias, así que la parametría también manda acá. Se resuelve al servir el
     // árbol, no al guardarlo: cambiar el perfil en el panel se refleja solo.
-    const placeholders = await this.loadPlaceholders(userId);
+    const placeholders = await this.loadPlaceholders(userId, lang);
 
     // Construir árbol recursivamente
     const tree: FileSystemNode[] = [];
     for (const folder of rootFolders) {
-      tree.push(await this.buildFolderNode(folder, userId, placeholders));
+      tree.push(await this.buildFolderNode(folder, userId, placeholders, lang));
     }
 
     return tree;
@@ -75,6 +83,7 @@ export class FilesystemService {
     name: string,
     content: string,
     userId: number,
+    contentEn: string | null = null,
   ): Promise<{ created: boolean; changed: boolean }> {
     const root = await this.findRootFolder(userId);
 
@@ -93,6 +102,7 @@ export class FilesystemService {
           name,
           type: FileType.MARKDOWN,
           content,
+          contentEn,
           folderId: root.id,
           userId,
           isActive: true,
@@ -101,24 +111,18 @@ export class FilesystemService {
       return { created: true, changed: true };
     }
 
-    if (existing.content === content) {
+    if (existing.content === content && existing.contentEn === contentEn) {
       return { created: false, changed: false };
     }
 
-    await this.filesRepository.update(existing.id, { content });
+    await this.filesRepository.update(existing.id, { content, contentEn });
     return { created: false, changed: true };
   }
 
   /** Mapa `clave -> valor` de la parametría del usuario. */
-  private async loadPlaceholders(userId: number): Promise<Map<string, string>> {
+  private async loadPlaceholders(userId: number, lang: Locale): Promise<Map<string, string>> {
     const settings = await this.settingsRepository.find({ where: { userId } });
-    return new Map(settings.map((s) => [s.key, s.value]));
-  }
-
-  /** Reemplaza `{{clave}}` por su valor; deja intacto lo que no exista. */
-  private applyPlaceholders(content: string, values: Map<string, string>): string {
-    if (!content) return content;
-    return content.replace(/\{\{(\w+)\}\}/g, (match, key) => values.get(key) ?? match);
+    return buildPlaceholders(settings, lang);
   }
 
   /**
@@ -128,6 +132,7 @@ export class FilesystemService {
     folder: Folder,
     userId: number,
     placeholders: Map<string, string> = new Map(),
+    lang: Locale = DEFAULT_LOCALE,
   ): Promise<FileSystemNode> {
     // Obtener subcarpetas del usuario
     const subfolders = await this.foldersRepository.find({
@@ -144,17 +149,20 @@ export class FilesystemService {
 
     // Agregar subcarpetas recursivamente
     for (const subfolder of subfolders) {
-      children.push(await this.buildFolderNode(subfolder, userId, placeholders));
+      children.push(await this.buildFolderNode(subfolder, userId, placeholders, lang));
     }
 
     // Agregar archivos
     for (const file of files) {
+      // Fallback explícito: un `.md` sin traducir se sirve en español, no vacío.
+      const content = (lang === 'en' ? file.contentEn : null) ?? file.content;
+
       children.push({
         id: file.id,
         name: file.name,
         type: 'file',
         fileType: file.type,
-        content: file.content ? this.applyPlaceholders(file.content, placeholders) : undefined,
+        content: content ? applyPlaceholders(content, placeholders) : undefined,
       });
     }
 
@@ -246,7 +254,7 @@ export class FilesystemService {
   /**
    * Crea un nuevo archivo
    */
-  async createFile(dto: CreateFileDto, userId: number): Promise<File> {
+  async createFile(dto: CreateFileDto, userId: number, contentEn: string | null = null): Promise<File> {
     // Verificar que la carpeta existe y pertenece al usuario
     await this.getFolderById(dto.folderId, userId);
 
@@ -254,6 +262,7 @@ export class FilesystemService {
       name: dto.name,
       type: dto.type,
       content: dto.content,
+      contentEn,
       folderId: dto.folderId,
       userId,
     });
@@ -268,8 +277,15 @@ export class FilesystemService {
     const file = await this.getFileById(id, userId);
 
     if (dto.name) file.name = dto.name;
-    if (dto.content !== undefined) file.content = dto.content;
     if (dto.isActive !== undefined) file.isActive = dto.isActive;
+
+    if (dto.content !== undefined && dto.content !== file.content) {
+      file.content = dto.content;
+      // Editar el texto invalida la traducción vieja: se rehace en el momento.
+      // Si falla queda en null y el visitante en inglés lo ve en español.
+      file.contentEn =
+        file.type === FileType.MARKDOWN ? await this.translationService.toEnglish(dto.content) : null;
+    }
 
     return this.filesRepository.save(file);
   }
@@ -470,8 +486,13 @@ export class FilesystemService {
           where: { folderId: existingFolder.id, name: 'README.md', userId }
         });
         
-        if (existingReadme && existingReadme.content !== project.content) {
+        if (
+          existingReadme &&
+          (existingReadme.content !== project.content ||
+            existingReadme.contentEn !== project.contentEn)
+        ) {
           existingReadme.content = project.content;
+          existingReadme.contentEn = project.contentEn;
           await this.filesRepository.save(existingReadme);
         }
         continue;
@@ -492,6 +513,7 @@ export class FilesystemService {
         type: FileType.MARKDOWN,
         folderId: projectFolder.id,
         content: project.content,
+        contentEn: project.contentEn,
         userId,
       });
       await this.filesRepository.save(readme);

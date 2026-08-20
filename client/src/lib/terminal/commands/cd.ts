@@ -1,9 +1,12 @@
 import type { Command } from '../types';
 import { displayPath } from '../paths';
+import { t } from '$lib/i18n/helpers';
 
 export const cd: Command = {
 	name: 'cd',
-	description: 'Cambia de directorio',
+	get description() {
+		return t('terminal.cd.description');
+	},
 	usage: 'cd [-h] <directorio>',
 	execute(args, ctx) {
 		// Help flag

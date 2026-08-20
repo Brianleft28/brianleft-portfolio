@@ -6,7 +6,9 @@ import { t, getCurrentLocale } from '$lib/i18n/helpers';
  */
 export const cv: Command = {
   name: 'cv',
-  description: t('terminal.cv.description'),
+  get description() {
+    return t('terminal.cv.description');
+  },
   usage: 'cv [-i] [-h]',
 
   execute(args: string[], ctx: CommandContext): CommandResult {
