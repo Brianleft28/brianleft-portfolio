@@ -7,7 +7,7 @@ endobj
 << /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>
 endobj
 3 0 obj
-<< /Length 13399 >>
+<< /Length 13447 >>
 stream
 BT
 0.11 0.12 0.14 rg
@@ -21,9 +21,15 @@ BT
 /F1 9 Tf
 (Desarrollador) Tj
 ( ) Tj
-(Full) Tj
+(Backend) Tj
 ( ) Tj
-(Stack) Tj
+(\267) Tj
+( ) Tj
+(Arquitectura) Tj
+( ) Tj
+(de) Tj
+( ) Tj
+(sistemas) Tj
 ET
 BT
 0.11 0.12 0.14 rg
@@ -89,9 +95,7 @@ BT
 /F1 9 Tf
 (Desarrollador) Tj
 ( ) Tj
-(full) Tj
-( ) Tj
-(stack) Tj
+(backend) Tj
 ( ) Tj
 (enfocado) Tj
 ( ) Tj
@@ -120,13 +124,13 @@ BT
 (y) Tj
 ( ) Tj
 (no) Tj
+( ) Tj
+(se) Tj
 ET
 BT
 0.11 0.12 0.14 rg
 1 0 0 1 42.00 667.39 Tm
 /F1 9 Tf
-(se) Tj
-( ) Tj
 (pueden) Tj
 ( ) Tj
 (caer.) Tj
@@ -2156,14 +2160,14 @@ xref
 0000000015 00000 n 
 0000000112 00000 n 
 0000000214 00000 n 
-0000013666 00000 n 
-0000013808 00000 n 
-0000021952 00000 n 
-0000022094 00000 n 
-0000022157 00000 n 
-0000022276 00000 n 
+0000013714 00000 n 
+0000013856 00000 n 
+0000022000 00000 n 
+0000022142 00000 n 
+0000022205 00000 n 
+0000022324 00000 n 
 trailer
 << /Size 10 /Root 9 0 R /Info 8 0 R >>
 startxref
-22325
+22373
 %%EOF

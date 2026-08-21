@@ -1,6 +1,6 @@
 # Brian Benegas
 
-Desarrollador Full Stack
+Desarrollador Backend · Arquitectura de sistemas
 Ituzaingó, Buenos Aires, Argentina · Disponible para remoto
 contactobrianleft@gmail.com · +54 11 3155 6315
 github.com/Brianleft28 · linkedin.com/in/brian-benegas-44770729b · brianleft.com
@@ -9,7 +9,7 @@ github.com/Brianleft28 · linkedin.com/in/brian-benegas-44770729b · brianleft.c
 
 ## Perfil
 
-Desarrollador full stack enfocado en sistemas de sector público que funcionan todo el día, desatendidos, y no se pueden caer. Trabajo de punta a punta: backend y frontend, y también el Linux donde corren, el CI/CD que los despliega, el nginx que los publica y el certificado que los asegura. La mayor parte de mi trabajo consiste en blindar sistemas de tiempo real bajo carga: escalado horizontal, comportamiento de memoria en clientes de larga duración y acceso a base de datos en hora pico. Actualmente lidero el equipo de innovación del Municipio de Ituzaingó.
+Desarrollador backend enfocado en sistemas de sector público que funcionan todo el día, desatendidos, y no se pueden caer. Trabajo de punta a punta: backend y frontend, y también el Linux donde corren, el CI/CD que los despliega, el nginx que los publica y el certificado que los asegura. La mayor parte de mi trabajo consiste en blindar sistemas de tiempo real bajo carga: escalado horizontal, comportamiento de memoria en clientes de larga duración y acceso a base de datos en hora pico. Actualmente lidero el equipo de innovación del Municipio de Ituzaingó.
 
 ---
 

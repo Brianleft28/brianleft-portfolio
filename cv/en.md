@@ -1,6 +1,6 @@
 # Brian Benegas
 
-Full Stack Developer
+Backend Developer · Systems Architecture
 Buenos Aires, Argentina · UTC-3 · Open to remote
 contactobrianleft@gmail.com · +54 11 3155 6315
 github.com/Brianleft28 · linkedin.com/in/brian-benegas-44770729b · brianleft.com
@@ -9,7 +9,7 @@ github.com/Brianleft28 · linkedin.com/in/brian-benegas-44770729b · brianleft.c
 
 ## Summary
 
-Full stack developer building and operating public-sector systems that run unattended all day and cannot go down. I work end to end: backend and frontend, plus the Linux hosts, CI/CD pipelines, nginx and certificates that put them in production. Most of my work is hardening real-time systems under load — horizontal scaling, memory behaviour in long-running clients, and database access at peak. Currently leading the innovation team at the Municipality of Ituzaingó.
+Backend developer building and operating public-sector systems that run unattended all day and cannot go down. I work end to end: backend and frontend, plus the Linux hosts, CI/CD pipelines, nginx and certificates that put them in production. Most of my work is hardening real-time systems under load — horizontal scaling, memory behaviour in long-running clients, and database access at peak. Currently leading the innovation team at the Municipality of Ituzaingó.
 
 ---
 
